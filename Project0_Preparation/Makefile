@@ -41,7 +41,7 @@ USER_ENTRYPOINT			= 0x50000000
 # UCAS-OS User Source Files
 # -----------------------------------------------------------------------
 
-SRC_USER	= adding1to100.S
+SRC_USER	= primeTest1.S
 ELF_USER	= $(patsubst %.S, %, $(SRC_USER))
 
 # -----------------------------------------------------------------------
