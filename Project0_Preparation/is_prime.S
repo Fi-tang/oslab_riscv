@@ -1,6 +1,6 @@
 .global main 
 main:
-    li a0, 6                # testing from 1 to 100, a0 means number
+    li a0, 8                # testing from 1 to 100, a0 means number
     li t0, 2                # for(i = 2)
     div t1, a0, t0          # i < (number // 2) + 1
     addi t1, t1, 1          # t1 = (number // 2) + 1
