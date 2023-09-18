@@ -29,7 +29,7 @@ loop:
 
 is_prime_finish:
     li a1, 1
-    j finish_calling
+    ret
 not_prime_false:
     li a1, 0
-    j finish_calling
+    ret
