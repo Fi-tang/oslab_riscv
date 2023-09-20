@@ -30,7 +30,7 @@ clean_done:
   lui sp, %hi(KERNEL_STACK)
   addi sp,sp, %lo(KERNEL_STACK)  // assign stack pointer
 
-  jal ra, main     // jump to main function 
+  j main     // jump to main function 
 
 loop:
   wfi

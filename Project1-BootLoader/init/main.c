@@ -83,6 +83,9 @@ int main(void)
         if(result != -1){
             bios_putchar(result);
         }
+	if(result == (int)'0'){
+	    break;
+	}
     }
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
