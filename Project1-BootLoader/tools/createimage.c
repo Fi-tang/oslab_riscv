@@ -12,6 +12,7 @@
 #define SECTOR_SIZE 512
 #define BOOT_LOADER_SIG_OFFSET 0x1fe
 #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
+#define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
 #define BOOT_LOADER_SIG_1 0x55
 #define BOOT_LOADER_SIG_2 0xaa
 
@@ -87,7 +88,7 @@ static void create_image(int nfiles, char *files[])
     Elf64_Phdr phdr;
 
     /* open the image file */
-    img = fopen(IMAGE_FILE, "w");
+    img = fopen(IMAGE_FILE, "w+");
     assert(img != NULL);
 
     /* for each input file */
@@ -134,6 +135,7 @@ static void create_image(int nfiles, char *files[])
         fclose(fp);
         files++;
     }
+    printf("\n\n\ndebug... Entering write_img_info\n");
     write_img_info(nbytes_kernel, taskinfo, tasknum, img);
 
     fclose(img);
@@ -215,6 +217,27 @@ static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
 {
     // TODO: [p1-task3] & [p1-task4] write image info to some certain places
     // NOTE: os size, infomation about app-info sector(s) ...
+    // image is not an elf file
+    int ret_app_number, ret_os_size;
+    fseek(img, APP_NUMBER_LOC, SEEK_SET);
+    ret_app_number = fwrite(&tasknum, 2, 1, img);
+    assert(ret_app_number == 1);
+
+    rewind(img);
+    fseek(img, OS_SIZE_LOC, SEEK_SET);
+    int kernel_sectors = NBYTES2SEC(nbytes_kernel) >= 15? NBYTES2SEC(nbytes_kernel) : 15;
+    ret_os_size = fwrite(&kernel_sectors, 2, 1, img);
+    assert(ret_os_size == 1);
+
+    // debug part A little revision, changing fopen(IMAGE_FILE, "w") to fopen(IMAGE_FILE, "w+")
+    // the following can be negelected
+    rewind(img);
+    fseek(img, APP_NUMBER_LOC, SEEK_SET);
+    printf("debug...:App_number = %d%d\n", fgetc(img), fgetc(img));
+
+    rewind(img);
+    fseek(img, OS_SIZE_LOC, SEEK_SET);
+    printf("debug...:os_total_size = %d%d\n", fgetc(img), fgetc(img));
 }
 
 /* print an error message and exit */
