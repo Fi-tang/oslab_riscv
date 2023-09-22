@@ -94,10 +94,14 @@ int main(void)
     while(1){
         int input_task_id = bios_getchar();
         if(input_task_id != -1){
-            bios_putstr("The input task id is: \n");
+            bios_putstr("The input task id is: ");
             bios_putchar(input_task_id);
-            load_task_img(input_task_id - '0');
-            break;
+            input_task_id = input_task_id - '0';
+            long task_enterance_address = load_task_img(input_task_id);
+            // This line is useful, but we find in a0, it stores the enterance address
+            asm volatile("mv a7, %0\n"
+            : :"r"(input_task_id));
+            ( *(void(*)(void))task_enterance_address)();
         }
     }
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)

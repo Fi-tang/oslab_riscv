@@ -19,6 +19,7 @@ uint64_t load_task_img(int taskid)
      * where the 736th block does not exist!
      * taskid = taskid - '0', change it in /init/main.c
     */
+    bios_putchar(TASK_MEM_BASE);
     long task_in_memory_address = TASK_MEM_BASE + (taskid - 1) * TASK_SIZE;
     long task3_block_number = 15;
     long task3_block_id = 15 * taskid + 1;
