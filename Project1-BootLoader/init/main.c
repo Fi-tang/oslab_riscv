@@ -96,6 +96,7 @@ int main(void)
         if(input_task_id != -1){
             bios_putstr("The input task id is: \n");
             bios_putchar(input_task_id);
+            load_task_img(input_task_id - '0');
             break;
         }
     }
