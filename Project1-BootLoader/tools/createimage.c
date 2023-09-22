@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define IMAGE_FILE "./image"
 #define ARGS "[--extended] [--vm] <bootblock> <executable-file> ..."
 
@@ -92,6 +93,7 @@ static void create_image(int nfiles, char *files[])
     assert(img != NULL);
 
     /* for each input file */
+    long new_phyaddr_base = SECTOR_SIZE;
     for (int fidx = 0; fidx < nfiles; ++fidx) {
 
         int taskidx = fidx - 2;
@@ -131,7 +133,14 @@ static void create_image(int nfiles, char *files[])
         if (strcmp(*files, "bootblock") == 0) {
             write_padding(img, &phyaddr, SECTOR_SIZE);
         }
-
+        else{
+            // p1-task3, every application(including main), occupies 15 sectors
+            // find error, the write_padding's new_phyaddr should be seriously calculated!
+            // [p1-task3]: need addition for p1-task4
+            new_phyaddr_base += 15 * SECTOR_SIZE;
+            printf("  !!before padding :  This time's new_phyaddr_base = 0x%lx\n", new_phyaddr_base);
+            write_padding(img, &phyaddr, new_phyaddr_base);
+        }
         fclose(fp);
         files++;
     }

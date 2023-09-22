@@ -77,19 +77,28 @@ int main(void)
     bios_putstr(buf);
 
     // p1-task2
-    bios_putchar((int)'\n');
+    bios_putstr("Input character, enter 0 to finish\n");
     while(1){
         int result = bios_getchar();
         if(result != -1){
             bios_putchar(result);
         }
-	if(result == (int)'0'){
-	    break;
-	}
+        if(result == (int)'0'){
+            break;
+        }
     }
+    bios_putstr("\nInput and output test finished!\n");
+    bios_putstr("\nInput taskid\n");
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-
+    while(1){
+        int input_task_id = bios_getchar();
+        if(input_task_id != -1){
+            bios_putstr("The input task id is: \n");
+            bios_putchar(input_task_id);
+            break;
+        }
+    }
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
     {
