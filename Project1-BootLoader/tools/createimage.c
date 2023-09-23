@@ -15,7 +15,7 @@
 #define BOOT_LOADER_SIG_OFFSET 0x1fe
 #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
 #define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
-#define TASK_INFO_LOC 0x70
+#define APP_INFO_SECTOR (BOOT_LOADER_SIG_OFFSET - 6)
 #define BOOT_LOADER_SIG_1 0x55
 #define BOOT_LOADER_SIG_2 0xaa
 
@@ -134,11 +134,13 @@ static void create_image(int nfiles, char *files[])
             }
             else{
                 // Adding sectors count
-                uint32_t current_filesz = get_filesz(phdr);
-                int current_file_sectors = NBYTES2SEC(current_filesz);
-                printf("***current_filesz: %d and that accounts for %d sectors\n", current_filesz, current_file_sectors);
+                if(strcmp(*files, "main") == 0){
+                    section_counter += 1;
+                
+                }
+                printf("***current_filesz: %d and that accounts for %d sectors\n", NBYTES2SEC(get_filesz(phdr)), get_filesz(phdr));
 
-                section_counter += current_file_sectors;
+                section_counter += NBYTES2SEC(get_filesz(phdr));
                 // real section_id is section_counter - 1
                 // [p1-task4]: padding to new section
                 printf("***The section_counter = %d\n", section_counter);
@@ -150,7 +152,12 @@ static void create_image(int nfiles, char *files[])
             if(strcmp(*files, "bootblock") != 0){
                 strncpy(taskinfo[task_id].taskname, *files, strlen(*files));
                 taskinfo[task_id].total_block_num = NBYTES2SEC(get_filesz(phdr));
-                taskinfo[task_id].start_block_id = section_counter - NBYTES2SEC(get_filesz(phdr));
+                if(strcmp(*files, "main") == 0){
+                    taskinfo[task_id].start_block_id = 1;
+                }
+                else{
+                    taskinfo[task_id].start_block_id = section_counter - NBYTES2SEC(get_filesz(phdr));
+                }
                 
                 task_id++;
             }
@@ -266,20 +273,28 @@ static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
     // TODO: [p1-task3] & [p1-task4] write image info to some certain places
     // NOTE: os size, infomation about app-info sector(s) ...
     // image is not an elf file
-    int ret_app_number, ret_os_size;
+    int ret_app_number, ret_os_size, ret_app_sector;
     fseek(img, APP_NUMBER_LOC, SEEK_SET);
     ret_app_number = fwrite(&tasknum, 2, 1, img);
     assert(ret_app_number == 1);
 
     rewind(img);
     fseek(img, OS_SIZE_LOC, SEEK_SET);
-    int kernel_sectors = NBYTES2SEC(nbytes_kernel) >= 15? NBYTES2SEC(nbytes_kernel) : 15;
+    int kernel_sectors = NBYTES2SEC(nbytes_kernel);
     ret_os_size = fwrite(&kernel_sectors, 2, 1, img);
     assert(ret_os_size == 1);
 
-    // [p1-task4], writing task_info_related message in 0x100
+    int app_info_sector = 1 + (NBYTES2SEC(nbytes_kernel));
+    fseek(img, APP_INFO_SECTOR, SEEK_SET);
+    ret_app_sector = fwrite(&app_info_sector, 2, 1, img);
+    assert(ret_app_sector == 1);
+    //                                              a b                   c d                 e f
+    //  0x1f0: 0000  0000  0000  0000  0000         0000                  0000                0000 
+    //                                        [APP_INFO_SECTOR]      [APP_NUMBER_LOC]       [OS_SIZE_LOC]        
+    // [p1-task4], writing task_info_related message in the sector after main
+    long APP_INFO_ADDRESS = (NBYTES2SEC(nbytes_kernel) + 1) * SECTOR_SIZE;
     rewind(img);
-    fseek(img, TASK_INFO_LOC, SEEK_SET);
+    fseek(img, APP_INFO_ADDRESS, SEEK_SET);
     for(int i = 0; i < tasknum + 1; i++){
         int app_info_result;
         app_info_result = fwrite(&taskinfo[i], sizeof(task_info_t), 1, img);
@@ -288,17 +303,20 @@ static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
 
     // debug part A little revision, changing fopen(IMAGE_FILE, "w") to fopen(IMAGE_FILE, "w+")
     // the following can be negelected
-    // actually, we need 4 time's fgetc(img), this should be changed later, but currently, we only need < 256
     rewind(img);
     fseek(img, APP_NUMBER_LOC, SEEK_SET);
     printf("debug...:App_number = %d%d\n", fgetc(img), fgetc(img));
 
     rewind(img);
     fseek(img, OS_SIZE_LOC, SEEK_SET);
-    printf("debug...:os_total_size = %d%d\n", fgetc(img), fgetc(img));  
+    printf("debug...:os_total_size = %d%d\n", fgetc(img), fgetc(img)); 
 
     rewind(img);
-    fseek(img, TASK_INFO_LOC, SEEK_SET);
+    fseek(img, APP_INFO_SECTOR, SEEK_SET);
+    printf("debug...:App_info_sector = %d%d\n", fgetc(img), fgetc(img)); 
+
+    rewind(img);
+    fseek(img, APP_INFO_ADDRESS, SEEK_SET);
     // in memory:
     // char tasknum occupies 16 byte, start_id occupies 4 byte, and num_of_blocks occupies 4 byte
     for(int i = 0; i < tasknum + 1; i++){
