@@ -9,19 +9,11 @@ ENTRY(_start)
 
     /* TODO: [p1-task3] setup C runtime environment for the user program */
     // assume a7 records - taskid, now we calculate it
-    lui t0, %hi(STACK_SIZE)
-    addi t0, t0, %lo(STACK_SIZE)        // t0 = STACK_SIZE
-
-    addi t1, a7, -1                    // t1 = (taskid - 1)
-    mul t2, t0, t1                     // t2 = (taskid - 1) * STACK_SIZE
 
     lui t3, %hi(USER_STACK_BASE)
     addi t3, t3, %lo(USER_STACK_BASE)   // t3 = USER_STACK_BASE
 
-    add t4, t3, t2                      // t4 = USER_STACK_BASE + (taskid - 1) * STACK_SIZE
-
-    mv sp, t4                           // Every program has it's own stack_pointer  
-                                        // sp = USER_STACK_BASE + (taskid - 1) * STACK_SIZE --> 0x535[taskid - 1]0000
+    mv sp, t3                           // Every program has it's own stack_pointer  
 
     /* TODO: [p1-task3] enter main function */
     j main 
