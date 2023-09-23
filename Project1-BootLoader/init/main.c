@@ -7,6 +7,12 @@
 #include <type.h>
 
 #define VERSION_BUF 50
+#define TEN (10)
+#define BOOT_LOADER_SIG_OFFSET 0x1fe
+#define BOOT_LOADER_ENTRIES 0x50200000
+#define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
+#define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
+#define APP_INFO_SECTOR (BOOT_LOADER_SIG_OFFSET - 6)
 
 int version = 2; // version must between 0 and 9
 char buf[VERSION_BUF];
@@ -40,6 +46,33 @@ static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
+    // 1. get number from  0x50200000
+    // #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
+    // #define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
+    // #define APP_INFO_SECTOR (BOOT_LOADER_SIG_OFFSET - 6)
+    short os_size_count = *(short*)(BOOT_LOADER_ENTRIES + OS_SIZE_LOC);
+    bios_putstr("os_size_count: ");
+    int os_size_first_half = (os_size_count / EI_NIDENT) >= 10?  os_size_count / EI_NIDENT - 10  + 'a': os_size_count / EI_NIDENT  + '0';
+    int os_size_second_half = (os_size_count % EI_NIDENT) >= 10?  os_size_count % EI_NIDENT - 10  + 'a': os_size_count % EI_NIDENT  + '0';
+    bios_putchar(os_size_first_half);
+    bios_putchar(os_size_second_half);
+
+    short appnum = *(short*)(BOOT_LOADER_ENTRIES + APP_NUMBER_LOC);
+    bios_putstr("\napp_num: ");
+    int appnum_size_first_half = (appnum / EI_NIDENT) >= 10?  appnum / EI_NIDENT - 10  + 'a': appnum / EI_NIDENT  + '0';
+    int appnum_size_second_half = (appnum % EI_NIDENT) >= 10?  appnum % EI_NIDENT - 10  + 'a': appnum % EI_NIDENT  + '0';
+    bios_putchar(appnum_size_first_half);
+    bios_putchar(appnum_size_second_half);
+   
+    short app_info_sector = *(short*)(BOOT_LOADER_ENTRIES + APP_INFO_SECTOR);
+    bios_putstr("\napp_info_sector: ");
+    int app_info_first_half = (app_info_sector / EI_NIDENT) >= 10?  app_info_sector / EI_NIDENT - 10  + 'a': app_info_sector / EI_NIDENT  + '0';
+    int app_info_second_half = (app_info_sector % EI_NIDENT) >= 10?  app_info_sector % EI_NIDENT - 10  + 'a': app_info_sector % EI_NIDENT  + '0';
+    bios_putchar(app_info_first_half);
+    bios_putchar(app_info_second_half);
+    bios_putstr(" \n");
+    // with the growth of our main-code, the section in which app_info at, and the os_size is growthing
+    
 }
 
 /************************************************************/
@@ -91,19 +124,19 @@ int main(void)
     bios_putstr("\nInput taskid\n");
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-    while(1){
-        int input_task_id = bios_getchar();
-        if(input_task_id != -1){
-            bios_putstr("The input task id is: ");
-            bios_putchar(input_task_id);
-            input_task_id = input_task_id - '0';
-            long task_enterance_address = load_task_img(input_task_id);
-            // This line is useful, but we find in a0, it stores the enterance address
-            asm volatile("mv a7, %0\n"
-            : :"r"(input_task_id));
-            ( *(void(*)(void))task_enterance_address)();
-        }
-    }
+    // while(1){
+    //     int input_task_id = bios_getchar();
+    //     if(input_task_id != -1){
+    //         bios_putstr("The input task id is: ");
+    //         bios_putchar(input_task_id);
+    //         input_task_id = input_task_id - '0';
+    //         long task_enterance_address = load_task_img(input_task_id);
+    //         // This line is useful, but we find in a0, it stores the enterance address
+    //         asm volatile("mv a7, %0\n"
+    //         : :"r"(input_task_id));
+    //         ( *(void(*)(void))task_enterance_address)();
+    //     }
+    // }
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
     {
