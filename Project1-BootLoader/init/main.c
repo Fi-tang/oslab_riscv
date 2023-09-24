@@ -87,8 +87,8 @@ static void init_task_info(void)
             temp_taskname[j] = *(char*)(address_location);
             address_location++;
         }
-        strncmp(tasks[i].taskname, temp_taskname, strlen(temp_taskname));
-        bios_putstr(temp_taskname);
+        strncpy(tasks[i].taskname, temp_taskname, strlen(temp_taskname));
+        bios_putstr(tasks[i].taskname);
         bios_putchar('\n');
         int temp_start_id = *(int*)(address_location);
         address_location += 4;
@@ -175,6 +175,7 @@ int main(void)
                 count_taskname++;
             }
             else if(taskname_result == '*'){
+                buf_taskname[count_taskname] = '\0';
                 break;
             }
         }

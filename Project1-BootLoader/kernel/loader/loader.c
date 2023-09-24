@@ -29,13 +29,13 @@ uint64_t load_task_img(int taskid)
 
 // [p1-task4]
 uint64_t load_task_img_by_name(int tasknum, char *taskname){
-    for(int i = 0; i < tasknum + 1; i++){
-        if(strcmp(taskname, tasks[i].taskname) == 0){
-            long task_in_memory_address = TASK_MEM_BASE + (i - 1) * TASK_SIZE;
+    for(int i = 0; i < (tasknum + 1); i++){
+        if(strcmp(taskname , tasks[i].taskname) == 0 ){
+            long task4_in_memory_address = TASK_MEM_BASE + (i - 1) * TASK_SIZE;
             long task4_block_number = tasks[i].total_block_num;
             long task4_block_id = tasks[i].start_block_id;
-            bios_sd_read(task_in_memory_address, task4_block_number, task4_block_id);
-            return task_in_memory_address;
+            bios_sd_read(task4_in_memory_address, task4_block_number, task4_block_id);
+            return task4_in_memory_address;
         }
     }
     return 0;
