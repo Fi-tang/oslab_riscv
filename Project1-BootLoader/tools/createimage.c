@@ -26,6 +26,8 @@ typedef struct {
     char taskname[EI_NIDENT];
     int start_block_id;
     int total_block_num;
+    long task_filesz;
+    long task_memorysz;
 } task_info_t;
 
 #define TASK_MAXNUM 16
@@ -135,23 +137,28 @@ static void create_image(int nfiles, char *files[])
             else{
                 // Adding sectors count
                 if(strcmp(*files, "main") == 0){
-                    section_counter += 1;
-                
-                }
-                printf("***current_filesz: %d and that accounts for %d sectors\n", NBYTES2SEC(get_filesz(phdr)), get_filesz(phdr));
+                    printf("***current_filesz: %d and that is  [%d sectors]\n",  get_filesz(phdr), NBYTES2SEC(get_filesz(phdr)));
 
-                section_counter += NBYTES2SEC(get_filesz(phdr));
+                    section_counter += NBYTES2SEC(get_filesz(phdr)) + 2; // [App - info] accounts for 2 sectors
+                    
+                }
+                else{
+                    section_counter += NBYTES2SEC(get_filesz(phdr));
+                }
                 // real section_id is section_counter - 1
                 // [p1-task4]: padding to new section
                 printf("***The section_counter = %d\n", section_counter);
                 int new_paddingRange = SECTOR_SIZE * section_counter;
                 write_padding(img, &phyaddr, new_paddingRange);
+                
             }
             
             // init task_info_t, task_id[0] = main
             if(strcmp(*files, "bootblock") != 0){
                 strncpy(taskinfo[task_id].taskname, *files, strlen(*files));
                 taskinfo[task_id].total_block_num = NBYTES2SEC(get_filesz(phdr));
+                taskinfo[task_id].task_filesz = get_filesz(phdr);
+                taskinfo[task_id].task_memorysz = get_memsz(phdr);
                 if(strcmp(*files, "main") == 0){
                     taskinfo[task_id].start_block_id = 1;
                 }
@@ -191,8 +198,10 @@ static void create_image(int nfiles, char *files[])
     // debug:
     printf("\n***Printing taskinfo\n");
     for(int i = 0; i < task_id; i++){
-        printf("**taskinfo[%d].taskname = %s\ttaskinfo[%d].start_block_id=%d\ttaskinfo[%d].total_block_num=%d\n",
-        i, taskinfo[i].taskname,  i,taskinfo[i].start_block_id,  i,taskinfo[i].total_block_num);
+        printf("**taskinfo[%d].taskname = %s\ttaskinfo[%d].start_block_id=%d\ttaskinfo[%d].total_block_num=%d\
+        taskinfo[%d].task_filesz = %ld\ttaskinfo[%d].task_memorysz = %ld\n",
+        i, taskinfo[i].taskname,  i,taskinfo[i].start_block_id,  i,taskinfo[i].total_block_num,
+        i, taskinfo[i].task_filesz, i, taskinfo[i].task_memorysz);
     }
 }
 
@@ -325,24 +334,22 @@ static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
             temp -> taskname[j] = fgetc(img);
         }
         // the next number should be getting 4 fgetc()
-        int  real_start_block = 0;
-        int  start_block_count = 1;
-        for(int j = 0; j < INT_IN_BYTES; j++){
-            int base_number = (int)fgetc(img);
-            real_start_block = real_start_block + base_number * start_block_count;
-            start_block_count = start_block_count << INT_IN_BYTES;
-        }
+        int real_start_block;
+        fread(&real_start_block, sizeof(int), 1, img);
 
-        int real_num_block = 0;
-        int num_block_count = 1;
-        for(int j = 0; j < INT_IN_BYTES; j++){
-            int base_number = (int)fgetc(img);
-            real_num_block = real_num_block + base_number * num_block_count;
-            num_block_count = num_block_count << INT_IN_BYTES;
-        }
+        int real_num_block;
+        fread(&real_num_block,sizeof(int), 1, img);
 
-        printf("taskinfo[%d].taskname=%s\ttaskinfo[%d].start_block_id=%d\ttaskinfo[%d].num_block=%d\n",
-        i, temp -> taskname, i, real_start_block, i, real_num_block);
+        long real_taskfile_size;
+        fread(&real_taskfile_size, sizeof(long), 1, img);
+
+        long real_taskmemory_size;
+        fread(&real_taskmemory_size, sizeof(long), 1, img);
+        
+        printf("taskinfo[%d].taskname=%s\ttaskinfo[%d].start_block_id=%d\ttaskinfo[%d].num_block=%d\
+        \ttaskinfo[%d].task_filesz=%ld\ttaskinfo[%d].task_memorysz=%ld\n",
+        i, temp -> taskname, i, real_start_block, i, real_num_block,
+        i, real_taskfile_size, i, real_taskmemory_size);
     }
 }
 

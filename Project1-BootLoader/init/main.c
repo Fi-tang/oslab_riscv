@@ -97,6 +97,14 @@ static void init_task_info(void)
         int temp_block_num = *(int *)(address_location);
         address_location += 4;
         tasks[i].total_block_num = temp_block_num;
+
+        long temp_filesz = *(long*)(address_location);
+        address_location += 8;
+        tasks[i].task_filesz = temp_filesz;
+
+        long temp_memorysz = *(long*)(address_location);
+        address_location += 8;
+        tasks[i].task_memorysz = temp_memorysz;
     }
 }
 
@@ -180,6 +188,12 @@ int main(void)
             }
         }
         long task_enterance_address = load_task_img_by_name((int)total_task_num, buf_taskname);
+        long current_task_filesz = load_taskfilesz((int)total_task_num, buf_taskname);
+        long current_task_memorysz = load_taskmemorysz((int)total_task_num, buf_taskname);
+        asm volatile( "mv a6, %0\n"
+            : : "r"(current_task_filesz));
+        asm volatile("mv a7, %0\n"
+            : : "r"(current_task_memorysz));
         ( *(void(*)(void))task_enterance_address)();
     }
 

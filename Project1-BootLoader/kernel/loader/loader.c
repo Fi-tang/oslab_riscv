@@ -28,6 +28,24 @@ uint64_t load_task_img(int taskid)
 }
 
 // [p1-task4]
+long load_taskfilesz(int tasknum, char *taskname){
+    for(int i = 0; i < (tasknum + 1); i++){
+        if(strcmp(taskname, tasks[i].taskname) == 0){
+            return tasks[i].task_filesz;
+        }
+    }
+    return 0;
+}
+
+long load_taskmemorysz(int tasknum, char *taskname){
+    for(int i = 0; i < (tasknum + 1); i++){
+        if(strcmp(taskname, tasks[i].taskname) == 0){
+            return tasks[i].task_memorysz;
+        }
+    }
+    return 0;
+}
+
 uint64_t load_task_img_by_name(int tasknum, char *taskname){
     for(int i = 0; i < (tasknum + 1); i++){
         if(strcmp(taskname , tasks[i].taskname) == 0 ){
