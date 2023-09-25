@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+// newly included for compressor and decompressor
 
 #define EI_NIDENT (16)
 #define INT_IN_BYTES (4)
@@ -51,6 +52,7 @@ static void write_segment(Elf64_Phdr phdr, FILE *fp, FILE *img, int *phyaddr);
 static void write_padding(FILE *img, int *phyaddr, int new_phyaddr);
 static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
                            short tasknum, FILE *img);
+static void compressor_and_decompressor_test(int section_number);
 
 int main(int argc, char **argv)
 {
@@ -81,6 +83,14 @@ int main(int argc, char **argv)
         error("usage: %s %s\n", progname, ARGS);
     }
     create_image(argc - 1, argv + 1);
+    int max_block_number = 0;
+    for(int i = 0; i < TASK_MAXNUM; i++){
+        if(taskinfo[i].start_block_id != 0){
+            max_block_number = taskinfo[i].start_block_id + taskinfo[i].total_block_num; 
+        }
+    }
+    printf("max_block_number = %d\n", max_block_number); // we need at least max_block_number 's sector to compress it
+    // compressor_and_decompressor_test(max_block_number);
     return 0;
 }
 
