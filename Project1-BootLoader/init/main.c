@@ -7,13 +7,12 @@
 #include <type.h>
 
 #define VERSION_BUF 50
-#define INT_IN_BYTES (4)
+#define BOOT_LOADER_ADDRESS 0x50200000
+#define EI_NIDENT (16)
+#define SECTOR_SIZE 512
 #define BOOT_LOADER_SIG_OFFSET 0x1fe
-#define BOOT_LOADER_ENTRIES 0x50200000
 #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
 #define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
-#define APP_INFO_SECTOR (BOOT_LOADER_SIG_OFFSET - 6)
-#define APP_IN_MEMORY 0x54000000
 
 int version = 2; // version must between 0 and 9
 char buf[VERSION_BUF];
@@ -47,65 +46,7 @@ static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
-    // 1. get number from  0x50200000
-    // #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
-    // #define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
-    // #define APP_INFO_SECTOR (BOOT_LOADER_SIG_OFFSET - 6)
-    short appnum = *(short*)(BOOT_LOADER_ENTRIES + APP_NUMBER_LOC);
-    bios_putstr("\napp_num: ");
-    int appnum_size_first_half = (appnum / EI_NIDENT) >= 10?  appnum / EI_NIDENT - 10  + 'a': appnum / EI_NIDENT  + '0';
-    int appnum_size_second_half = (appnum % EI_NIDENT) >= 10?  appnum % EI_NIDENT - 10  + 'a': appnum % EI_NIDENT  + '0';
-    bios_putchar(appnum_size_first_half);
-    bios_putchar(appnum_size_second_half);
-
-
-    short os_size_count = *(short*)(BOOT_LOADER_ENTRIES + OS_SIZE_LOC);
-    bios_putstr("\nos_size_count: ");
-    int os_size_first_half = (os_size_count / EI_NIDENT) >= 10?  os_size_count / EI_NIDENT - 10  + 'a': os_size_count / EI_NIDENT  + '0';
-    int os_size_second_half = (os_size_count % EI_NIDENT) >= 10?  os_size_count % EI_NIDENT - 10  + 'a': os_size_count % EI_NIDENT  + '0';
-    bios_putchar(os_size_first_half);
-    bios_putchar(os_size_second_half);
-
-    
-    short app_info_sector = *(short*)(BOOT_LOADER_ENTRIES + APP_INFO_SECTOR);
-    bios_putstr("\napp_info_sector: ");
-    int app_info_first_half = (app_info_sector / EI_NIDENT) >= 10?  app_info_sector / EI_NIDENT - 10  + 'a': app_info_sector / EI_NIDENT  + '0';
-    int app_info_second_half = (app_info_sector % EI_NIDENT) >= 10?  app_info_sector % EI_NIDENT - 10  + 'a': app_info_sector % EI_NIDENT  + '0';
-    bios_putchar(app_info_first_half);
-    bios_putchar(app_info_second_half);
-    bios_putstr(" \n");
-    // with the growth of our main-code, the section in which app_info at, and the os_size is growthing
-
-    // 2. sd_read of app-info sector, and relocate it to ...[assume we place it in 0x54000000]
-    bios_sd_read(APP_IN_MEMORY, 1, app_info_sector);
-
-    // 3. initialize tasks, and print the initializing result
-    long address_location = APP_IN_MEMORY;
-    for(int i = 0; i < (int)appnum + 1; i++){
-        char temp_taskname[EI_NIDENT];
-        for(int j = 0; j < EI_NIDENT; j++){
-            temp_taskname[j] = *(char*)(address_location);
-            address_location++;
-        }
-        strncpy(tasks[i].taskname, temp_taskname, strlen(temp_taskname));
-        bios_putstr(tasks[i].taskname);
-        bios_putchar('\n');
-        int temp_start_id = *(int*)(address_location);
-        address_location += 4;
-        tasks[i].start_block_id = temp_start_id;
-
-        int temp_block_num = *(int *)(address_location);
-        address_location += 4;
-        tasks[i].total_block_num = temp_block_num;
-
-        long temp_filesz = *(long*)(address_location);
-        address_location += 8;
-        tasks[i].task_filesz = temp_filesz;
-
-        long temp_memorysz = *(long*)(address_location);
-        address_location += 8;
-        tasks[i].task_memorysz = temp_memorysz;
-    }
+    bios_sd_read(&tasks, 2, 1);
 }
 
 /************************************************************/
@@ -142,59 +83,52 @@ int main(void)
     bios_putstr("Hello OS!\n\r");
     bios_putstr(buf);
 
-    // p1-task2
-    bios_putstr("Input character, enter 0 to finish\n");
+    bios_putstr("\n\rInput test, press 0 to finish!\n");
+    int putchar_test_result;
     while(1){
-        int result = bios_getchar();
-        if(result != -1){
-            bios_putchar(result);
+        putchar_test_result = bios_getchar();
+        if(putchar_test_result != -1){
+            bios_putchar(putchar_test_result);
         }
-        if(result == (int)'0'){
+        if(putchar_test_result == (int)'0'){
             break;
         }
     }
-    bios_putstr("\nInput and output test finished!\n");
-    bios_putstr("\nInput taskid\n");
+
+    bios_putstr("\n***************Input testing passed! Task testing begin***********\n");
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-    // while(1){
-    //     int input_task_id = bios_getchar();
-    //     if(input_task_id != -1){
-    //         bios_putstr("The input task id is: ");
-    //         bios_putchar(input_task_id);
-    //         input_task_id = input_task_id - '0';
-    //         long task_enterance_address = load_task_img(input_task_id);
-    //         // This line is useful, but we find in a0, it stores the enterance address
-    //         asm volatile("mv a7, %0\n"
-    //         : :"r"(input_task_id));
-    //         ( *(void(*)(void))task_enterance_address)();
-    //     }
-    // }
-    short total_task_num = *(short*)(BOOT_LOADER_ENTRIES + APP_NUMBER_LOC);
     while(1){
-        bios_putstr("\nInput taskname: limit in 16 bytes, if press * means end\n");
-        char buf_taskname[EI_NIDENT] = {0};
-        int count_taskname = 0;
-        while(count_taskname < EI_NIDENT){
-            int taskname_result = bios_getchar();
-            if(taskname_result != -1 && taskname_result != '*'){
-                bios_putchar(taskname_result);
-                buf_taskname[count_taskname] = taskname_result;
-                count_taskname++;
+        char input_task_name[EI_NIDENT];
+        int task_name_count_index = 0;
+        while(task_name_count_index < EI_NIDENT){
+            int task_name_bios_getchar;
+            task_name_bios_getchar = bios_getchar();
+            if(task_name_bios_getchar != -1){
+                if(task_name_bios_getchar != (int)'*'){
+                    input_task_name[task_name_count_index] = task_name_bios_getchar;
+                    bios_putchar(task_name_bios_getchar);
+                    task_name_count_index++;
+                }
+                else{
+                    input_task_name[task_name_count_index] = '\0';
+                    break;
+                }
             }
-            else if(taskname_result == '*'){
-                buf_taskname[count_taskname] = '\0';
-                break;
-            }
-        }
-        long task_enterance_address = load_task_img_by_name((int)total_task_num, buf_taskname);
-        long current_task_filesz = load_taskfilesz((int)total_task_num, buf_taskname);
-        long current_task_memorysz = load_taskmemorysz((int)total_task_num, buf_taskname);
-        asm volatile( "mv a6, %0\n"
-            : : "r"(current_task_filesz));
+        } 
+        bios_putchar('\n');
+        long current_task_filesz = load_task_img_filesz(task_num, input_task_name);
+        long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
+        long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
+        asm volatile("mv a6, %0\n"
+        : :"r"(current_task_filesz));
         asm volatile("mv a7, %0\n"
-            : : "r"(current_task_memorysz));
-        ( *(void(*)(void))task_enterance_address)();
+        : :"r"(current_task_memorysz));
+        asm volatile("mv a1, %0\n"
+        : :"r"(current_task_entry_address));
+        ( *(void(*)(void))current_task_entry_address)();
+        
     }
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)

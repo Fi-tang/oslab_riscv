@@ -18,6 +18,7 @@ typedef struct {
     int total_block_num;
     long task_filesz;
     long task_memorysz;
+    long task_blockstart_offset;
 } task_info_t;
 
 extern task_info_t tasks[TASK_MAXNUM];
