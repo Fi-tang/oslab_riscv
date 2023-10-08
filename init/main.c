@@ -7,6 +7,12 @@
 #include <type.h>
 
 #define VERSION_BUF 50
+#define BOOT_LOADER_ADDRESS 0x50200000
+#define EI_NIDENT (16)
+#define SECTOR_SIZE 512
+#define BOOT_LOADER_SIG_OFFSET 0x1fe
+#define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
+#define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
 
 int version = 2; // version must between 0 and 9
 char buf[VERSION_BUF];
@@ -40,6 +46,7 @@ static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
+    bios_sd_read(&tasks, 2, 1);
 }
 
 /************************************************************/
@@ -76,8 +83,53 @@ int main(void)
     bios_putstr("Hello OS!\n\r");
     bios_putstr(buf);
 
+    bios_putstr("\n\rInput test, press 0 to finish!\n");
+    int putchar_test_result;
+    while(1){
+        putchar_test_result = bios_getchar();
+        if(putchar_test_result != -1){
+            bios_putchar(putchar_test_result);
+        }
+        if(putchar_test_result == (int)'0'){
+            break;
+        }
+    }
+
+    bios_putstr("\n***************Input testing passed! Task testing begin***********\n");
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
+    while(1){
+        char input_task_name[EI_NIDENT];
+        int task_name_count_index = 0;
+        while(task_name_count_index < EI_NIDENT){
+            int task_name_bios_getchar;
+            task_name_bios_getchar = bios_getchar();
+            if(task_name_bios_getchar != -1){
+                if(task_name_bios_getchar != (int)'*'){
+                    input_task_name[task_name_count_index] = task_name_bios_getchar;
+                    bios_putchar(task_name_bios_getchar);
+                    task_name_count_index++;
+                }
+                else{
+                    input_task_name[task_name_count_index] = '\0';
+                    break;
+                }
+            }
+        } 
+        bios_putchar('\n');
+        long current_task_filesz = load_task_img_filesz(task_num, input_task_name);
+        long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
+        long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
+        asm volatile("mv a6, %0\n"
+        : :"r"(current_task_filesz));
+        asm volatile("mv a7, %0\n"
+        : :"r"(current_task_memorysz));
+        asm volatile("mv a1, %0\n"
+        : :"r"(current_task_entry_address));
+        ( *(void(*)(void))current_task_entry_address)();
+        
+    }
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
