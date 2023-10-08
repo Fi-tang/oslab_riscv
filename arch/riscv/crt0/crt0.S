@@ -35,8 +35,8 @@ bss_clean_done:
     addi t5, t5, %lo(KERNEL_ENTER_POINT)
     jr t5
     /************************************************************/
-	/* Do not touch this comment. Reserved for future projects. */
-	/************************************************************/
+    /* Do not touch this comment. Reserved for future projects. */
+    /************************************************************/
 // while(1) loop, unreachable here
 loop:
     wfi
