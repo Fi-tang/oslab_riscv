@@ -33,6 +33,7 @@
 #include <os/list.h>
 
 #define NUM_MAX_TASK 16
+#define EI_NIDENT  16
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -84,7 +85,8 @@ typedef struct pcb
 
     /* time(seconds) to wake up sleeping PCB */
     uint64_t wakeup_time;
-
+    switchto_context_t pcb_switchto_context;
+    char name[EI_NIDENT];
 } pcb_t;
 
 /* ready queue to run */

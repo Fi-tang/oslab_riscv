@@ -17,10 +17,8 @@
 #include <type.h>
 #include <csr.h>
 
-<<<<<<< HEAD
 #define VERSION_BUF 50
 #define BOOT_LOADER_ADDRESS 0x50200000
-#define EI_NIDENT (16)
 #define SECTOR_SIZE 512
 #define BOOT_LOADER_SIG_OFFSET 0x1fe
 #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
@@ -28,9 +26,7 @@
 
 int version = 2; // version must between 0 and 9
 char buf[VERSION_BUF];
-=======
 extern void ret_from_exception();
->>>>>>> start/Project2-A_Simple_Kernel
 
 // Task info array
 task_info_t tasks[TASK_MAXNUM];
@@ -56,7 +52,7 @@ static void init_jmptab(void)
     jmptab[MUTEX_RELEASE]   = (long (*)())do_mutex_lock_release;
 
     // TODO: [p2-task1] (S-core) initialize system call table.
-
+    
 }
 
 static void init_task_info(void)
@@ -92,10 +88,24 @@ static void init_pcb_stack(
 static void init_pcb(void)
 {
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
-
-
+    // from here start initializing_pcb
+    bios_putstr("\nIN [init_pcb]: start to initializing!\n");
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        pcb[i].kernel_sp = allocKernelPage(1);
+        pcb[i].user_sp = allocUserPage(1);
+        pcb[i].pid = i;
+        pcb[i].status = TASK_READY;
+        pcb[i].pcb_switchto_context.regs[0] = TASK_MEM_BASE + (i - 1) * TASK_SIZE;          // if main, change it later
+        if(strcmp(tasks[i].taskname, "")!= 0){
+            strcpy(pcb[i].name, tasks[i].taskname);
+            if(strcmp(tasks[i].taskname, "main") == 0){
+                pcb[i].pcb_switchto_context.regs[0] = BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4);
+            }
+        }
+    }
     /* TODO: [p2-task1] remember to initialize 'current_running' */
-
+    // design: because we place main at 
+    current_running = &pcb[0];
 }
 
 static void init_syscall(void)
@@ -112,9 +122,11 @@ int main(void)
     // Init task information (〃'▽'〃)
     init_task_info();
 
+    bios_putstr("\nHello OS!\n");
     // Init Process Control Blocks |•'-'•) ✧
     init_pcb();
     printk("> [INIT] PCB initialization succeeded.\n");
+   
 
     // Read CPU frequency (｡•ᴗ-)_
     time_base = bios_read_fdt(TIMEBASE);
