@@ -93,7 +93,13 @@ static void init_pcb(void)
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].kernel_sp = allocKernelPage(1);
         pcb[i].user_sp = allocUserPage(1);
+        
+        // initialize double linked list prev <- []-> next 
+        pcb[i].list.next = &pcb[i].list; 
+        pcb[i].list.prev = &pcb[i].list; 
+
         pcb[i].pid = i;
+       
         pcb[i].status = TASK_READY;
         pcb[i].pcb_switchto_context.regs[0] = TASK_MEM_BASE + (i - 1) * TASK_SIZE;          // if main, change it later
         if(strcmp(tasks[i].taskname, "")!= 0){
@@ -150,55 +156,7 @@ int main(void)
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
     
-
-
-    bios_putstr("\n\rInput test, press 0 to finish!\n");
-    int putchar_test_result;
-    while(1){
-        putchar_test_result = bios_getchar();
-        if(putchar_test_result != -1){
-            bios_putchar(putchar_test_result);
-        }
-        if(putchar_test_result == (int)'0'){
-            break;
-        }
-    }
-
-    bios_putstr("\n***************Input testing passed! Task testing begin***********\n");
-    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
-    //   and then execute them.
-    while(1){
-        char input_task_name[EI_NIDENT];
-        int task_name_count_index = 0;
-        while(task_name_count_index < EI_NIDENT){
-            int task_name_bios_getchar;
-            task_name_bios_getchar = bios_getchar();
-            if(task_name_bios_getchar != -1){
-                if(task_name_bios_getchar != (int)'*'){
-                    input_task_name[task_name_count_index] = task_name_bios_getchar;
-                    bios_putchar(task_name_bios_getchar);
-                    task_name_count_index++;
-                }
-                else{
-                    input_task_name[task_name_count_index] = '\0';
-                    break;
-                }
-            }
-        } 
-        bios_putchar('\n');
-        long current_task_filesz = load_task_img_filesz(task_num, input_task_name);
-        long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
-        long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
-        asm volatile("mv a6, %0\n"
-        : :"r"(current_task_filesz));
-        asm volatile("mv a7, %0\n"
-        : :"r"(current_task_memorysz));
-        asm volatile("mv a1, %0\n"
-        : :"r"(current_task_entry_address));
-        ( *(void(*)(void))current_task_entry_address)();
-        
-    }
+    bios_putstr("\n In main function!\n");
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
