@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <type.h>
 #include <csr.h>
+// !!![warning] have no reference for <os/list.h>
+#include <os/list.h>
 
 #define VERSION_BUF 50
 #define BOOT_LOADER_ADDRESS 0x50200000
@@ -90,14 +92,16 @@ static void init_pcb(void)
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
     // from here start initializing_pcb
     bios_putstr("\nIN [init_pcb]: start to initializing!\n");
+    bios_putstr("\nIN [init_pcb]: initialize queue!\n");
+    InitializeQueueNode(&ready_queue);
+
     for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].kernel_sp = allocKernelPage(1);
         pcb[i].user_sp = allocUserPage(1);
         
         // initialize double linked list prev <- []-> next 
-        pcb[i].list.next = &pcb[i].list; 
-        pcb[i].list.prev = &pcb[i].list; 
-
+        
+        InitializeQueueNode(&pcb[i].list);
         pcb[i].pid = i;
        
         pcb[i].status = TASK_READY;
@@ -107,6 +111,7 @@ static void init_pcb(void)
             if(strcmp(tasks[i].taskname, "main") == 0){
                 pcb[i].pcb_switchto_context.regs[0] = BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4);
             }
+            EnqueueNodeFromTail(&ready_queue, &pcb[i].list);
         }
     }
     /* TODO: [p2-task1] remember to initialize 'current_running' */
@@ -132,7 +137,6 @@ int main(void)
     // Init Process Control Blocks |•'-'•) ✧
     init_pcb();
     printk("> [INIT] PCB initialization succeeded.\n");
-   
 
     // Read CPU frequency (｡•ᴗ-)_
     time_base = bios_read_fdt(TIMEBASE);

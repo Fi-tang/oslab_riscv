@@ -51,5 +51,21 @@ typedef list_node_t list_head;
 #define LIST_HEAD(name) struct list_node name = {&(name), &(name)}
 
 /* TODO: [p2-task1] implement your own list API */
+static inline void InitializeQueueNode(list_head *node){
+    node -> next = node;
+    node -> prev = node;
+}
+
+static inline void EnqueueNodeFromTail(list_head *head, list_head *node){
+    list_head *temp = head;
+    while(temp -> next != head){
+        temp = temp -> next;
+    }
+    temp -> next = node;
+    node -> prev = temp;
+    node -> next = head;
+    head -> prev = node;
+}
+
 
 #endif
