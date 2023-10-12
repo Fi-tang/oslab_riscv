@@ -34,6 +34,7 @@
 
 #define NUM_MAX_TASK 16
 #define EI_NIDENT  16
+#define LIST_IN_PCB_OFFSET 16
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -113,5 +114,12 @@ void do_unblock(list_node_t *);
 /************************************************************/
 /* Do not touch this comment. Reserved for future projects. */
 /************************************************************/
+
+// use list to find the whole pcb
+static inline pcb_t *GetPcbFromList(list_head *node){
+    pcb_t *getPCB = (pcb_t *)(node - LIST_IN_PCB_OFFSET);
+    return getPCB;
+}
+
 
 #endif

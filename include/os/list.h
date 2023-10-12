@@ -67,5 +67,24 @@ static inline void EnqueueNodeFromTail(list_head *head, list_head *node){
     head -> prev = node;
 }
 
+// [My TODO]: check it's correctness
+static inline list_head *DequeueNodeFromHead(list_head *head){
+    // if queue is empty, return null
+    if(head -> next == head)    return NULL;
+    // else: queue is not empty
+    list_head *DequeNode = head -> next;
+    if(DequeNode -> next == head){
+        // only has one Node in queue [head] -> [DequeNode] ->
+        head -> next = head;
+        head -> prev = head;
+    }
+    else{
+        head -> next = DequeNode -> next;
+        DequeNode -> next -> prev = head;
+    }
+    return DequeNode;
+}
+
+
 
 #endif

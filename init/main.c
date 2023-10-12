@@ -114,9 +114,16 @@ static void init_pcb(void)
             EnqueueNodeFromTail(&ready_queue, &pcb[i].list);
         }
     }
+
+   
     /* TODO: [p2-task1] remember to initialize 'current_running' */
     // design: because we place main at 
     current_running = &pcb[0];
+    // It turns out that all the following returned getPCBNode is uninitialized!
+    // for(int i = 0; i < 7; i++){
+    //     pcb_t *getPCBNode = GetPcbFromList(&pcb[i].list);
+    //     printk("\n name is %s\n", getPCBNode -> name);
+    // }
 }
 
 static void init_syscall(void)
