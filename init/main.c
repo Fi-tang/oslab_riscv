@@ -54,7 +54,6 @@ static void init_jmptab(void)
     jmptab[MUTEX_RELEASE]   = (long (*)())do_mutex_lock_release;
 
     // TODO: [p2-task1] (S-core) initialize system call table.
-    
 }
 
 static void init_task_info(void)
@@ -168,6 +167,47 @@ int main(void)
     // NOTE: The function of sstatus.sie is different from sie's
     
     bios_putstr("\n In main function!\n");
+
+
+    bios_putstr("\n***************Input testing passed! Task testing begin***********\n");
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
+    //   and then execute them.
+    while(1){
+        char input_task_name[EI_NIDENT];
+        int task_name_count_index = 0;
+        while(task_name_count_index < EI_NIDENT){
+            int task_name_bios_getchar;
+            task_name_bios_getchar = bios_getchar();
+            if(task_name_bios_getchar != -1){
+                if(task_name_bios_getchar != (int)'*'){
+                    input_task_name[task_name_count_index] = task_name_bios_getchar;
+                    bios_putchar(task_name_bios_getchar);
+                    task_name_count_index++;
+                }
+                else{
+                    input_task_name[task_name_count_index] = '\0';
+                    break;
+                }
+            }
+        } 
+        bios_putchar('\n');
+        long current_task_filesz = load_task_img_filesz(task_num, input_task_name);
+        long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
+        long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
+        // [change record]: newly added in p2-task1
+        /**
+        clean bss section-p1 task3
+        */
+        long count_bss = current_task_memorysz - current_task_filesz;
+        unsigned char *clean_bss_ptr = NULL;
+        clean_bss_ptr = (char *)(current_task_entry_address + current_task_filesz + 4);
+        while(count_bss--){
+            *clean_bss_ptr = (unsigned char)0;
+            clean_bss_ptr++; 
+        }
+        ( *(void(*)(void))current_task_entry_address)();
+    }
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)

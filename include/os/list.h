@@ -86,5 +86,4 @@ static inline list_head *DequeueNodeFromHead(list_head *head){
 }
 
 
-
 #endif
