@@ -121,12 +121,14 @@ int main(void)
         long current_task_filesz = load_task_img_filesz(task_num, input_task_name);
         long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
         long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
-        asm volatile("mv a6, %0\n"
-        : :"r"(current_task_filesz));
-        asm volatile("mv a7, %0\n"
-        : :"r"(current_task_memorysz));
-        asm volatile("mv a1, %0\n"
-        : :"r"(current_task_entry_address));
+        long count_bss = 2 * (current_task_memorysz - current_task_filesz);
+	unsigned char *clean_bss_ptr = NULL;
+	clean_bss_ptr = (char*)(current_task_entry_address + current_task_filesz);
+	while(count_bss--){
+		*clean_bss_ptr = (unsigned char)0;
+		clean_bss_ptr++;
+	}	
+
         ( *(void(*)(void))current_task_entry_address)();
         
     }
