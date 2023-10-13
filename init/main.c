@@ -54,6 +54,7 @@ static void init_jmptab(void)
     jmptab[MUTEX_RELEASE]   = (long (*)())do_mutex_lock_release;
 
     // TODO: [p2-task1] (S-core) initialize system call table.
+    jmptab[REFLUSH]        = (long (*)())screen_reflush;
 }
 
 static void init_task_info(void)
@@ -94,7 +95,8 @@ static void init_pcb(void)
     bios_putstr("\nIN [init_pcb]: initialize queue!\n");
     InitializeQueueNode(&ready_queue);
 
-    for(int i = 0; i < NUM_MAX_TASK; i++){
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    for(int i = 0; i <= (int)task_num; i++){
         pcb[i].kernel_sp = allocKernelPage(1);
         pcb[i].user_sp = allocUserPage(1);
         
@@ -118,11 +120,6 @@ static void init_pcb(void)
     /* TODO: [p2-task1] remember to initialize 'current_running' */
     // design: because we place main at 
     current_running = &pcb[0];
-    // It turns out that all the following returned getPCBNode is uninitialized!
-    // for(int i = 0; i < 7; i++){
-    //     pcb_t *getPCBNode = GetPcbFromList(&pcb[i].list);
-    //     printk("\n name is %s\n", getPCBNode -> name);
-    // }
 }
 
 static void init_syscall(void)
