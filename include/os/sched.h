@@ -31,6 +31,7 @@
 
 #include <type.h>
 #include <os/list.h>
+#include <printk.h>     // newly added for print queue
 
 #define NUM_MAX_TASK 16
 #define EI_NIDENT  16
@@ -116,10 +117,22 @@ void do_unblock(list_node_t *);
 /************************************************************/
 
 // use list to find the whole pcb
-static inline pcb_t *GetPcbFromList(list_head *node){
+static inline pcb_t *GetPcb_FromList(list_head *node){
     pcb_t *getPCB = (pcb_t *)(node - LIST_IN_PCB_OFFSET);
     return getPCB;
 }
 
-
+static inline void PrintPcb_FromList(list_head *head){
+    if(head -> next == head){
+        printk("NULL\n");
+    }
+    else{
+        list_head *node = head -> next;
+        while(node != head){
+            pcb_t *node_related_pcb = GetPcb_FromList(node);
+            printk("[%d]:%s ->  ", node_related_pcb -> pid, node_related_pcb -> name);
+        }
+        printk("NULL\n");
+    }
+}
 #endif

@@ -51,38 +51,28 @@ typedef list_node_t list_head;
 #define LIST_HEAD(name) struct list_node name = {&(name), &(name)}
 
 /* TODO: [p2-task1] implement your own list API */
-static inline void InitializeQueueNode(list_head *node){
+static inline void Initialize_QueueNode(list_head *node){
     node -> next = node;
     node -> prev = node;
 }
 
-static inline void EnqueueNodeFromTail(list_head *head, list_head *node){
-    list_head *temp = head;
-    while(temp -> next != head){
-        temp = temp -> next;
-    }
-    temp -> next = node;
-    node -> prev = temp;
-    node -> next = head;
-    head -> prev = node;
-}
-
-// [My TODO]: check it's correctness
-static inline list_head *DequeueNodeFromHead(list_head *head){
-    // if queue is empty, return null
-    if(head -> next == head)    return NULL;
-    // else: queue is not empty
-    list_head *DequeNode = head -> next;
-    if(DequeNode -> next == head){
-        // only has one Node in queue [head] -> [DequeNode] ->
-        head -> next = head;
-        head -> prev = head;
+static inline void Enque_FromTail(list_head *head, list_head *node){
+    if(head -> next == head){
+        head -> next = node;
+        node -> next = head;
+        node -> prev = head;
+        head -> prev = node;
     }
     else{
-        head -> next = DequeNode -> next;
-        DequeNode -> next -> prev = head;
+        list_head *last_node = head -> next;
+        while(last_node -> next != head){
+            last_node = last_node -> next;
+        }
+        last_node -> next = node;
+        node -> next = head;
+        node -> prev = last_node;
+        head -> prev = node;
     }
-    return DequeNode;
 }
 
 

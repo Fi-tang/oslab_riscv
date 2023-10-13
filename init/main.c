@@ -61,7 +61,7 @@ static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
-    bios_sd_read(&tasks, 2, 1);
+    bios_sd_read(tasks, 2, 1);
 }
 
 /************************************************************/
@@ -84,41 +84,43 @@ static void init_pcb_stack(
      */
     switchto_context_t *pt_switchto =
         (switchto_context_t *)((ptr_t)pt_regs - sizeof(switchto_context_t));
-
+    *(ptr_t*)(pt_switchto) = entry_point;       // ra
+    *(ptr_t*)(pt_switchto + 8) = user_stack;    // sp
+    
 }
 
 static void init_pcb(void)
 {
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
-    // from here start initializing_pcb
-    bios_putstr("\nIN [init_pcb]: start to initializing!\n");
-    bios_putstr("\nIN [init_pcb]: initialize queue!\n");
-    InitializeQueueNode(&ready_queue);
-
+    Initialize_QueueNode(&ready_queue);
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    for(int i = 0; i <= (int)task_num; i++){
+    for(int i = 0; i <= task_num; i++){
         pcb[i].kernel_sp = allocKernelPage(1);
         pcb[i].user_sp = allocUserPage(1);
-        
-        // initialize double linked list prev <- []-> next 
-        
-        InitializeQueueNode(&pcb[i].list);
+
+        Initialize_QueueNode(&pcb[i].list);
+
         pcb[i].pid = i;
-       
-        pcb[i].status = TASK_READY;
-        pcb[i].pcb_switchto_context.regs[0] = TASK_MEM_BASE + (i - 1) * TASK_SIZE;          // if main, change it later
-        if(strcmp(tasks[i].taskname, "")!= 0){
-            strcpy(pcb[i].name, tasks[i].taskname);
-            if(strcmp(tasks[i].taskname, "main") == 0){
-                pcb[i].pcb_switchto_context.regs[0] = BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4);
-            }
-            EnqueueNodeFromTail(&ready_queue, &pcb[i].list);
+
+        if(strcmp(tasks[i].taskname, "print1") == 0 || strcmp(tasks[i].taskname, "print2") == 0 || strcmp(tasks[i].taskname, "fly") == 0){
+            // task1 - first load the three process
+            pcb[i].status = TASK_READY;
         }
+
+        pcb[i].pcb_switchto_context.regs[0] = TASK_MEM_BASE + (i - 1) * TASK_SIZE;
+        if(strcmp(tasks[i].taskname, "main") == 0){
+            pcb[i].pcb_switchto_context.regs[0] = BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4);
+        }
+        strcpy(pcb[i].name, tasks[i].taskname);
+        init_pcb_stack(pcb[i].kernel_sp, pcb[i].user_sp, pcb[i].pcb_switchto_context.regs[0], &pcb[i]);
     }
 
-   
+    for(int i = 0; i <= task_num; i++){
+        if(pcb[i].status == TASK_READY){
+            Enque_FromTail(&ready_queue, &pcb[i].list);
+        }
+    }
     /* TODO: [p2-task1] remember to initialize 'current_running' */
-    // design: because we place main at 
     current_running = &pcb[0];
 }
 
@@ -136,8 +138,8 @@ int main(void)
     // Init task information (〃'▽'〃)
     init_task_info();
 
-    bios_putstr("\nHello OS!\n");
     // Init Process Control Blocks |•'-'•) ✧
+    // only used for printk
     init_pcb();
     printk("> [INIT] PCB initialization succeeded.\n");
 
@@ -163,47 +165,11 @@ int main(void)
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
     
-    bios_putstr("\n In main function!\n");
 
 
-    bios_putstr("\n***************Input testing passed! Task testing begin***********\n");
-    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-    char input_task_name[EI_NIDENT];
-    int task_name_count_index = 0;
-    while(task_name_count_index < EI_NIDENT){
-        int task_name_bios_getchar;
-        task_name_bios_getchar = bios_getchar();
-        if(task_name_bios_getchar != -1){
-            if(task_name_bios_getchar != (int)'*'){
-                input_task_name[task_name_count_index] = task_name_bios_getchar;
-                bios_putchar(task_name_bios_getchar);
-                task_name_count_index++;
-            }
-            else{
-                input_task_name[task_name_count_index] = '\0';
-                break;
-            }
-        }
-    } 
-    bios_putchar('\n');
-    long current_task_filesz = load_task_img_filesz(task_num, input_task_name);
-    long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
-    long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
-    // [change record]: newly added in p2-task1
-    /**
-    clean bss section-p1 task3
-    */
-    long count_bss = 2 *(current_task_memorysz - current_task_filesz);
-    unsigned char *clean_bss_ptr = NULL;
-    clean_bss_ptr = (char *)(current_task_entry_address + current_task_filesz);
-    while(count_bss--){
-        *clean_bss_ptr = (unsigned char)0;
-        clean_bss_ptr++; 
-    }
-    ( *(void(*)(void))current_task_entry_address)();
-
+    
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
     {

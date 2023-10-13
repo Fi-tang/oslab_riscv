@@ -31,30 +31,10 @@ void do_scheduler(void)
     /************************************************************/
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
-
+    PrintPcb_FromList(&ready_queue);
     // TODO: [p2-task1] Modify the current_running pointer.
-    printk("\nIN [DO-SCHEDULER]: \n");
-    DequeueNodeFromHead(&ready_queue);  // first deque the current, need revise, main should not be placed at ready_queue
-    list_head *The_next_to_shedule = DequeueNodeFromHead(&ready_queue);
-    if(The_next_to_shedule == NULL){
-        printk("\n IN [DO_SCHEDULER]: No process is ready, queue empty!\n");
-    }
-    else{
-        EnqueueNodeFromTail(&ready_queue, current_running);
-    }
-    pcb_t *prev = current_running;
-    pcb_t *current = GetPcbFromList(The_next_to_shedule);
-    /**
-    error report: prev and current are all main!
-    */
-    printk("\n IN [DO_SCHEDULER]: ==[prev]==The prev process's id = %d\n", prev -> pid);
-    printk("\n IN [DO_SCHEDULER]: ==[prev]==The prev process's name = %s\n", prev -> name);
-    printk("\n IN [DO_SCHEDULER]: ==[current]==The current process's id = %d\n", current -> pid);
-    printk("\n IN [DO_SCHEDULER]: ==[current]==The current process's name = %s\n", current -> name);
-
-    current_running = current;
     // TODO: [p2-task1] switch_to current_running
-    switch_to(prev, current);
+   
 }
 
 void do_sleep(uint32_t sleep_time)
