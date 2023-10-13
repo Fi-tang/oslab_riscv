@@ -122,12 +122,12 @@ int main(void)
         long current_task_memorysz = load_task_img_memorysz(task_num, input_task_name);
         long current_task_entry_address = load_task_img_by_name(task_num, input_task_name);
         long count_bss = 2 * (current_task_memorysz - current_task_filesz);
-	unsigned char *clean_bss_ptr = NULL;
-	clean_bss_ptr = (char*)(current_task_entry_address + current_task_filesz);
-	while(count_bss--){
-		*clean_bss_ptr = (unsigned char)0;
-		clean_bss_ptr++;
-	}	
+        unsigned char *clean_bss_ptr = NULL;
+        clean_bss_ptr = (char*)(current_task_entry_address + current_task_filesz);
+        while(count_bss--){
+            *clean_bss_ptr = (unsigned char)0;
+            clean_bss_ptr++;
+        }	
 
         ( *(void(*)(void))current_task_entry_address)();
         
