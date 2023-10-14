@@ -61,7 +61,7 @@ static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
-    bios_sd_read(tasks, 2, 1);
+    bios_sd_read(&tasks, 2, 1);
 }
 
 /************************************************************/
@@ -84,35 +84,35 @@ static void init_pcb_stack(
      */
     switchto_context_t *pt_switchto =
         (switchto_context_t *)((ptr_t)pt_regs - sizeof(switchto_context_t));
-    *(ptr_t*)(pt_switchto) = entry_point;       // ra
-    *(ptr_t*)(pt_switchto + 8) = user_stack;    // sp
-    
 }
 
 static void init_pcb(void)
 {
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
-    Initialize_QueueNode(&ready_queue);
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    Initialize_QueueNode(&ready_queue);
     for(int i = 0; i <= task_num; i++){
-        pcb[i].kernel_sp = allocKernelPage(1);
-        pcb[i].user_sp = allocUserPage(1);
+        pcb[i].kernel_sp = allocKernelPage(1);  // kernel_sp
+        pcb[i].user_sp = allocUserPage(1);      // user_sp;
 
         Initialize_QueueNode(&pcb[i].list);
-
+        
         pcb[i].pid = i;
+        strcpy(pcb[i].name, tasks[i].taskname);
 
-        if(strcmp(tasks[i].taskname, "print1") == 0 || strcmp(tasks[i].taskname, "print2") == 0 || strcmp(tasks[i].taskname, "fly") == 0){
-            // task1 - first load the three process
-            pcb[i].status = TASK_READY;
-        }
-
-        pcb[i].pcb_switchto_context.regs[0] = TASK_MEM_BASE + (i - 1) * TASK_SIZE;
         if(strcmp(tasks[i].taskname, "main") == 0){
             pcb[i].pcb_switchto_context.regs[0] = BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4);
+            pcb[i].pcb_switchto_context.regs[1] = pcb[i].user_sp;
         }
-        strcpy(pcb[i].name, tasks[i].taskname);
-        init_pcb_stack(pcb[i].kernel_sp, pcb[i].user_sp, pcb[i].pcb_switchto_context.regs[0], &pcb[i]);
+        else{
+            long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
+            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 || strcmp(pcb[i].name, "fly") == 0){
+                pcb[i].status = TASK_READY;
+            }
+            pcb[i].pcb_switchto_context.regs[0] = current_task_entry_address;
+            pcb[i].pcb_switchto_context.regs[1] = pcb[i].user_sp;
+        }
+        
     }
 
     for(int i = 0; i <= task_num; i++){
@@ -120,7 +120,7 @@ static void init_pcb(void)
             Enque_FromTail(&ready_queue, &pcb[i].list);
         }
     }
-    /* TODO: [p2-task1] remember to initialize 'current_running' */
+
     current_running = &pcb[0];
 }
 
@@ -141,26 +141,26 @@ int main(void)
     // Init Process Control Blocks |•'-'•) ✧
     // only used for printk
     init_pcb();
-    //printk("> [INIT] PCB initialization succeeded.\n");
+    printk("> [INIT] PCB initialization succeeded.\n");
 
     // Read CPU frequency (｡•ᴗ-)_
     time_base = bios_read_fdt(TIMEBASE);
 
     // Init lock mechanism o(´^｀)o
     init_locks();
-    //printk("> [INIT] Lock mechanism initialization succeeded.\n");
+    printk("> [INIT] Lock mechanism initialization succeeded.\n");
 
     // Init interrupt (^_^)
     init_exception();
-    //printk("> [INIT] Interrupt processing initialization succeeded.\n");
+    printk("> [INIT] Interrupt processing initialization succeeded.\n");
 
     // Init system call table (0_0)
     init_syscall();
-    //printk("> [INIT] System call initialized successfully.\n");
+    printk("> [INIT] System call initialized successfully.\n");
 
     // Init screen (QAQ)
     init_screen();
-    //printk("> [INIT] SCREEN initialization succeeded.\n");
+    printk("> [INIT] SCREEN initialization succeeded.\n");
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
@@ -169,19 +169,17 @@ int main(void)
 
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-    do_scheduler();
-
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
-    // while (1)
-    // {
-    //     // If you do non-preemptive scheduling, it's used to surrender control
-    //     do_scheduler();
+    while (1)
+    {
+        // If you do non-preemptive scheduling, it's used to surrender control
+        do_scheduler();
 
-    //     // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-    //     // enable_preempt();
-    //     // asm volatile("wfi");
-    // }
+        // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+        // enable_preempt();
+        // asm volatile("wfi");
+    }
 
     return 0;
 }

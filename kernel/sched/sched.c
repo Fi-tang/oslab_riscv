@@ -32,10 +32,23 @@ void do_scheduler(void)
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
     // TODO: [p2-task1] Modify the current_running pointer.
-    printk("\n IN [DO-SCHEDULER]: \n");
-    PrintPcb_FromList(&ready_queue);
+
+    list_head *deque_node = Deque_FromHead(&ready_queue);
+    if(deque_node == NULL){
+        return;
+    }
+    else{
+        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
+
+        if(deque_pcb_node -> status == TASK_READY){
+            Enque_FromTail(&ready_queue, deque_node);
+        }
+
+        pcb_t *prev_running = current_running;
+        current_running = deque_pcb_node;
+        switch_to(prev_running, current_running);
+    }
     // TODO: [p2-task1] switch_to current_running
-   
 }
 
 void do_sleep(uint32_t sleep_time)

@@ -75,5 +75,22 @@ static inline void Enque_FromTail(list_head *head, list_head *node){
     }
 }
 
+static inline list_head *Deque_FromHead(list_head *head){
+    if(head -> next == head){
+        return NULL;
+    }
+    else{
+        list_head *deque_node = head -> next;
+        if(deque_node -> next == head){
+            head -> next = head;
+            head -> prev = head;
+        }
+        else{
+            head -> next = deque_node -> next;
+            deque_node -> next -> prev = head;
+        }
+        return deque_node;
+    }
+}
 
 #endif
