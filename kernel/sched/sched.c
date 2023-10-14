@@ -31,8 +31,9 @@ void do_scheduler(void)
     /************************************************************/
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
-    PrintPcb_FromList(&ready_queue);
     // TODO: [p2-task1] Modify the current_running pointer.
+    printk("\n IN [DO-SCHEDULER]: \n");
+    PrintPcb_FromList(&ready_queue);
     // TODO: [p2-task1] switch_to current_running
    
 }

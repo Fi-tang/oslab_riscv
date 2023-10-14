@@ -35,7 +35,7 @@
 
 #define NUM_MAX_TASK 16
 #define EI_NIDENT  16
-#define LIST_IN_PCB_OFFSET 16
+#define LIST_IN_PCB_OFFSET 16  //  (unsigned long) (&((pcb_t *)0)-> list);
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -118,19 +118,24 @@ void do_unblock(list_node_t *);
 
 // use list to find the whole pcb
 static inline pcb_t *GetPcb_FromList(list_head *node){
-    pcb_t *getPCB = (pcb_t *)(node - LIST_IN_PCB_OFFSET);
-    return getPCB;
+   unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> list);
+   pcb_t *return_pcb = NULL;
+   return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+   return return_pcb;
 }
 
 static inline void PrintPcb_FromList(list_head *head){
+    printk("\n\n\n");
     if(head -> next == head){
         printk("NULL\n");
+        return;
     }
     else{
         list_head *node = head -> next;
         while(node != head){
-            pcb_t *node_related_pcb = GetPcb_FromList(node);
-            printk("[%d]:%s ->  ", node_related_pcb -> pid, node_related_pcb -> name);
+            pcb_t *print_pcb_list = GetPcb_FromList(node);
+            printk("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
+            node = node -> next;
         }
         printk("NULL\n");
     }

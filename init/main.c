@@ -141,26 +141,26 @@ int main(void)
     // Init Process Control Blocks |•'-'•) ✧
     // only used for printk
     init_pcb();
-    printk("> [INIT] PCB initialization succeeded.\n");
+    //printk("> [INIT] PCB initialization succeeded.\n");
 
     // Read CPU frequency (｡•ᴗ-)_
     time_base = bios_read_fdt(TIMEBASE);
 
     // Init lock mechanism o(´^｀)o
     init_locks();
-    printk("> [INIT] Lock mechanism initialization succeeded.\n");
+    //printk("> [INIT] Lock mechanism initialization succeeded.\n");
 
     // Init interrupt (^_^)
     init_exception();
-    printk("> [INIT] Interrupt processing initialization succeeded.\n");
+    //printk("> [INIT] Interrupt processing initialization succeeded.\n");
 
     // Init system call table (0_0)
     init_syscall();
-    printk("> [INIT] System call initialized successfully.\n");
+    //printk("> [INIT] System call initialized successfully.\n");
 
     // Init screen (QAQ)
     init_screen();
-    printk("> [INIT] SCREEN initialization succeeded.\n");
+    //printk("> [INIT] SCREEN initialization succeeded.\n");
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
@@ -169,17 +169,19 @@ int main(void)
 
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-    
-    // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
-    while (1)
-    {
-        // If you do non-preemptive scheduling, it's used to surrender control
-        do_scheduler();
+    do_scheduler();
 
-        // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-        // enable_preempt();
-        // asm volatile("wfi");
-    }
+
+    // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
+    // while (1)
+    // {
+    //     // If you do non-preemptive scheduling, it's used to surrender control
+    //     do_scheduler();
+
+    //     // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+    //     // enable_preempt();
+    //     // asm volatile("wfi");
+    // }
 
     return 0;
 }

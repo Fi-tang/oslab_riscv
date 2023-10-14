@@ -60,8 +60,8 @@ static inline void Enque_FromTail(list_head *head, list_head *node){
     if(head -> next == head){
         head -> next = node;
         node -> next = head;
-        node -> prev = head;
         head -> prev = node;
+        node -> prev = head;
     }
     else{
         list_head *last_node = head -> next;
@@ -69,8 +69,8 @@ static inline void Enque_FromTail(list_head *head, list_head *node){
             last_node = last_node -> next;
         }
         last_node -> next = node;
-        node -> next = head;
         node -> prev = last_node;
+        node -> next = head;
         head -> prev = node;
     }
 }
