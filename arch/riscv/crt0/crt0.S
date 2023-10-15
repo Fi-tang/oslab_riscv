@@ -8,9 +8,7 @@
 ENTRY(_start)
 
     /* TODO: [p1-task3] setup C runtime environment for the user program */
-    lui t3, %hi(USER_STACK_P1)
-    addi t3,t3, %lo(USER_STACK_P1)
-    mv sp, t3                           // Every program has it's own stack_pointer  
+    // Every program has it's own stack_pointer  
 
     /* TODO: [p1-task3] enter main function */
     j main 
