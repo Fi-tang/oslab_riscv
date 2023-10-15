@@ -97,6 +97,9 @@ extern list_head ready_queue;
 /* sleep queue to be blocked in */
 extern list_head sleep_queue;
 
+/* newly added block_queue*/
+extern list_head block_queue;
+
 /* current running task PCB */
 extern pcb_t * volatile current_running;
 extern pid_t process_id;

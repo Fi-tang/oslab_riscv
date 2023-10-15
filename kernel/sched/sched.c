@@ -17,6 +17,7 @@ pcb_t pid0_pcb = {
 
 LIST_HEAD(ready_queue);
 LIST_HEAD(sleep_queue);
+LIST_HEAD(block_queue);
 
 /* current running task PCB */
 pcb_t * volatile current_running;
@@ -32,8 +33,6 @@ void do_scheduler(void)
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
     // TODO: [p2-task1] Modify the current_running pointer.
-    // printk("\nIN [DO-SCHEDULER] \n");
-    // PrintPcb_FromList(&ready_queue);
     list_head *deque_node = Deque_FromHead(&ready_queue);
     if(deque_node == NULL){
         return;
@@ -44,7 +43,6 @@ void do_scheduler(void)
         if(deque_pcb_node -> status == TASK_READY){
             Enque_FromTail(&ready_queue, deque_node);
         }
-
         pcb_t *prev_running = current_running;
         current_running = deque_pcb_node;
         switch_to(prev_running, deque_pcb_node);

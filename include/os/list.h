@@ -93,4 +93,18 @@ static inline list_head *Deque_FromHead(list_head *head){
     }
 }
 
+// if node is in queue, return 1
+// else return 0
+static inline int FindNode_InQueue(list_head *head, list_head *node){
+    list_head *find_node = head -> next;
+    while(find_node != head){
+        if(find_node == node){
+            return 1;
+        }
+        else{
+            find_node = find_node -> next;
+        }
+    }
+    return 0;
+}
 #endif
