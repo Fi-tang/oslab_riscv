@@ -91,7 +91,6 @@ static void init_pcb(void)
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     Initialize_QueueNode(&ready_queue);
-    Initialize_QueueNode(&block_queue);
     for(int i = 0; i <= task_num; i++){
         pcb[i].kernel_sp = allocKernelPage(1);  // kernel_sp
         pcb[i].user_sp = allocUserPage(1);      // user_sp;

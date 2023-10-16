@@ -17,7 +17,6 @@ pcb_t pid0_pcb = {
 
 LIST_HEAD(ready_queue);
 LIST_HEAD(sleep_queue);
-LIST_HEAD(block_queue);
 
 /* current running task PCB */
 pcb_t * volatile current_running;
@@ -33,20 +32,12 @@ void do_scheduler(void)
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
     // TODO: [p2-task1] Modify the current_running pointer.
-    list_head *deque_node = Deque_FromHead(&ready_queue);
     if(deque_node == NULL){
         return;
     }
     else{
-        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
-        if(strcmp(deque_pcb_node -> name, "lock1") == 0 || strcmp(deque_pcb_node -> name, "lock2") == 0){
-            do_block(deque_node, &block_queue);   // test do_block
-        }
-        
-        if(strcmp(deque_pcb_node -> name, "lock2") == 0){
-            do_unblock(deque_node);             //  test do_unblock
-        }
-        
+        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);        
+        printk("current deque_pcb_node[%d]: %s\n", deque_pcb_node -> pid, deque_pcb_node -> name);
 
         if(deque_pcb_node -> status == TASK_READY){
             Enque_FromTail(&ready_queue, deque_node);
@@ -67,7 +58,7 @@ void do_sleep(uint32_t sleep_time)
     // 3. reschedule because the current_running is blocked.
 }
 
-// queue -> means: block_queue
+
 void do_block(list_node_t *pcb_node, list_head *queue)
 {
     // TODO: [p2-task2] block the pcb task into the block queue
@@ -81,6 +72,5 @@ void do_unblock(list_node_t *pcb_node)
     // TODO: [p2-task2] unblock the `pcb` from the block queue
     pcb_t *unblock_pcb_node = GetPcb_FromList(pcb_node);
     unblock_pcb_node -> status = TASK_READY;
-    DequeNode_AccordList(&block_queue, pcb_node);
     Enque_FromTail(&ready_queue, pcb_node);
 }

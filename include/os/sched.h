@@ -97,8 +97,7 @@ extern list_head ready_queue;
 /* sleep queue to be blocked in */
 extern list_head sleep_queue;
 
-/* newly added block_queue*/
-extern list_head block_queue;
+/* lock_queue can be implemented on lock.h*/
 
 /* current running task PCB */
 extern pcb_t * volatile current_running;
