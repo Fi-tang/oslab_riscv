@@ -95,6 +95,8 @@ static void init_pcb(void)
         pcb[i].kernel_sp = allocKernelPage(1);  // kernel_sp
         pcb[i].user_sp = allocUserPage(1);      // user_sp;
 
+        pcb[i].cursor_x = i;
+        pcb[i].cursor_y = i;
         Initialize_QueueNode(&pcb[i].list);
         
         pcb[i].pid = i;
@@ -106,8 +108,10 @@ static void init_pcb(void)
         }
         else{
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
-            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 || strcmp(pcb[i].name, "fly") == 0
-            || strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0){
+            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 || strcmp(pcb[i].name, "fly") == 0){
+                pcb[i].status = TASK_READY;
+            }
+            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
                 pcb[i].status = TASK_READY;
             }
             pcb[i].pcb_switchto_context.regs[0] = current_task_entry_address;
