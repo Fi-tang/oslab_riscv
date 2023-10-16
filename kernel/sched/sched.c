@@ -41,10 +41,10 @@ void do_scheduler(void)
 
         if(deque_pcb_node -> status == TASK_READY){
             Enque_FromTail(&ready_queue, deque_node);
+            pcb_t *prev_running = current_running;
+            current_running = deque_pcb_node;
+            switch_to(prev_running, deque_pcb_node);
         }
-        pcb_t *prev_running = current_running;
-        current_running = deque_pcb_node;
-        switch_to(prev_running, deque_pcb_node);
     }
     // TODO: [p2-task1] switch_to current_running
 }
@@ -58,14 +58,31 @@ void do_sleep(uint32_t sleep_time)
     // 3. reschedule because the current_running is blocked.
 }
 
-
+/**
+pcb_node: always mean current_running -> list
+queue: means the queue to be blocked in
+*/
 void do_block(list_node_t *pcb_node, list_head *queue)
 {
     // TODO: [p2-task2] block the pcb task into the block queue
-
+    if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
+        DequeNode_AccordList(&ready_queue, pcb_node);
+        // printk("\n++++++++++++ The BLOCKED pcb [%s] +++++\n", current_running -> name);
+    }
+    pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
+    get_block_pcb -> status = TASK_BLOCKED;
+    Enque_FromTail(queue, pcb_node);
+    do_scheduler();
 }
 
 void do_unblock(list_node_t *pcb_node)
 {
     // TODO: [p2-task2] unblock the `pcb` from the block queue
+     if(FindNode_InQueue(&ready_queue, pcb_node) == 0){
+        // printk("\n******************* The UNBLOCKED pcb [%s] **************\n", pcb_unblock_node -> name);
+        pcb_t *pcb_unblock_node = GetPcb_FromList(pcb_node);
+        pcb_unblock_node -> status = TASK_READY;
+        Enque_FromTail(&ready_queue, pcb_node);
+        do_scheduler();
+    }
 }

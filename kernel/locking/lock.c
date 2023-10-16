@@ -72,13 +72,7 @@ void do_mutex_lock_acquire(int mlock_idx)
     }
     else{
         // failed!
-        if(FindNode_InQueue(&ready_queue, &(current_running -> list)) == 1){
-            DequeNode_AccordList(&ready_queue, &(current_running -> list));
-            // printk("\n++++++++++++ The BLOCKED pcb [%s] +++++\n", current_running -> name);
-        }
-        current_running -> status = TASK_BLOCKED;
-        Enque_FromTail(&(mlocks[mlock_idx].block_queue), &(current_running -> list));
-        do_scheduler();
+        do_block(&(current_running -> list), &(mlocks[mlock_idx].block_queue));
     }
 }
 
@@ -94,14 +88,7 @@ void do_mutex_lock_release(int mlock_idx)
     else{
         while(target_head -> next != target_head){
             list_head *deque_node = Deque_FromHead(&(mlocks[mlock_idx].block_queue));
-            pcb_t *pcb_unblock_node = GetPcb_FromList(deque_node);
-
-            if(FindNode_InQueue(&ready_queue, &(pcb_unblock_node -> list)) == 0){
-                // printk("\n******************* The UNBLOCKED pcb [%s] **************\n", pcb_unblock_node -> name);
-                pcb_unblock_node -> status = TASK_READY;
-                Enque_FromTail(&ready_queue, &(pcb_unblock_node -> list));
-            }
+            do_unblock(deque_node);
         }
-        do_scheduler();
     }
 }
