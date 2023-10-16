@@ -107,4 +107,18 @@ static inline int FindNode_InQueue(list_head *head, list_head *node){
     }
     return 0;
 }
+
+// deque_Node from queue
+// assume that node must in head!
+static inline void DequeNode_AccordList(list_head *head, list_head *node){
+    if(FindNode_InQueue(head, node) == 0){
+        return;
+    }
+    list_head *find_prev = head;
+    while(find_prev -> next != node){
+        find_prev = find_prev -> next;
+    }
+    find_prev -> next = node -> next;
+    node -> next -> prev = find_prev;
+}
 #endif
