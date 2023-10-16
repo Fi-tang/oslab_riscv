@@ -42,9 +42,11 @@ void do_scheduler(void)
         if(strcmp(deque_pcb_node -> name, "lock1") == 0 || strcmp(deque_pcb_node -> name, "lock2") == 0){
             do_block(deque_node, &block_queue);   // test do_block
         }
+        
         if(strcmp(deque_pcb_node -> name, "lock2") == 0){
             do_unblock(deque_node);             //  test do_unblock
         }
+        
 
         if(deque_pcb_node -> status == TASK_READY){
             Enque_FromTail(&ready_queue, deque_node);
