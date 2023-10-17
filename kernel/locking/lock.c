@@ -13,6 +13,7 @@ void init_locks(void)
         spin_lock_init(&(mlocks[i].lock));
         Initialize_QueueNode(&(mlocks[i].block_queue));
         mlocks[i].key = 0;
+        mlocks[i].lock_owner = NULL;
     }
 }
 
@@ -34,14 +35,7 @@ int spin_lock_try_acquire(spin_lock_t *lock)
 void spin_lock_acquire(spin_lock_t *lock)
 {
     /* TODO: [p2-task2] acquire spin lock */
-    if(spin_lock_try_acquire(lock) == 1){
-        lock -> status = LOCKED;
-        // printk("\n[%s] Acquire lock!\n", current_running -> name);
-    }
-    else{
-        // need to delete it from ready_queue
-        // add it to the current block_queue
-    }
+    lock -> status = LOCKED;
 }
 
 void spin_lock_release(spin_lock_t *lock)
@@ -53,6 +47,11 @@ void spin_lock_release(spin_lock_t *lock)
 int do_mutex_lock_init(int key)
 {
     /* TODO: [p2-task2] initialize mutex lock */
+    for(int i = 0; i < LOCK_NUM; i++){
+        if(mlocks[i].key == key){
+            return i;
+        }
+    }
     for(int i = 0; i < LOCK_NUM; i++){
         if(mlocks[i].key == 0){
             mlocks[i].key = key;
@@ -68,11 +67,13 @@ void do_mutex_lock_acquire(int mlock_idx)
     // printk("\n[LOCK_ACQUIRE]: %s trying to acquire lock\n", current_running -> name);
     if(spin_lock_try_acquire(&(mlocks[mlock_idx].lock)) == 1){
         // success
-        spin_lock_acquire(&(mlocks[mlock_idx].lock));
+        mlocks[mlock_idx].lock_owner = current_running;
+        spin_lock_acquire(&(mlocks[mlock_idx].lock)); 
     }
     else{
         // failed!
         do_block(&(current_running -> list), &(mlocks[mlock_idx].block_queue));
+        do_mutex_lock_acquire(mlock_idx);
     }
 }
 
@@ -81,6 +82,7 @@ void do_mutex_lock_release(int mlock_idx)
     /* TODO: [p2-task2] release mutex lock */
     // printk("\n[LOCK_RELEASE]: %s release lock\n",current_running -> name);
     spin_lock_release(&(mlocks[mlock_idx].lock));
+    mlocks[mlock_idx].lock_owner = NULL;
     list_head *target_head = &(mlocks[mlock_idx].block_queue);
     if(target_head -> next == target_head){
         return;

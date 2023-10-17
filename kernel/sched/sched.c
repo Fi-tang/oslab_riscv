@@ -41,10 +41,10 @@ void do_scheduler(void)
 
         if(deque_pcb_node -> status == TASK_READY){
             Enque_FromTail(&ready_queue, deque_node);
-            pcb_t *prev_running = current_running;
-            current_running = deque_pcb_node;
-            switch_to(prev_running, deque_pcb_node);
         }
+        pcb_t *prev_running = current_running;
+        current_running = deque_pcb_node;
+        switch_to(prev_running, deque_pcb_node);
     }
     // TODO: [p2-task1] switch_to current_running
 }
@@ -83,6 +83,5 @@ void do_unblock(list_node_t *pcb_node)
         pcb_t *pcb_unblock_node = GetPcb_FromList(pcb_node);
         pcb_unblock_node -> status = TASK_READY;
         Enque_FromTail(&ready_queue, pcb_node);
-        do_scheduler();
     }
 }

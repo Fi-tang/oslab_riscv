@@ -29,6 +29,7 @@
 #define INCLUDE_LOCK_H_
 
 #include <os/list.h>
+#include <os/sched.h>   // newly added
 
 #define LOCK_NUM 16
 
@@ -47,6 +48,7 @@ typedef struct mutex_lock
     spin_lock_t lock;
     list_head block_queue;
     int key;
+    pcb_t *lock_owner; // newly added, only for debug!
 } mutex_lock_t;
 
 void init_locks(void);
