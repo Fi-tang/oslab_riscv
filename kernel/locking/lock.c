@@ -73,7 +73,7 @@ void do_mutex_lock_acquire(int mlock_idx)
     else{
         // failed!
         do_block(&(current_running -> list), &(mlocks[mlock_idx].block_queue));
-        do_mutex_lock_acquire(mlock_idx);
+        do_mutex_lock_acquire(mlock_idx);   // very important!!! debug for this line
     }
 }
 
