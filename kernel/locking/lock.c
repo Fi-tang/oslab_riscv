@@ -64,16 +64,24 @@ int do_mutex_lock_init(int key)
 void do_mutex_lock_acquire(int mlock_idx)
 {
     /* TODO: [p2-task2] acquire mutex lock */
-    // printk("\n[LOCK_ACQUIRE]: %s trying to acquire lock\n", current_running -> name);
-    if(spin_lock_try_acquire(&(mlocks[mlock_idx].lock)) == 1){
-        // success
-        mlocks[mlock_idx].lock_owner = current_running;
-        spin_lock_acquire(&(mlocks[mlock_idx].lock)); 
-    }
+    /**
+    first it format like:
+    if(){}
     else{
-        // failed!
-        do_block(&(current_running -> list), &(mlocks[mlock_idx].block_queue));
-        do_mutex_lock_acquire(mlock_idx);   // very important!!! debug for this line
+        do_block();
+        do_mutex_lock_acquire(mlock_idx);
+    }
+    change the recursion to the while(1) loop, in case that the stack can be too deep!
+    */
+    while(1){
+        if(spin_lock_try_acquire(&(mlocks[mlock_idx].lock)) == 1){
+            mlocks[mlock_idx].lock_owner = current_running;
+            spin_lock_acquire(&(mlocks[mlock_idx].lock));
+            break;
+        }
+        else{
+            do_block(&(current_running -> list), &(mlocks[mlock_idx].block_queue));
+        }
     }
 }
 
