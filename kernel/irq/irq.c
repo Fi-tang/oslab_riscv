@@ -14,6 +14,12 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task3] & [p2-task4] interrupt handler.
     // call corresponding handler by the value of `scause`
+    if(scause == 0x8){
+        handle_syscall(regs, stval, scause);
+    }
+    else{
+        handle_other(regs, stval, scause);
+    }
 }
 
 void handle_irq_timer(regs_context_t *regs, uint64_t stval, uint64_t scause)
@@ -26,11 +32,21 @@ void init_exception()
 {
     /* TODO: [p2-task3] initialize exc_table */
     /* NOTE: handle_syscall, handle_other, etc.*/
+    exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ACCESS]     = (handler_t)handle_other;
+    exc_table[EXCC_BREAKPOINT]      = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_ACCESS]     = (handler_t)handle_other;
+    exc_table[EXCC_STORE_ACCESS]    = (handler_t)handle_other;
+    exc_table[EXCC_SYSCALL]         = (handler_t)handle_syscall;
+    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_other;
 
     /* TODO: [p2-task4] initialize irq_table */
     /* NOTE: handle_int, handle_other, etc.*/
 
     /* TODO: [p2-task3] set up the entrypoint of exceptions */
+    setup_exception();
 }
 
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t scause)
