@@ -76,7 +76,7 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
     user_regs_context -> regs[4] = pcb;
 
     user_regs_context -> sstatus = SR_SPIE;
-    user_regs_context -> sepc = entry_point;
+    user_regs_context -> sepc = entry_point - 4;        // restore context, first happen because in ret_from_exception:[sepc + 4]
     user_regs_context -> sbadaddr = 0;
     user_regs_context -> scause = 0;
     user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
@@ -103,9 +103,6 @@ static void init_pcb(void)
         }
         else{
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
-            // if(strcmp(pcb[i].name, "print1") == 0){
-            //     pcb[i].status = TASK_READY;
-            // }
             if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 || strcmp(pcb[i].name, "fly") == 0){
                 pcb[i].status = TASK_READY;
             }

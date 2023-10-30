@@ -114,7 +114,7 @@
   csrw CSR_SSTATUS, s0 
 
   ld s0,    OFFSET_REG_SEPC(t0)
-  csrw CSR_SCAUSE, s0
+  csrw CSR_SEPC, s0
 
   ld t0,    OFFSET_REG_T0(t0)
   ld s0,    OFFSET_REG_S0(t0)
@@ -189,8 +189,6 @@ ENTRY(switch_to)
   ld s11, SWITCH_TO_S11(t1)
   mv tp, a1
   // addi sp, sp, SWITCH_TO_SIZE
-  addi ra, ra, -4 
-  csrw CSR_SEPC, ra
   j ret_from_exception
 ENDPROC(switch_to)
 
