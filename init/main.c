@@ -103,10 +103,13 @@ static void init_pcb(void)
         }
         else{
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
-            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 ){
+            // if(strcmp(pcb[i].name, "print1") == 0){
+            //     pcb[i].status = TASK_READY;
+            // }
+            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 || strcmp(pcb[i].name, "fly") == 0){
                 pcb[i].status = TASK_READY;
             }
-            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
+            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 ){
                 pcb[i].status = TASK_READY;
             }
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
@@ -131,7 +134,7 @@ static void init_syscall(void)
     syscall[SYSCALL_WRITE]          =  (long (*)())printk;
     syscall[SYSCALL_CURSOR]         =  (long (*)())screen_move_cursor;
     syscall[SYSCALL_REFLUSH]        =  (long (*)())screen_reflush;
-    syscall[SYSCALL_GET_TIMEBASE]   = (long (*)())get_time_base;
+    syscall[SYSCALL_GET_TIMEBASE]   =  (long (*)())get_time_base;
     syscall[SYSCALL_GET_TICK]       = (long (*)())get_ticks;
     syscall[SYSCALL_LOCK_INIT]      = (long (*)())do_mutex_lock_init;
     syscall[SYSCALL_LOCK_ACQ]       = (long (*)())do_mutex_lock_acquire;
