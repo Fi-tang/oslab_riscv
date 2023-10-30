@@ -9,7 +9,13 @@ static long invoke_syscall(long sysno, long arg0, long arg1, long arg2,
                            long arg3, long arg4)
 {
     /* TODO: [p2-task3] implement invoke_syscall via inline assembly */
-    asm volatile("nop");
+    asm volatile("nop"); 
+    register uintptr_t a0 asm("a0") = (uintptr_t)(sysno);
+    register uintptr_t a1 asm("a1") = (uintptr_t)(arg0);
+    register uintptr_t a2 asm("a2") = (uintptr_t)(arg1);
+    register uintptr_t a3 asm("a3") = (uintptr_t)(arg2);
+    register uintptr_t a4 asm("a4") = (uintptr_t)(arg3);
+    register uintptr_t a5 asm("a5") = (uintptr_t)(arg4);
     asm volatile("ecall");
     return 0;
 }

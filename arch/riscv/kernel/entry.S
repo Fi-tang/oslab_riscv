@@ -202,11 +202,22 @@ ENTRY(exception_handler_entry)
   /* TODO: [p2-task3] call interrupt_helper
    * NOTE: don't forget to pass parameters for it.
    */
-  mv a0, tp 
-  addi a0, a0, PCB_USER_REGS_CONTEXT_OFFSET
-  mv a0, t0
-  csrr a1, CSR_STVAL
+  mv t0, tp 
+  addi t0, t0, PCB_USER_REGS_CONTEXT_OFFSET
+
+  sd a0, OFFSET_REG_S0(t0)
+  sd a1, OFFSET_REG_S1(t0)
+  sd a2, OFFSET_REG_S2(t0)
+  sd a3, OFFSET_REG_S3(t0)
+  sd a4, OFFSET_REG_S4(t0)
+  sd a5, OFFSET_REG_S5(t0)
+
+  csrr s0, CSR_SEPC
+  sd s0, OFFSET_REG_SEPC(t0)
+
+  ld a0, OFFSET_REG_REGS_POINTER(t0)
+  csrr a1, CSR_STVAL 
   csrr a2, CSR_SCAUSE
   call interrupt_helper
-  jr ra
+  j ret_from_exception
 ENDPROC(exception_handler_entry)

@@ -79,6 +79,7 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
     user_regs_context -> sepc = entry_point;
     user_regs_context -> sbadaddr = 0;
     user_regs_context -> scause = 0;
+    user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
 }
 
 static void init_pcb(void)
@@ -128,8 +129,8 @@ static void init_syscall(void)
     syscall[SYSCALL_SLEEP]          =  (long (*)())do_sleep;
     syscall[SYSCALL_YIELD]          =  (long (*)())do_scheduler;
     syscall[SYSCALL_WRITE]          =  (long (*)())printk;
-    syscall[SYSCALL_CURSOR]         = (long (*)())screen_move_cursor;
-    syscall[SYSCALL_REFLUSH]        = (long (*)())screen_reflush;
+    syscall[SYSCALL_CURSOR]         =  (long (*)())screen_move_cursor;
+    syscall[SYSCALL_REFLUSH]        =  (long (*)())screen_reflush;
     syscall[SYSCALL_GET_TIMEBASE]   = (long (*)())get_time_base;
     syscall[SYSCALL_GET_TICK]       = (long (*)())get_ticks;
     syscall[SYSCALL_LOCK_INIT]      = (long (*)())do_mutex_lock_init;
