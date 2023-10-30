@@ -88,6 +88,7 @@ typedef struct pcb
     /* time(seconds) to wake up sleeping PCB */
     uint64_t wakeup_time;
     switchto_context_t pcb_switchto_context;
+    regs_context_t pcb_user_regs_context;
     char name[EI_NIDENT];
 } pcb_t;
 

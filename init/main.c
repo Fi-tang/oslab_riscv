@@ -65,25 +65,20 @@ static void init_task_info(void)
 }
 
 /************************************************************/
-static void init_pcb_stack(
-    ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_point,
-    pcb_t *pcb)
-{
-     /* TODO: [p2-task3] initialization of registers on kernel stack
-      * HINT: sp, ra, sepc, sstatus
-      * NOTE: To run the task in user mode, you should set corresponding bits
-      *     of sstatus(SPP, SPIE, etc.).
-      */
-    regs_context_t *pt_regs =
-        (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
+static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_context_t *user_regs_context, pcb_t *pcb, ptr_t entry_point){
+    // ********************* kernel ***************************//
+    kernel_switchto_context -> regs[0] = entry_point; // ra
+    kernel_switchto_context -> regs[1] = pcb -> kernel_sp; // sp
 
+    //********************** user ****************************//
+    user_regs_context -> regs[1] = entry_point;
+    user_regs_context -> regs[2] = pcb -> user_sp;
+    user_regs_context -> regs[4] = pcb;
 
-    /* TODO: [p2-task1] set sp to simulate just returning from switch_to
-     * NOTE: you should prepare a stack, and push some values to
-     * simulate a callee-saved context.
-     */
-    switchto_context_t *pt_switchto =
-        (switchto_context_t *)((ptr_t)pt_regs - sizeof(switchto_context_t));
+    user_regs_context -> sstatus = SR_SPIE;
+    user_regs_context -> sepc = entry_point;
+    user_regs_context -> sbadaddr = 0;
+    user_regs_context -> scause = 0;
 }
 
 static void init_pcb(void)
@@ -103,8 +98,7 @@ static void init_pcb(void)
         strcpy(pcb[i].name, tasks[i].taskname);
 
         if(strcmp(tasks[i].taskname, "main") == 0){
-            pcb[i].pcb_switchto_context.regs[0] = BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4);
-            pcb[i].pcb_switchto_context.regs[1] = pcb[i].user_sp;
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4));
         }
         else{
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
@@ -114,10 +108,8 @@ static void init_pcb(void)
             if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
                 pcb[i].status = TASK_READY;
             }
-            pcb[i].pcb_switchto_context.regs[0] = current_task_entry_address;
-            pcb[i].pcb_switchto_context.regs[1] = pcb[i].user_sp;
-        }
-        
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
+        }  
     }
 
     for(int i = 0; i <= task_num; i++){
@@ -127,6 +119,7 @@ static void init_pcb(void)
     }
 
     current_running = &pcb[0];
+    asm volatile("mv tp, %0" : :"r"(current_running));
 }
 
 static void init_syscall(void)
