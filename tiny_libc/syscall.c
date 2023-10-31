@@ -10,12 +10,6 @@ static long invoke_syscall(long sysno, long arg0, long arg1, long arg2,
 {
     /* TODO: [p2-task3] implement invoke_syscall via inline assembly */
     asm volatile("nop"); 
-    register uintptr_t a0 asm("a0") = (uintptr_t)(sysno);
-    register uintptr_t a1 asm("a1") = (uintptr_t)(arg0);
-    register uintptr_t a2 asm("a2") = (uintptr_t)(arg1);
-    register uintptr_t a3 asm("a3") = (uintptr_t)(arg2);
-    register uintptr_t a4 asm("a4") = (uintptr_t)(arg3);
-    register uintptr_t a5 asm("a5") = (uintptr_t)(arg4);
     asm volatile("ecall");
     return 0;
 }
@@ -81,18 +75,21 @@ void sys_mutex_release(int mutex_idx)
 long sys_get_timebase(void)
 {
     /* TODO: [p2-task3] call invoke_syscall to implement sys_get_timebase */
+    invoke_syscall(SYSCALL_GET_TIMEBASE, 0, 0, 0, 0, 0);
     return 0;
 }
 
 long sys_get_tick(void)
 {
     /* TODO: [p2-task3] call invoke_syscall to implement sys_get_tick */
+    invoke_syscall(SYSCALL_GET_TICK, 0, 0, 0, 0, 0);
     return 0;
 }
 
 void sys_sleep(uint32_t time)
 {
     /* TODO: [p2-task3] call invoke_syscall to implement sys_sleep */
+    invoke_syscall(SYSCALL_SLEEP,(long)time, 0, 0, 0, 0);
 }
 
 /************************************************************/

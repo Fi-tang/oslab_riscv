@@ -67,7 +67,7 @@ static void init_task_info(void)
 /************************************************************/
 static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_context_t *user_regs_context, pcb_t *pcb, ptr_t entry_point){
     // ********************* kernel ***************************//
-    kernel_switchto_context -> regs[0] = entry_point; // ra
+    kernel_switchto_context -> regs[0] = ret_from_exception; // ra
     kernel_switchto_context -> regs[1] = pcb -> kernel_sp; // sp
 
     //********************** user ****************************//
@@ -103,10 +103,10 @@ static void init_pcb(void)
         }
         else{
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
-            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 || strcmp(pcb[i].name, "fly") == 0){
+            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 ){
                 pcb[i].status = TASK_READY;
             }
-            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 ){
+            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
                 pcb[i].status = TASK_READY;
             }
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
