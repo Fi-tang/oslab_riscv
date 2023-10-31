@@ -87,6 +87,7 @@ static void init_pcb(void)
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     Initialize_QueueNode(&ready_queue);
+    Initialize_QueueNode(&sleep_queue);
     for(int i = 0; i <= task_num; i++){
         pcb[i].kernel_sp = allocKernelPage(1);  // kernel_sp
         pcb[i].user_sp = allocUserPage(1);      // user_sp;
@@ -107,6 +108,9 @@ static void init_pcb(void)
                 pcb[i].status = TASK_READY;
             }
             if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
+                pcb[i].status = TASK_READY;
+            }
+            if(strcmp(pcb[i].name, "sleep") == 0 || strcmp(pcb[i].name, "timer") == 0){
                 pcb[i].status = TASK_READY;
             }
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);

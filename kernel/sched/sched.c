@@ -32,6 +32,7 @@ void do_scheduler(void)
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
     // TODO: [p2-task1] Modify the current_running pointer.
+    check_sleeping();
     list_head *deque_node = Deque_FromHead(&ready_queue);
     if(deque_node == NULL){
         return;
@@ -56,6 +57,8 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. set the wake up time for the blocked task
     // 3. reschedule because the current_running is blocked.
+    current_running -> wakeup_time = sleep_time;
+    do_block(&(current_running -> list), &sleep_queue);
 }
 
 /**
