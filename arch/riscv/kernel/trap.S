@@ -10,7 +10,5 @@ ENTRY(setup_exception)
   /* TODO: [p2-task4] enable interrupts globally */
   addi a0, zero, SR_SIE   // sstatus.sie = 1
   csrw CSR_SSTATUS, a0
-  addi a0, zero, SIE_STIE // sie.stie = 1 --> sie[5] = 1
-  csrw CSR_SIE,  a0 
   ret
 ENDPROC(setup_exception)

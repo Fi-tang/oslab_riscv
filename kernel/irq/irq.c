@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <screen.h>
 
+#define SCAUSE_IRQ_FLAG   (1UL << 63) // newly added!
+
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 
@@ -14,11 +16,11 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task3] & [p2-task4] interrupt handler.
     // call corresponding handler by the value of `scause`
-    if(scause == 0x8){
-        handle_syscall(regs, stval, scause);
+    if( (scause & SCAUSE_IRQ_FLAG) == 0){
+        exc_table[scause & 0xffff](regs, stval, scause);
     }
     else{
-        handle_other(regs, stval, scause);
+        irq_table[scause & 0xffff](regs, stval, scause); 
     }
 }
 
@@ -26,6 +28,7 @@ void handle_irq_timer(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task4] clock interrupt handler.
     // Note: use bios_set_timer to reset the timer and remember to reschedule
+    printk("Enter handle_irq_timer!\n");
 }
 
 void init_exception()

@@ -142,6 +142,8 @@ static void init_syscall(void)
     syscall[SYSCALL_LOCK_RELEASE]   = (long (*)())do_mutex_lock_release;
 }
 /************************************************************/
+static void init_time(void){    
+}
 
 int main(void)
 {
@@ -177,9 +179,13 @@ int main(void)
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
-    
+    // Init time interrupt 
+    init_time();
+    printk("> [INIT] Time interrupt initialization succeed.\n");
+
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
+  
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
