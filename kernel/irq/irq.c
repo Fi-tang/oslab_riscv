@@ -44,7 +44,15 @@ void init_exception()
 
     /* TODO: [p2-task4] initialize irq_table */
     /* NOTE: handle_int, handle_other, etc.*/
-
+    irq_table[IRQC_U_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_M_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_U_TIMER]        = (handler_t)handle_other;
+    irq_table[IRQC_S_TIMER]        = (handler_t)handle_irq_timer;
+    irq_table[IRQC_M_TIMER]        = (handler_t)handle_other;
+    irq_table[IRQC_U_EXT]          = (handler_t)handle_other;
+    irq_table[IRQC_S_EXT]          = (handler_t)handle_other;
+    irq_table[IRQC_M_EXT]          = (handler_t)handle_other;
     /* TODO: [p2-task3] set up the entrypoint of exceptions */
     setup_exception();
 }
