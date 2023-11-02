@@ -11,7 +11,7 @@ ENTRY(_start)
     // Every program has it's own stack_pointer  
 
     /* TODO: [p1-task3] enter main function */
-    j main 
+    jal main 
     /* TODO: [p1-task3] finish task and return to the kernel, replace this in p3-task2! */
     lui t5, %hi(KERNEL_ENTER_POINT)
     addi t5, t5, %lo(KERNEL_ENTER_POINT)
