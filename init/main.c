@@ -142,7 +142,12 @@ static void init_syscall(void)
     syscall[SYSCALL_LOCK_RELEASE]   = (long (*)())do_mutex_lock_release;
 }
 /************************************************************/
-static void init_time(void){    
+static void init_time(void){
+    // assume sstatus.sie = 1, and sie.stie = 1
+    asm volatile(
+        "addi a0, zero, 0x20\n"
+        "csrw sie, a0\n");
+    clock_trigger_next_interrupt();
 }
 
 int main(void)
@@ -185,17 +190,16 @@ int main(void)
 
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-  
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
     {
         // If you do non-preemptive scheduling, it's used to surrender control
-        do_scheduler();
+        // do_scheduler();
 
         // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-        // enable_preempt();
-        // asm volatile("wfi");
+        enable_preempt();
+        asm volatile("wfi");
     }
 
     return 0;
