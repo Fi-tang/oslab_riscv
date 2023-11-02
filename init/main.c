@@ -147,6 +147,7 @@ static void init_time(void){
     asm volatile(
         "addi a0, zero, 0x20\n"
         "csrw sie, a0\n");
+    time_elapsed = 0;
     clock_trigger_next_interrupt();
 }
 

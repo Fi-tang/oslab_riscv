@@ -16,7 +16,6 @@
    * space.
    */
   li t0, SR_SUM | SR_FS
-
   addi t0, tp, PCB_USER_REGS_CONTEXT_OFFSET
   
   sd zero,  OFFSET_REG_ZERO(t0)
@@ -61,9 +60,6 @@
 
   csrr s0, CSR_SEPC
   sd s0,  OFFSET_REG_SEPC(t0)
-
-  csrr s0, CSR_STVAL 
-  sd s0,  OFFSET_REG_SBADADDR(t0)
 
   csrr s0, CSR_SCAUSE
   sd s0,  OFFSET_REG_SCAUSE(t0)
@@ -115,6 +111,9 @@
 
   ld s0,    OFFSET_REG_SEPC(t0)
   csrw CSR_SEPC, s0
+
+  ld s0,    OFFSET_REG_SCAUSE(t0)
+  csrw CSR_SCAUSE, s0
 
   ld t0,    OFFSET_REG_T0(t0)
   ld s0,    OFFSET_REG_S0(t0)
