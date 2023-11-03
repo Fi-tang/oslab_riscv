@@ -229,5 +229,5 @@ ENTRY(exception_handler_entry)
   csrr a1, CSR_STVAL 
   csrr a2, CSR_SCAUSE
   call interrupt_helper
-  j ret_from_exception
+  j ret_from_exception 
 ENDPROC(exception_handler_entry)
