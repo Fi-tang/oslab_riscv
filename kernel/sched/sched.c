@@ -32,7 +32,7 @@ void do_scheduler(void)
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
     // TODO: [p2-task1] Modify the current_running pointer.
-    printl("[DO_SCHEDULER]: enter do_scheduler\n");
+    // printl("[DO_SCHEDULER]: enter do_scheduler\n");
     check_sleeping();
     list_head *deque_node = Deque_FromHead(&ready_queue);
     if(deque_node == NULL){
