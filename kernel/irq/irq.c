@@ -45,9 +45,11 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
     current_running -> pcb_user_regs_context.sstatus, 
     current_running -> pcb_user_regs_context.sepc,
     current_running -> pcb_user_regs_context.scause);
+
+    current_running -> pcb_user_regs_context.scause = scause;
     if( (scause & SCAUSE_IRQ_FLAG) == 0){
         exc_table[scause & 0xffff](regs, stval, scause);
-    }
+    }   
     else{
         // ![IMPORTANT]: interrupt do not need sepc + 4
         irq_table[scause & 0xffff](regs, stval, scause); 
