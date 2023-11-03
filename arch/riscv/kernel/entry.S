@@ -197,6 +197,8 @@ ENTRY(ret_from_exception)
   RESTORE_CONTEXT
   csrr a0, CSR_SCAUSE
   blt a0, zero, interrupt_case
+  li a1, 0x8
+  bne a0, a1, interrupt_case
 
   csrr s0, CSR_SEPC
   addi s0, s0, 4
