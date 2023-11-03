@@ -195,9 +195,9 @@ ENTRY(ret_from_exception)
   /* TODO: [p2-task3] restore context via provided macro and return to sepc */
   /* HINT: remember to check your sp, does it point to the right address? */
   RESTORE_CONTEXT
-  csrr s0, CSR_SEPC
-  addi s0, s0, 4
-  csrw CSR_SEPC, s0
+  //csrr s0, CSR_SEPC
+  //addi s0, s0, 4
+  //csrw CSR_SEPC, s0
   sret
 ENDPROC(ret_from_exception)
 

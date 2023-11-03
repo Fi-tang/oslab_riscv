@@ -16,7 +16,35 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task3] & [p2-task4] interrupt handler.
     // call corresponding handler by the value of `scause`
+    printl("\n\n\n[6 Kernel_sp]: %s -> [kernel_ra]: %lx -> [kernel_sp]: %lx\n", pcb[6].name, 
+    pcb[6]. pcb_switchto_context.regs[0], 
+    pcb[6].pcb_switchto_context.regs[1]);
 
+    printl("[6 User_sp]: %s -> [user_ra]: %lx -> [user_sp]: %lx\n", pcb[6].name, 
+    pcb[6].pcb_user_regs_context.regs[1], 
+    pcb[6].pcb_user_regs_context.regs[2]);
+
+    printl("[6 User_csr]: %s -> [pcb_sstatus]: %lx -> [pcb_sepc]: %lx -> [pcb_scause]: %lx\n\n", pcb[6].name,
+    pcb[6].pcb_user_regs_context.sstatus, 
+    pcb[6].pcb_user_regs_context.sepc,
+    pcb[6].pcb_user_regs_context.scause);
+
+    printl("\n\n[Interrupt_helper]: scause = %lx, scause & SACUSE_IRQ_FLAG = %lx, scause & 0xffff = %lx\n\n",
+    scause, 
+    (scause & SCAUSE_IRQ_FLAG), (scause & 0xffff));
+
+    printl("[Kernel_sp]: %s -> [kernel_ra]: %lx -> [kernel_sp]: %lx\n\n", current_running -> name, 
+    current_running -> pcb_switchto_context.regs[0], 
+    current_running -> pcb_switchto_context.regs[1]);
+
+    printl("[User_sp]: %s -> [user_ra]: %lx -> [user_sp]: %lx\n\n", current_running -> name, 
+    current_running -> pcb_user_regs_context.regs[1], 
+    current_running -> pcb_user_regs_context.regs[2]);
+
+    printl("[User_csr]: %s -> [pcb_sstatus]: %lx -> [pcb_sepc]: %lx -> [pcb_scause]: %lx\n\n", current_running -> name,
+    current_running -> pcb_user_regs_context.sstatus, 
+    current_running -> pcb_user_regs_context.sepc,
+    current_running -> pcb_user_regs_context.scause);
     if( (scause & SCAUSE_IRQ_FLAG) == 0){
         exc_table[scause & 0xffff](regs, stval, scause);
     }
