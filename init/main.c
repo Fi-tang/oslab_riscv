@@ -113,6 +113,9 @@ static void init_pcb(void)
             if(strcmp(pcb[i].name, "sleep") == 0 || strcmp(pcb[i].name, "timer") == 0){
                 pcb[i].status = TASK_READY;
             }
+            if(strcmp(pcb[i].name, "fly") == 0){
+                pcb[i].status = TASK_READY;
+            }
             // if(strcmp(pcb[i].name, "whileloop") == 0){
             //     pcb[i].status = TASK_READY;
             // }

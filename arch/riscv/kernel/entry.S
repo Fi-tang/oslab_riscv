@@ -115,8 +115,8 @@
   ld s0,    OFFSET_REG_SCAUSE(t0)
   csrw CSR_SCAUSE, s0
 
-  ld t0,    OFFSET_REG_T0(t0)
   ld s0,    OFFSET_REG_S0(t0)
+  ld t0,    OFFSET_REG_T0(t0)
 .endm
 
 ENTRY(enable_preempt)
