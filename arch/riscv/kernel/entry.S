@@ -194,6 +194,10 @@ ENDPROC(switch_to)
 ENTRY(ret_from_exception)
   /* TODO: [p2-task3] restore context via provided macro and return to sepc */
   /* HINT: remember to check your sp, does it point to the right address? */
+  mv t0, tp
+  addi t0, t0, PCB_SWITCH_TO_CONTEX_OFFSET
+  sd sp, SWITCH_TO_SP(t0)
+
   RESTORE_CONTEXT
   csrr a0, CSR_SCAUSE
   blt a0, zero, interrupt_case
@@ -218,8 +222,13 @@ ENTRY(exception_handler_entry)
   /* TODO: [p2-task3] call interrupt_helper
    * NOTE: don't forget to pass parameters for it.
    */
+  mv t1, tp 
+  addi t1, t1, PCB_SWITCH_TO_CONTEX_OFFSET
+  ld sp, SWITCH_TO_SP(t1)
+
   mv t0, tp 
   addi t0, t0, PCB_USER_REGS_CONTEXT_OFFSET
+  
 
   sd a0, OFFSET_REG_A0(t0)
   sd a1, OFFSET_REG_A1(t0)
@@ -228,12 +237,9 @@ ENTRY(exception_handler_entry)
   sd a4, OFFSET_REG_A4(t0)
   sd a5, OFFSET_REG_A5(t0)
 
-  csrr s0, CSR_SEPC
-  sd s0, OFFSET_REG_SEPC(t0)
-
   ld a0, OFFSET_REG_REGS_POINTER(t0)
   csrr a1, CSR_STVAL 
   csrr a2, CSR_SCAUSE
   call interrupt_helper
-  j ret_from_exception 
+  j ret_from_exception
 ENDPROC(exception_handler_entry)
