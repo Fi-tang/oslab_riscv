@@ -15,54 +15,55 @@
    * Disable the FPU to detect illegal usage of floating point in kernel
    * space.
    */
-  li t0, SR_SUM | SR_FS
-  addi t0, tp, PCB_USER_REGS_CONTEXT_OFFSET
+  // li t0, SR_SUM | SR_FS
+  addi tp, tp, PCB_USER_REGS_CONTEXT_OFFSET
   
-  sd zero,  OFFSET_REG_ZERO(t0)
-  sd ra,    OFFSET_REG_RA(t0)
-  sd sp,    OFFSET_REG_SP(t0)
-  sd gp,    OFFSET_REG_GP(t0)
-  sd tp,    OFFSET_REG_TP(t0)
-  sd t0,    OFFSET_REG_T0(t0)
-  sd t1,    OFFSET_REG_T1(t0)
-  sd t2,    OFFSET_REG_T2(t0)
-  sd s0,    OFFSET_REG_S0(t0)
-  sd s1,    OFFSET_REG_S1(t0)
+  sd zero,  OFFSET_REG_ZERO(tp)
+  sd ra,    OFFSET_REG_RA(tp)
+  sd sp,    OFFSET_REG_SP(tp)
+  sd gp,    OFFSET_REG_GP(tp)
 
-  sd a0,    OFFSET_REG_A0(t0)
-  sd a1,    OFFSET_REG_A1(t0)
-  sd a2,    OFFSET_REG_A2(t0)
-  sd a3,    OFFSET_REG_A3(t0)
-  sd a4,    OFFSET_REG_A4(t0)
-  sd a5,    OFFSET_REG_A5(t0)
-  sd a6,    OFFSET_REG_A6(t0)
-  sd a7,    OFFSET_REG_A7(t0)
-  sd s2,    OFFSET_REG_S2(t0)
-  sd s3,    OFFSET_REG_S3(t0)
+  sd t0,    OFFSET_REG_T0(tp)
+  sd t1,    OFFSET_REG_T1(tp)
+  sd t2,    OFFSET_REG_T2(tp)
+  sd s0,    OFFSET_REG_S0(tp)
+  sd s1,    OFFSET_REG_S1(tp)
 
-  sd s4,    OFFSET_REG_S4(t0)
-  sd s5,    OFFSET_REG_S5(t0)
-  sd s6,    OFFSET_REG_S6(t0)
-  sd s7,    OFFSET_REG_S7(t0)
-  sd s8,    OFFSET_REG_S8(t0)
-  sd s9,    OFFSET_REG_S9(t0)
-  sd s10,   OFFSET_REG_S10(t0)
-  sd s11,   OFFSET_REG_S11(t0)
-  sd t3,    OFFSET_REG_T3(t0)
-  sd t4,    OFFSET_REG_T4(t0)
+  sd a0,    OFFSET_REG_A0(tp)
+  sd a1,    OFFSET_REG_A1(tp)
+  sd a2,    OFFSET_REG_A2(tp)
+  sd a3,    OFFSET_REG_A3(tp)
+  sd a4,    OFFSET_REG_A4(tp)
+  sd a5,    OFFSET_REG_A5(tp)
+  sd a6,    OFFSET_REG_A6(tp)
+  sd a7,    OFFSET_REG_A7(tp)
+  sd s2,    OFFSET_REG_S2(tp)
+  sd s3,    OFFSET_REG_S3(tp)
 
-  sd t5,    OFFSET_REG_T5(t0)
-  sd t6,    OFFSET_REG_T6(t0)
+  sd s4,    OFFSET_REG_S4(tp)
+  sd s5,    OFFSET_REG_S5(tp)
+  sd s6,    OFFSET_REG_S6(tp)
+  sd s7,    OFFSET_REG_S7(tp)
+  sd s8,    OFFSET_REG_S8(tp)
+  sd s9,    OFFSET_REG_S9(tp)
+  sd s10,   OFFSET_REG_S10(tp)
+  sd s11,   OFFSET_REG_S11(tp)
+  sd t3,    OFFSET_REG_T3(tp)
+  sd t4,    OFFSET_REG_T4(tp)
+
+  sd t5,    OFFSET_REG_T5(tp)
+  sd t6,    OFFSET_REG_T6(tp)
 
   /* TODO: [p2-task3] save sstatus, sepc, stval and scause on kernel stack */
   csrr s0,  CSR_SSTATUS
-  sd s0,    OFFSET_REG_SSTATUS(t0)
+  sd s0,    OFFSET_REG_SSTATUS(tp)
 
   csrr s0, CSR_SEPC
-  sd s0,  OFFSET_REG_SEPC(t0)
+  sd s0,  OFFSET_REG_SEPC(tp)
 
   csrr s0, CSR_SCAUSE
-  sd s0,  OFFSET_REG_SCAUSE(t0)
+  sd s0,  OFFSET_REG_SCAUSE(tp)
+  addi tp, tp, -(PCB_USER_REGS_CONTEXT_OFFSET)
 .endm
 
 .macro RESTORE_CONTEXT
@@ -74,7 +75,6 @@
   ld ra,    OFFSET_REG_RA(t0)
   ld sp,    OFFSET_REG_SP(t0)
   ld gp,    OFFSET_REG_GP(t0)
-  ld tp,    OFFSET_REG_TP(t0)
   
   ld t1,    OFFSET_REG_T1(t0)
   ld t2,    OFFSET_REG_T2(t0)
@@ -108,9 +108,6 @@
 
   ld s0,    OFFSET_REG_SSTATUS(t0)
   csrw CSR_SSTATUS, s0 
-
-  ld s0,    OFFSET_REG_SEPC(t0)
-  csrw CSR_SEPC, s0
 
   ld s0,    OFFSET_REG_SCAUSE(t0)
   csrw CSR_SCAUSE, s0
@@ -198,16 +195,20 @@ ENTRY(ret_from_exception)
   addi t0, t0, PCB_SWITCH_TO_CONTEX_OFFSET
   sd sp, SWITCH_TO_SP(t0)
 
-  RESTORE_CONTEXT
-  csrr a0, CSR_SCAUSE
+  addi t0, tp, PCB_USER_REGS_CONTEXT_OFFSET
+  ld a0, OFFSET_REG_SCAUSE(t0)
+  ld s0, OFFSET_REG_SEPC(t0)
+  csrw CSR_SEPC, s0
+  
   blt a0, zero, interrupt_case
   li a1, 0x8
   bne a0, a1, interrupt_case
 
-  csrr s0, CSR_SEPC
   addi s0, s0, 4
   csrw CSR_SEPC, s0
+  
 interrupt_case: 
+  RESTORE_CONTEXT
   sret
 ENDPROC(ret_from_exception)
 

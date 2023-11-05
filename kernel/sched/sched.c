@@ -58,7 +58,7 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. set the wake up time for the blocked task
     // 3. reschedule because the current_running is blocked.
-    current_running -> wakeup_time = sleep_time;
+    current_running -> wakeup_time = sleep_time * 1000;
     do_block(&(current_running -> list), &sleep_queue);
 }
 

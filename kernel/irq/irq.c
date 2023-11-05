@@ -31,10 +31,13 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
 
     //printl("[Interrupt_helper]\n");
 
-    printl("[User_csr]: %s -> [pcb_sstatus]: %lx -> [pcb_sepc]: %lx -> [pcb_scause]: %lx\n\n", current_running -> name,
-    current_running -> pcb_user_regs_context.sstatus, 
-    current_running -> pcb_user_regs_context.sepc,
-    current_running -> pcb_user_regs_context.scause);
+    // printl("%lx %lx %lx %lx %lx\n", 
+    // regs -> regs[10],
+    // regs -> regs[11],
+    // regs -> regs[12],
+    // regs -> regs[13],
+    // regs -> regs[14]);
+    
 
     current_running -> pcb_user_regs_context.scause = scause;
     if((scause & SCAUSE_IRQ_FLAG) == SCAUSE_IRQ_FLAG){
@@ -44,6 +47,13 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
     else{
         exc_table[scause & 0xffff](regs, stval, scause);
     }
+
+    // printl("%lx %lx %lx %lx %lx\n", 
+    // regs -> regs[10],
+    // regs -> regs[11],
+    // regs -> regs[12],
+    // regs -> regs[13],
+    // regs -> regs[14]);
 }
 
 void clock_trigger_next_interrupt(){
@@ -54,7 +64,7 @@ void handle_irq_timer(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task4] clock interrupt handler.
     // Note: use bios_set_timer to reset the timer and remember to reschedule
-    printl("[HANDLE_IRQ_timer]: get_ticks() = %ld\n",get_ticks());
+    // printl("[HANDLE_IRQ_timer]: get_ticks() = %ld\n",get_ticks());
     clock_trigger_next_interrupt();
     do_scheduler();
 }

@@ -16,11 +16,12 @@ void handle_syscall(regs_context_t *regs, uint64_t interrupt, uint64_t cause)
     long handle_syscall_arg3 = (long)(regs -> regs[14]);     // a4
     long handle_syscall_arg4 = (long)(regs -> regs[15]);     // a5
     
-    printl("[HANDLE_SYSCALL]: %d arg0=%lx\n", syscall_num, handle_syscall_arg0);
-    if(syscall_num == 20){
-        printl("arg0=%s\n",handle_syscall_arg0);
-    }
+    // printl("[HANDLE_SYSCALL]\n");
+    // if(syscall_num == 20){
+    //     printl("arg0=%s\n",handle_syscall_arg0);
+    // }
 
     syscall[syscall_num](handle_syscall_arg0, handle_syscall_arg1, handle_syscall_arg2, handle_syscall_arg3, handle_syscall_arg4);
-
+    register uintptr_t a0 asm("a0");
+    regs -> regs[10] = a0;
 }

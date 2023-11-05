@@ -11,7 +11,8 @@ static long invoke_syscall(long sysno, long arg0, long arg1, long arg2,
     /* TODO: [p2-task3] implement invoke_syscall via inline assembly */
     asm volatile("nop"); 
     asm volatile("ecall");
-    return 0;
+    register uintptr_t a0 asm("a0");
+    return a0;
 }
 
 void sys_yield(void)
@@ -52,8 +53,7 @@ int sys_mutex_init(int key)
     /* TODO: [p2-task2] call call_jmptab to implement sys_mutex_init */
     // call_jmptab(MUTEX_INIT, (long)key, 0, 0, 0, 0);
     /* TODO: [p2-task3] call invoke_syscall to implement sys_mutex_init */
-    invoke_syscall(SYSCALL_LOCK_INIT, (long)key, 0, 0, 0, 0);
-    return 0;
+    return invoke_syscall(SYSCALL_LOCK_INIT, (long)key, 0, 0, 0, 0);
 }
 
 void sys_mutex_acquire(int mutex_idx)
@@ -75,15 +75,13 @@ void sys_mutex_release(int mutex_idx)
 long sys_get_timebase(void)
 {
     /* TODO: [p2-task3] call invoke_syscall to implement sys_get_timebase */
-    invoke_syscall(SYSCALL_GET_TIMEBASE, 0, 0, 0, 0, 0);
-    return 0;
+    return invoke_syscall(SYSCALL_GET_TIMEBASE, 0, 0, 0, 0, 0);
 }
 
 long sys_get_tick(void)
 {
     /* TODO: [p2-task3] call invoke_syscall to implement sys_get_tick */
-    invoke_syscall(SYSCALL_GET_TICK, 0, 0, 0, 0, 0);
-    return 0;
+    return invoke_syscall(SYSCALL_GET_TICK, 0, 0, 0, 0, 0);
 }
 
 void sys_sleep(uint32_t time)
