@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <screen.h>
 
+#define SCAUSE_IRQ_FLAG   (1UL << 63) // newly added!
+
 handler_t irq_table[IRQC_COUNT];
 handler_t exc_table[EXCC_COUNT];
 
@@ -14,23 +16,86 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task3] & [p2-task4] interrupt handler.
     // call corresponding handler by the value of `scause`
+    
+    // printl("\n\n[Interrupt_helper]: scause = %lx, scause & SACUSE_IRQ_FLAG = %lx, scause & 0xffff = %lx\n\n",
+    // scause, 
+    // (scause & SCAUSE_IRQ_FLAG), (scause & 0xffff));
+
+    // printl("[Kernel_sp]: %s -> [kernel_ra]: %lx -> [kernel_sp]: %lx\n\n", current_running -> name, 
+    // current_running -> pcb_switchto_context.regs[0], 
+    // current_running -> pcb_switchto_context.regs[1]);
+
+    // printl("[User_sp]: %s -> [user_ra]: %lx -> [user_sp]: %lx\n\n", current_running -> name, 
+    // current_running -> pcb_user_regs_context.regs[1], 
+    // current_running -> pcb_user_regs_context.regs[2]);
+
+    //printl("[Interrupt_helper]\n");
+
+    // printl("%lx %lx %lx %lx %lx\n", 
+    // regs -> regs[10],
+    // regs -> regs[11],
+    // regs -> regs[12],
+    // regs -> regs[13],
+    // regs -> regs[14]);
+    
+
+    current_running -> pcb_user_regs_context.scause = scause;
+    if((scause & SCAUSE_IRQ_FLAG) == SCAUSE_IRQ_FLAG){
+         // ![IMPORTANT]: interrupt do not need sepc + 4
+        irq_table[scause & 0xffff](regs, stval, scause); 
+    }   
+    else{
+        exc_table[scause & 0xffff](regs, stval, scause);
+    }
+
+    // printl("%lx %lx %lx %lx %lx\n", 
+    // regs -> regs[10],
+    // regs -> regs[11],
+    // regs -> regs[12],
+    // regs -> regs[13],
+    // regs -> regs[14]);
+}
+
+void clock_trigger_next_interrupt(){
+    bios_set_timer(get_ticks() + TIMER_INTERVAL);
 }
 
 void handle_irq_timer(regs_context_t *regs, uint64_t stval, uint64_t scause)
 {
     // TODO: [p2-task4] clock interrupt handler.
     // Note: use bios_set_timer to reset the timer and remember to reschedule
+    // printl("[HANDLE_IRQ_timer]: get_ticks() = %ld\n",get_ticks());
+    clock_trigger_next_interrupt();
+    do_scheduler();
 }
 
 void init_exception()
 {
     /* TODO: [p2-task3] initialize exc_table */
     /* NOTE: handle_syscall, handle_other, etc.*/
+    exc_table[EXCC_INST_MISALIGNED] = (handler_t)handle_other;
+    exc_table[EXCC_INST_ACCESS]     = (handler_t)handle_other;
+    exc_table[EXCC_BREAKPOINT]      = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_ACCESS]     = (handler_t)handle_other;
+    exc_table[EXCC_STORE_ACCESS]    = (handler_t)handle_other;
+    exc_table[EXCC_SYSCALL]         = (handler_t)handle_syscall;
+    exc_table[EXCC_INST_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_LOAD_PAGE_FAULT] = (handler_t)handle_other;
+    exc_table[EXCC_STORE_PAGE_FAULT] = (handler_t)handle_other;
 
     /* TODO: [p2-task4] initialize irq_table */
     /* NOTE: handle_int, handle_other, etc.*/
-
+    irq_table[IRQC_U_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_M_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_U_TIMER]        = (handler_t)handle_other;
+    irq_table[IRQC_S_TIMER]        = (handler_t)handle_irq_timer;
+    irq_table[IRQC_M_TIMER]        = (handler_t)handle_other;
+    irq_table[IRQC_U_EXT]          = (handler_t)handle_other;
+    irq_table[IRQC_S_EXT]          = (handler_t)handle_other;
+    irq_table[IRQC_M_EXT]          = (handler_t)handle_other;
     /* TODO: [p2-task3] set up the entrypoint of exceptions */
+    setup_exception();
 }
 
 void handle_other(regs_context_t *regs, uint64_t stval, uint64_t scause)

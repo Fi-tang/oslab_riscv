@@ -2,7 +2,7 @@
 #include <os/sched.h>
 #include <type.h>
 
-uint64_t time_elapsed = 0;
+volatile uint64_t time_elapsed = 0;
 uint64_t time_base = 0;
 
 uint64_t get_ticks()
@@ -34,4 +34,17 @@ void latency(uint64_t time)
 void check_sleeping(void)
 {
     // TODO: [p2-task3] Pick out tasks that should wake up from the sleep queue
+    list_head *sleep_node = (&sleep_queue) -> next;
+    while(sleep_node != (&sleep_queue)){
+        list_node_t *sleep_node_next = sleep_node -> next;
+        pcb_t *sleep_pcb = GetPcb_FromList(sleep_node);
+        if(sleep_pcb -> wakeup_time == 0){
+            DequeNode_AccordList(&sleep_queue, sleep_node);
+            do_unblock(sleep_node);
+        }
+        else{
+            sleep_pcb -> wakeup_time -= 1;
+        }
+        sleep_node = sleep_node_next;
+    }
 }

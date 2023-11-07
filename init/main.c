@@ -16,7 +16,18 @@
 #include <assert.h>
 #include <type.h>
 #include <csr.h>
+// !!![warning] have no reference for <os/list.h>
+#include <os/list.h>
 
+#define VERSION_BUF 50
+#define BOOT_LOADER_ADDRESS 0x50200000
+#define SECTOR_SIZE 512
+#define BOOT_LOADER_SIG_OFFSET 0x1fe
+#define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
+#define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
+
+int version = 2; // version must between 0 and 9
+char buf[VERSION_BUF];
 extern void ret_from_exception();
 
 // Task info array
@@ -43,52 +54,102 @@ static void init_jmptab(void)
     jmptab[MUTEX_RELEASE]   = (long (*)())do_mutex_lock_release;
 
     // TODO: [p2-task1] (S-core) initialize system call table.
-
+    jmptab[REFLUSH]        = (long (*)())screen_reflush;
 }
 
 static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
+    bios_sd_read(&tasks, 2, 1);
 }
 
 /************************************************************/
-static void init_pcb_stack(
-    ptr_t kernel_stack, ptr_t user_stack, ptr_t entry_point,
-    pcb_t *pcb)
-{
-     /* TODO: [p2-task3] initialization of registers on kernel stack
-      * HINT: sp, ra, sepc, sstatus
-      * NOTE: To run the task in user mode, you should set corresponding bits
-      *     of sstatus(SPP, SPIE, etc.).
-      */
-    regs_context_t *pt_regs =
-        (regs_context_t *)(kernel_stack - sizeof(regs_context_t));
+static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_context_t *user_regs_context, pcb_t *pcb, ptr_t entry_point){
+    // ********************* kernel ***************************//
+    kernel_switchto_context -> regs[0] = ret_from_exception; // ra
+    kernel_switchto_context -> regs[1] = pcb -> kernel_sp; // sp
 
+    //********************** user ****************************//
+    user_regs_context -> regs[1] = entry_point;
+    user_regs_context -> regs[2] = pcb -> user_sp;
+    user_regs_context -> regs[4] = pcb;
 
-    /* TODO: [p2-task1] set sp to simulate just returning from switch_to
-     * NOTE: you should prepare a stack, and push some values to
-     * simulate a callee-saved context.
-     */
-    switchto_context_t *pt_switchto =
-        (switchto_context_t *)((ptr_t)pt_regs - sizeof(switchto_context_t));
-
+    user_regs_context -> sstatus = SR_SPIE;
+    user_regs_context -> sepc = entry_point;        // restore context, first happen because in ret_from_exception:[sepc + 4]
+    user_regs_context -> sbadaddr = 0;
+    user_regs_context -> scause = SCAUSE_IRQ_FLAG + IRQC_S_TIMER;
+    user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
 }
 
 static void init_pcb(void)
 {
     /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    Initialize_QueueNode(&ready_queue);
+    Initialize_QueueNode(&sleep_queue);
+    for(int i = 0; i <= task_num; i++){
+        pcb[i].kernel_sp = allocKernelPage(1);  // kernel_sp
+        pcb[i].user_sp = allocUserPage(1);      // user_sp;
 
+        pcb[i].cursor_x = i;
+        pcb[i].cursor_y = i;
+        Initialize_QueueNode(&pcb[i].list);
+        
+        pcb[i].pid = i;
+        strcpy(pcb[i].name, tasks[i].taskname);
 
-    /* TODO: [p2-task1] remember to initialize 'current_running' */
+        if(strcmp(tasks[i].taskname, "main") == 0){
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4));
+        }
+        else{
+            long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
+            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 ){
+                pcb[i].status = TASK_READY;
+            }
+            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
+                pcb[i].status = TASK_READY;
+            }
+            if(strcmp(pcb[i].name, "sleep") == 0 || strcmp(pcb[i].name, "timer") == 0){
+                pcb[i].status = TASK_READY;
+            }
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
+        }  
+    }
 
+    for(int i = 0; i <= task_num; i++){
+        if(pcb[i].status == TASK_READY){
+            Enque_FromTail(&ready_queue, &pcb[i].list);
+        }
+    }
+
+    current_running = &pcb[0];
+    asm volatile("mv tp, %0" : :"r"(current_running));
 }
 
 static void init_syscall(void)
 {
     // TODO: [p2-task3] initialize system call table.
+    syscall[SYSCALL_SLEEP]          =  (long (*)())do_sleep;
+    syscall[SYSCALL_YIELD]          =  (long (*)())do_scheduler;
+    syscall[SYSCALL_WRITE]          =  (long (*)())printk;
+    syscall[SYSCALL_CURSOR]         =  (long (*)())screen_move_cursor;
+    syscall[SYSCALL_REFLUSH]        =  (long (*)())screen_reflush;
+    syscall[SYSCALL_GET_TIMEBASE]   =  (long (*)())get_time_base;
+    syscall[SYSCALL_GET_TICK]       = (long (*)())get_ticks;
+    syscall[SYSCALL_LOCK_INIT]      = (long (*)())do_mutex_lock_init;
+    syscall[SYSCALL_LOCK_ACQ]       = (long (*)())do_mutex_lock_acquire;
+    syscall[SYSCALL_LOCK_RELEASE]   = (long (*)())do_mutex_lock_release;
 }
 /************************************************************/
+static void init_time(void){
+    // assume sstatus.sie = 1, and sie.stie = 1
+    asm volatile(
+        "addi a0, zero, 0x20\n"
+        "csrw sie, a0\n");
+    time_elapsed = 0;
+    clock_trigger_next_interrupt();
+}
 
 int main(void)
 {
@@ -99,6 +160,7 @@ int main(void)
     init_task_info();
 
     // Init Process Control Blocks |•'-'•) ✧
+    // only used for printk
     init_pcb();
     printk("> [INIT] PCB initialization succeeded.\n");
 
@@ -123,21 +185,21 @@ int main(void)
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
-    
-
+    // Init time interrupt 
+    init_time();
+    printk("> [INIT] Time interrupt initialization succeed.\n");
 
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
-
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
     {
         // If you do non-preemptive scheduling, it's used to surrender control
-        do_scheduler();
+        // do_scheduler();
 
         // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-        // enable_preempt();
-        // asm volatile("wfi");
+        enable_preempt();
+        asm volatile("wfi");
     }
 
     return 0;

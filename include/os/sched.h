@@ -31,8 +31,11 @@
 
 #include <type.h>
 #include <os/list.h>
+#include <printk.h>     // newly added for print queue
 
 #define NUM_MAX_TASK 16
+#define EI_NIDENT  16
+#define LIST_IN_PCB_OFFSET 16  //  (unsigned long) (&((pcb_t *)0)-> list);
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -45,6 +48,7 @@ typedef struct regs_context
     reg_t sepc;
     reg_t sbadaddr;
     reg_t scause;
+    reg_t regs_pointer;
 } regs_context_t;
 
 /* used to save register infomation in switch_to */
@@ -87,7 +91,9 @@ typedef struct pcb
 
     /* time(seconds) to wake up sleeping PCB */
     uint64_t wakeup_time;
-
+    switchto_context_t pcb_switchto_context;
+    regs_context_t pcb_user_regs_context;
+    char name[EI_NIDENT];
 } pcb_t;
 
 /* ready queue to run */
@@ -95,6 +101,8 @@ extern list_head ready_queue;
 
 /* sleep queue to be blocked in */
 extern list_head sleep_queue;
+
+/* lock_queue can be implemented on lock.h*/
 
 /* current running task PCB */
 extern pcb_t * volatile current_running;
@@ -125,4 +133,28 @@ extern void do_process_show();
 extern pid_t do_getpid();
 /************************************************************/
 
+// use list to find the whole pcb
+static inline pcb_t *GetPcb_FromList(list_head *node){
+   unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> list);
+   pcb_t *return_pcb = NULL;
+   return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+   return return_pcb;
+}
+
+static inline void PrintPcb_FromList(list_head *head){
+    printk("\n\n\n");
+    if(head -> next == head){
+        printk("NULL\n");
+        return;
+    }
+    else{
+        list_head *node = head -> next;
+        while(node != head){
+            pcb_t *print_pcb_list = GetPcb_FromList(node);
+            printk("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
+            node = node -> next;
+        }
+        printk("NULL\n");
+    }
+}
 #endif
