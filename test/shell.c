@@ -33,6 +33,59 @@
 
 #define SHELL_BEGIN 20
 
+int command_spaceNum(char command_buffer[1000]){
+    int spaceNum = 0;
+    int i = 0;
+    int command_buffer_start_index = 0;
+    while(command_buffer[i] == ' '){
+        i++;
+    }
+    command_buffer_start_index = i;
+    for(  ; command_buffer[i] != '\0'; i++){
+        if(command_buffer[i] == ' '){
+            spaceNum++;
+        }
+    }
+    // step-1: get spaceNum
+    printf("spaceNum = %d\n", spaceNum);
+    return spaceNum;
+}
+
+char **split_command_to_multiple_line(char command_buffer[1000], int spaceNum){
+    char command_split[spaceNum + 1][1000];
+
+    int command_buffer_start_index = 0;
+    while(command_buffer[command_buffer_start_index] == ' '){
+        command_buffer_start_index++;
+    }
+    int k = command_buffer_start_index;
+    for(int m = 0; m < spaceNum + 1; m++){
+        int split_count = 0;
+        while(1){
+            if(command_buffer[k] != ' ' && command_buffer[k] != '\0'){
+                command_split[m][split_count++] = command_buffer[k];
+                printf("%d [%c] -> ", k, command_buffer[k]);
+                k++;
+            }
+            else if(command_buffer[k] == ' '){
+                k++;
+                break;
+            }
+            else{
+                break;
+            }
+        }
+        command_split[m][split_count] = '\0';
+        printf("\n");
+    }
+    printf("[After parsing]: \n");
+    for(int m = 0; m < spaceNum + 1; m++){  
+        printf("%d %s\n",m, command_split[m]);
+    }
+    return command_split;
+}
+
+
 int main(void)
 {
     sys_move_cursor(0, SHELL_BEGIN);
@@ -43,6 +96,9 @@ int main(void)
     {
         // TODO [P3-task1]: call syscall to read UART port
         int input_character;
+        char command_buffer[1000];
+
+        int command_real_index = 0;
         while(1){
             input_character = sys_getchar();
             if(input_character == -1){
@@ -50,22 +106,34 @@ int main(void)
             }
             else if(input_character == 8 || input_character == 127){
                 printf("%c", (char)input_character);
+                if(command_real_index > 0){
+                    command_real_index -= 1;
+                }
             }
             else if(input_character == 13){     // enter '\n'
                printf("\n");
                break;
             }
             else{
+                command_buffer[command_real_index++] = (char)input_character;
                 printf("%c", (char)input_character);
             }
         }
-        
+        printf("COMMAND_LINE: %s\n", command_buffer);
+        //=============================================== Input finished ====================================================
         // TODO [P3-task1]: parse input
         // note: backspace maybe 8('\b') or 127(delete)
 
+        int spaceNum = 0;
+        spaceNum = command_spaceNum(command_buffer);
+        if(spaceNum > 0){
+            char **command_split;
+            command_split = split_command_to_multiple_line(command_buffer, spaceNum);
+        }
+        //============================================= Split finished =======================================================
         // TODO [P3-task1]: ps, exec, kill, clear
 
-        printf("> root@UCAS_OS: ");    
+        printf("> root@UCAS_OS: ");  
         /************************************************************/
         /* Do not touch this comment. Reserved for future projects. */
         /************************************************************/    
