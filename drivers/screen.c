@@ -42,6 +42,10 @@ static void screen_write_ch(char ch)
         current_running->cursor_x = 0;
         current_running->cursor_y++;
     }
+    else if(ch == 8 || ch == 127){
+        current_running->cursor_x--;
+        new_screen[SCREEN_LOC(current_running -> cursor_x, current_running -> cursor_y)] = ' ';
+    }
     else
     {
         new_screen[SCREEN_LOC(current_running->cursor_x, current_running->cursor_y)] = ch;

@@ -134,6 +134,9 @@ static void init_syscall(void)
     syscall[SYSCALL_LOCK_INIT]      = (long (*)())do_mutex_lock_init;
     syscall[SYSCALL_LOCK_ACQ]       = (long (*)())do_mutex_lock_acquire;
     syscall[SYSCALL_LOCK_RELEASE]   = (long (*)())do_mutex_lock_release;
+
+    // P3-part1
+    syscall[SYSCALL_READCH]         = (long (*)())bios_getchar;
 }
 /************************************************************/
 static void init_time(void){

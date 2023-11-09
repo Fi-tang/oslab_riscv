@@ -126,6 +126,7 @@ pid_t sys_getpid()
 int  sys_getchar(void)
 {
     /* TODO: [p3-task1] call invoke_syscall to implement sys_getchar */
+    return invoke_syscall(SYSCALL_READCH, 0, 0, 0, 0, 0);
 }
 
 int  sys_barrier_init(int key, int goal)

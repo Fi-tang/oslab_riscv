@@ -42,12 +42,30 @@ int main(void)
     while (1)
     {
         // TODO [P3-task1]: call syscall to read UART port
+        int input_character;
+        while(1){
+            input_character = sys_getchar();
+            if(input_character == -1){
+                ;
+            }
+            else if(input_character == 8 || input_character == 127){
+                printf("%c", (char)input_character);
+            }
+            else if(input_character == 13){     // enter '\n'
+               printf("\n");
+               break;
+            }
+            else{
+                printf("%c", (char)input_character);
+            }
+        }
         
         // TODO [P3-task1]: parse input
         // note: backspace maybe 8('\b') or 127(delete)
 
-        // TODO [P3-task1]: ps, exec, kill, clear    
+        // TODO [P3-task1]: ps, exec, kill, clear
 
+        printf("> root@UCAS_OS: ");    
         /************************************************************/
         /* Do not touch this comment. Reserved for future projects. */
         /************************************************************/    
