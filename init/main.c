@@ -104,15 +104,6 @@ static void init_pcb(void)
         }
         else{
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
-            if(strcmp(pcb[i].name, "print1") == 0 || strcmp(pcb[i].name, "print2") == 0 ){
-                pcb[i].status = TASK_READY;
-            }
-            if(strcmp(pcb[i].name, "lock1") == 0 || strcmp(pcb[i].name, "lock2") == 0 || strcmp(pcb[i].name, "fly") == 0){
-                pcb[i].status = TASK_READY;
-            }
-            if(strcmp(pcb[i].name, "sleep") == 0 || strcmp(pcb[i].name, "timer") == 0){
-                pcb[i].status = TASK_READY;
-            }
             if(strcmp(pcb[i].name, "shell") == 0){
                 pcb[i].status = TASK_READY;
             }
