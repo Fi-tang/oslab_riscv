@@ -113,6 +113,9 @@ static void init_pcb(void)
             if(strcmp(pcb[i].name, "sleep") == 0 || strcmp(pcb[i].name, "timer") == 0){
                 pcb[i].status = TASK_READY;
             }
+            if(strcmp(pcb[i].name, "shell") == 0){
+                pcb[i].status = TASK_READY;
+            }
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
         }  
     }

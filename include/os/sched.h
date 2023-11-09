@@ -35,7 +35,7 @@
 
 #define NUM_MAX_TASK 16
 #define EI_NIDENT  16
-#define LIST_IN_PCB_OFFSET 16  //  (unsigned long) (&((pcb_t *)0)-> list);
+#define LIST_IN_PCB_OFFSET 32  //  (unsigned long) (&((pcb_t *)0)-> list);
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -70,30 +70,30 @@ typedef struct pcb
 {
     /* register context */
     // NOTE: this order must be preserved, which is defined in regs.h!!
-    reg_t kernel_sp;
-    reg_t user_sp;
-    ptr_t kernel_stack_base;
-    ptr_t user_stack_base;
+    reg_t kernel_sp;                // 0
+    reg_t user_sp;                  // 8
+    ptr_t kernel_stack_base;        // 16
+    ptr_t user_stack_base;          // 24
 
     /* previous, next pointer */
-    list_node_t list;
-    list_head wait_list;
+    list_node_t list;               // 32
+    list_head wait_list;            // 48
 
     /* process id */
-    pid_t pid;
+    pid_t pid;                      // 64
 
     /* BLOCK | READY | RUNNING */
-    task_status_t status;
+    task_status_t status;           // 68
 
     /* cursor position */
-    int cursor_x;
-    int cursor_y;
+    int cursor_x;                   // 72
+    int cursor_y;                   // 76
 
     /* time(seconds) to wake up sleeping PCB */
-    uint64_t wakeup_time;
-    switchto_context_t pcb_switchto_context;
-    regs_context_t pcb_user_regs_context;
-    char name[EI_NIDENT];
+    uint64_t wakeup_time;           // 80
+    switchto_context_t pcb_switchto_context;    // 88
+    regs_context_t pcb_user_regs_context;       // 200
+    char name[EI_NIDENT];                       // 496
 } pcb_t;
 
 /* ready queue to run */

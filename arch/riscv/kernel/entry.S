@@ -2,8 +2,8 @@
 #include <csr.h>
 #include <asm/regs.h>
 
-#define PCB_SWITCH_TO_CONTEX_OFFSET   56  
-#define PCB_USER_REGS_CONTEXT_OFFSET  168 
+#define PCB_SWITCH_TO_CONTEX_OFFSET   88  
+#define PCB_USER_REGS_CONTEXT_OFFSET  200 
 
 .macro SAVE_CONTEXT
   /* TODO: [p2-task3] save all general purpose registers here! */
