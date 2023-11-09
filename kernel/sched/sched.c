@@ -89,3 +89,25 @@ void do_unblock(list_node_t *pcb_node)
         Enque_FromTail(&ready_queue, pcb_node);
     }
 }
+
+void do_process_show(){
+    printk("[Process Table]: \n");
+    int count = 0;
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].status == TASK_RUNNING){
+            printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\n",
+            count, pcb[i].pid, pcb[i].name, "RUNNING");
+            count++;
+        }
+        else if(pcb[i].status == TASK_BLOCKED){
+            printk("[%d]\tPID\t:\t%d\t%s\tSTATUS\t:\t%s\n",
+            count, pcb[i].pid, pcb[i].name, "BLOCKED");
+            count++;
+        }
+        else if(pcb[i].status == TASK_READY){
+            printk("[%d]\tPID\t:\t%d\t%s\tSTATUS\t:\t%s\n",
+            count, pcb[i].pid, pcb[i].name, "READY");
+            count++;
+        }
+    }
+}

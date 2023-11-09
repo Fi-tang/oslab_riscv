@@ -137,6 +137,7 @@ static void init_syscall(void)
 
     // P3-part1
     syscall[SYSCALL_READCH]         = (long (*)())bios_getchar;
+    syscall[SYSCALL_PS]             = (long (*)())do_process_show;
 }
 /************************************************************/
 static void init_time(void){

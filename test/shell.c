@@ -31,7 +31,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define SHELL_BEGIN 20
+#define SHELL_BEGIN 10
 
 int command_spaceNum(char command_buffer[1000]){
     int spaceNum = 0;
@@ -86,6 +86,15 @@ char **split_command_to_multiple_line(char command_buffer[1000], int spaceNum){
 }
 
 
+void handle_single_command(char command_buffer[1000]){
+    if(strcmp(command_buffer, "ps") == 0){
+        sys_ps();
+    }
+    else{
+        printf("Error: Unknown Command %s\n", command_buffer);
+    }
+}
+
 int main(void)
 {
     sys_move_cursor(0, SHELL_BEGIN);
@@ -133,7 +142,10 @@ int main(void)
         }
         //============================================= Split finished =======================================================
         // TODO [P3-task1]: ps, exec, kill, clear
-
+        if(spaceNum == 0){
+            handle_single_command(command_buffer);
+        }
+        
         printf("> root@UCAS_OS: ");  
         /************************************************************/
         /* Do not touch this comment. Reserved for future projects. */
