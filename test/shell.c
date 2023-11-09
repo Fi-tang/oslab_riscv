@@ -119,6 +119,7 @@ int main(void)
                 printf("%c", (char)input_character);
             }
         }
+        command_buffer[command_real_index] = '\0';
         printf("COMMAND_LINE: %s\n", command_buffer);
         //=============================================== Input finished ====================================================
         // TODO [P3-task1]: parse input
