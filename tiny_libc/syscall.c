@@ -94,6 +94,7 @@ void sys_sleep(uint32_t time)
 pid_t  sys_exec(char *name, int argc, char **argv)
 {
     /* TODO: [p3-task1] call invoke_syscall to implement sys_exec */
+    return invoke_syscall(SYSCALL_EXEC, (long)name, (long)argc, (long)argv, 0, 0);
 }
 
 

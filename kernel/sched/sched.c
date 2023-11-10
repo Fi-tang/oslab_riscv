@@ -41,11 +41,17 @@ void do_scheduler(void)
     else{
         pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);        
 
-        if(deque_pcb_node -> status == TASK_READY){
+        if(deque_pcb_node -> status != TASK_BLOCKED){
             Enque_FromTail(&ready_queue, deque_node);
         }
         pcb_t *prev_running = current_running;
         current_running = deque_pcb_node;
+        
+        // Adding the following to change pcb state: [running] -> [ready]
+        if(strcmp(prev_running -> name, "main") != 0){
+            prev_running -> status = TASK_READY;
+        }
+        current_running -> status = TASK_RUNNING;
         switch_to(prev_running, deque_pcb_node);
     }
     // TODO: [p2-task1] switch_to current_running
@@ -111,3 +117,5 @@ void do_process_show(){
         }
     }
 }
+
+

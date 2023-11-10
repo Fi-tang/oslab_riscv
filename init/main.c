@@ -90,9 +90,13 @@ static void init_shell(void){
             pcb[0].kernel_sp = allocKernelPage(1);
             pcb[0].user_sp = allocUserPage(1);
 
+            pcb[0].kernel_stack_base = pcb[0].kernel_sp;
+            pcb[0].user_stack_base = pcb[0].user_sp;
+
             pcb[0].cursor_x = 0;
             pcb[0].cursor_y = 0;
             Initialize_QueueNode(&pcb[0].list);
+            Initialize_QueueNode(&pcb[0].wait_list);
 
             pcb[0].pid = 0;
             strcpy(pcb[0].name, tasks[i].taskname);
@@ -102,9 +106,14 @@ static void init_shell(void){
             pcb[1].kernel_sp = allocKernelPage(1);
             pcb[1].user_sp = allocUserPage(1);
             
+            pcb[1].kernel_stack_base = pcb[1].kernel_sp;
+            pcb[1].user_stack_base = pcb[1].user_sp;
+
             pcb[1].cursor_x = 1;
             pcb[1].cursor_y = 1;
+           
             Initialize_QueueNode(&pcb[1].list);
+            Initialize_QueueNode(&pcb[1].wait_list);
 
             pcb[1].pid = 1;
             strcpy(pcb[1].name, tasks[1].taskname);
@@ -125,6 +134,40 @@ static void init_shell(void){
     asm volatile("mv tp, %0" ::"r"(current_running));
 }
 
+
+pid_t do_exec(char *name, int argc, char *argv[]){
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].status == TASK_EXITED){
+            pcb[i].kernel_sp = allocKernelPage(1);
+            pcb[i].user_sp = allocUserPage(1);
+
+            pcb[i].kernel_stack_base = pcb[i].kernel_sp;
+            pcb[i].user_stack_base = pcb[i].user_sp;
+
+            pcb[i].cursor_x = i;
+            pcb[i].cursor_y = i;
+            Initialize_QueueNode(&pcb[i].list);
+            Initialize_QueueNode(&pcb[i].wait_list);
+
+            strcpy(pcb[i].name, name);
+            long current_task_entry_address = load_task_img_by_name(task_num, name);
+            pcb[i].status = TASK_READY;
+
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
+            
+            // write argc and argv to a0 and a1 register!
+            pcb[i].pcb_user_regs_context.regs[10] = argc;
+            pcb[i].pcb_user_regs_context.regs[11] = argv;
+
+
+            Enque_FromTail(&ready_queue, &pcb[i].list);
+            return i;
+        }
+    }
+    return 0;
+}
+
 static void init_syscall(void)
 {
     // TODO: [p2-task3] initialize system call table.
@@ -143,6 +186,9 @@ static void init_syscall(void)
     syscall[SYSCALL_READCH]         = (long (*)())bios_getchar;
     syscall[SYSCALL_PS]             = (long (*)())do_process_show;
     syscall[SYSCALL_CLEAR]          = (long (*)())screen_clear;
+
+    // P3-part1
+    syscall[SYSCALL_EXEC]           = (long (*)())do_exec;
 }
 /************************************************************/
 static void init_time(void){

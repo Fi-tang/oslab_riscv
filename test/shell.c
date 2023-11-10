@@ -51,9 +51,7 @@ int command_spaceNum(char command_buffer[1000]){
     return spaceNum;
 }
 
-char **split_command_to_multiple_line(char command_buffer[1000], int spaceNum){
-    char command_split[spaceNum + 1][1000];
-
+void split_command_to_multiple_line(char command_buffer[1000], int spaceNum, char command_split[spaceNum + 1][1000]){
     int command_buffer_start_index = 0;
     while(command_buffer[command_buffer_start_index] == ' '){
         command_buffer_start_index++;
@@ -82,7 +80,6 @@ char **split_command_to_multiple_line(char command_buffer[1000], int spaceNum){
     for(int m = 0; m < spaceNum + 1; m++){  
         printf("%d %s\n",m, command_split[m]);
     }
-    return command_split;
 }
 
 
@@ -95,6 +92,22 @@ void handle_single_command(char command_buffer[1000]){
     }
     else{
         printf("Error: Unknown Command %s\n", command_buffer);
+    }
+}
+
+void handle_multiple_command(char command_buffer[1000], int spaceNum){
+    char command_split[spaceNum + 1][1000];
+    split_command_to_multiple_line(command_buffer, spaceNum, command_split);
+    //=============================== split ================================================
+    if(strcmp(command_split[0], "exec") == 0){
+        char taskname[100];
+        strcpy(taskname, command_split[1]);
+        printf("starting task %s\n", taskname);
+        pid_t task_start_id = sys_exec(taskname, spaceNum + 1, command_split);
+        printf("Info: execute %s sucessfully, pid = %d ...\n", taskname, task_start_id);
+    }
+    else{
+        printf("task-1: unhandled command!\n");
     }
 }
 
@@ -139,15 +152,14 @@ int main(void)
 
         int spaceNum = 0;
         spaceNum = command_spaceNum(command_buffer);
-        if(spaceNum > 0){
-            char **command_split;
-            command_split = split_command_to_multiple_line(command_buffer, spaceNum);
-        }
-        //============================================= Split finished =======================================================
-        // TODO [P3-task1]: ps, exec, kill, clear
         if(spaceNum == 0){
             handle_single_command(command_buffer);
         }
+        else{
+            handle_multiple_command(command_buffer, spaceNum);
+        }
+        //============================================= Split finished =======================================================
+        // TODO [P3-task1]: ps, exec, kill, clear
         
         printf("> root@UCAS_OS: ");  
         /************************************************************/
