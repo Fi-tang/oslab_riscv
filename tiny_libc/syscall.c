@@ -101,6 +101,7 @@ pid_t  sys_exec(char *name, int argc, char **argv)
 void sys_exit(void)
 {
     /* TODO: [p3-task1] call invoke_syscall to implement sys_exit */
+    invoke_syscall(SYSCALL_EXIT, 0, 0, 0, 0, 0);
 }
 
 int  sys_kill(pid_t pid)
@@ -111,6 +112,7 @@ int  sys_kill(pid_t pid)
 int  sys_waitpid(pid_t pid)
 {
     /* TODO: [p3-task1] call invoke_syscall to implement sys_waitpid */
+    return invoke_syscall(SYSCALL_WAITPID, (long)pid, 0, 0, 0, 0);
 }
 
 
@@ -128,6 +130,7 @@ void sys_clear(void){
 pid_t sys_getpid()
 {
     /* TODO: [p3-task1] call invoke_syscall to implement sys_getpid */
+    return invoke_syscall(SYSCALL_GETPID, 0, 0, 0, 0, 0);
 }
 
 int  sys_getchar(void)

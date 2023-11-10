@@ -13,11 +13,9 @@ ENTRY(_start)
     /* TODO: [p1-task3] enter main function */
     jal main 
     /* TODO: [p1-task3] finish task and return to the kernel, replace this in p3-task2! */
-    lui t5, %hi(KERNEL_ENTER_POINT)
-    addi t5, t5, %lo(KERNEL_ENTER_POINT)
-    jr t5
     /************************************************************/
     /* TODO: [P3] call sys_exit */
+    call sys_exit
     /************************************************************/
 // while(1) loop, unreachable here
 loop:

@@ -189,6 +189,9 @@ static void init_syscall(void)
 
     // P3-part1
     syscall[SYSCALL_EXEC]           = (long (*)())do_exec;
+    syscall[SYSCALL_WAITPID]        = (long (*)())do_waitpid;
+    syscall[SYSCALL_EXIT]           = (long (*)())do_exit;
+    syscall[SYSCALL_GETPID]         = (long (*)())do_getpid;
 }
 /************************************************************/
 static void init_time(void){

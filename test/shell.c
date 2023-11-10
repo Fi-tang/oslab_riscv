@@ -62,7 +62,6 @@ void split_command_to_multiple_line(char command_buffer[1000], int spaceNum, cha
         while(1){
             if(command_buffer[k] != ' ' && command_buffer[k] != '\0'){
                 command_split[m][split_count++] = command_buffer[k];
-                printf("%d [%c] -> ", k, command_buffer[k]);
                 k++;
             }
             else if(command_buffer[k] == ' '){
@@ -103,7 +102,12 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
         char taskname[100];
         strcpy(taskname, command_split[1]);
         printf("starting task %s\n", taskname);
-        pid_t task_start_id = sys_exec(taskname, spaceNum + 1, command_split);
+
+        char input_argv[spaceNum][1000];
+        for(int i = 0; i < spaceNum; i++){
+            strcpy(input_argv[i], command_split[i + 1]);
+        } 
+        pid_t task_start_id = sys_exec(taskname, spaceNum, input_argv);
         printf("Info: execute %s sucessfully, pid = %d ...\n", taskname, task_start_id);
     }
     else{
