@@ -82,43 +82,47 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
     user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
 }
 
-static void init_pcb(void)
-{
-    /* TODO: [p2-task1] load needed tasks and init their corresponding PCB */
+static void init_shell(void){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    Initialize_QueueNode(&ready_queue);
-    Initialize_QueueNode(&sleep_queue);
+    Initialize_QueueNode(&ready_queue); 
     for(int i = 0; i <= task_num; i++){
-        pcb[i].kernel_sp = allocKernelPage(1);  // kernel_sp
-        pcb[i].user_sp = allocUserPage(1);      // user_sp;
-
-        pcb[i].cursor_x = i;
-        pcb[i].cursor_y = i;
-        Initialize_QueueNode(&pcb[i].list);
-        
-        pcb[i].pid = i;
-        strcpy(pcb[i].name, tasks[i].taskname);
-
         if(strcmp(tasks[i].taskname, "main") == 0){
-            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4));
+            pcb[0].kernel_sp = allocKernelPage(1);
+            pcb[0].user_sp = allocUserPage(1);
+
+            pcb[0].cursor_x = 0;
+            pcb[0].cursor_y = 0;
+            Initialize_QueueNode(&pcb[0].list);
+
+            pcb[0].pid = 0;
+            strcpy(pcb[0].name, tasks[i].taskname);
+            init_pcb_regs(&pcb[0].pcb_switchto_context, &pcb[0].pcb_user_regs_context, &pcb[0], BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4));
         }
-        else{
-            long current_task_entry_address = load_task_img_by_name(task_num, pcb[i].name);
-            if(strcmp(pcb[i].name, "shell") == 0){
-                pcb[i].status = TASK_READY;
-            }
-            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
-        }  
+        else if(strcmp(tasks[i].taskname, "shell") == 0){
+            pcb[1].kernel_sp = allocKernelPage(1);
+            pcb[1].user_sp = allocUserPage(1);
+            
+            pcb[1].cursor_x = 1;
+            pcb[1].cursor_y = 1;
+            Initialize_QueueNode(&pcb[1].list);
+
+            pcb[1].pid = 1;
+            strcpy(pcb[1].name, tasks[1].taskname);
+            long current_task_entry_address = load_task_img_by_name(task_num, pcb[1].name);
+            pcb[1].status = TASK_READY;
+            init_pcb_regs(&pcb[1].pcb_switchto_context, &pcb[1].pcb_user_regs_context, &pcb[1], current_task_entry_address);
+            
+            Enque_FromTail(&ready_queue, &pcb[1].list);
+        }
     }
 
-    for(int i = 0; i <= task_num; i++){
-        if(pcb[i].status == TASK_READY){
-            Enque_FromTail(&ready_queue, &pcb[i].list);
-        }
+    for(int i = 2; i < NUM_MAX_TASK; i++){
+        pcb[i].pid = i;
+        pcb[i].status = TASK_EXITED;
     }
 
     current_running = &pcb[0];
-    asm volatile("mv tp, %0" : :"r"(current_running));
+    asm volatile("mv tp, %0" ::"r"(current_running));
 }
 
 static void init_syscall(void)
@@ -138,6 +142,7 @@ static void init_syscall(void)
     // P3-part1
     syscall[SYSCALL_READCH]         = (long (*)())bios_getchar;
     syscall[SYSCALL_PS]             = (long (*)())do_process_show;
+    syscall[SYSCALL_CLEAR]          = (long (*)())screen_clear;
 }
 /************************************************************/
 static void init_time(void){
@@ -159,8 +164,8 @@ int main(void)
 
     // Init Process Control Blocks |•'-'•) ✧
     // only used for printk
-    init_pcb();
-    printk("> [INIT] PCB initialization succeeded.\n");
+    init_shell();
+    printk("> [INIT] Shell initialization succeeded.\n");
 
     // Read CPU frequency (｡•ᴗ-)_
     time_base = bios_read_fdt(TIMEBASE);

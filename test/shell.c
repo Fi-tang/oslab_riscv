@@ -90,6 +90,9 @@ void handle_single_command(char command_buffer[1000]){
     if(strcmp(command_buffer, "ps") == 0){
         sys_ps();
     }
+    else if(strcmp(command_buffer, "clear") == 0){
+        sys_clear();
+    }
     else{
         printf("Error: Unknown Command %s\n", command_buffer);
     }

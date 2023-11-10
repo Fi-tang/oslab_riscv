@@ -20,6 +20,8 @@ void sys_mutex_release(int mutex_idx);
 /* TODO: [P3 task1] ps, getchar */
 void sys_ps(void);
 int  sys_getchar(void);
+// newly added!
+void sys_clear(void);
 
 /* TODO: [P3 task1] exec, exit, kill waitpid */
 // A/C-core
