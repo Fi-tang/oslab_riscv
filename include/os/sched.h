@@ -142,19 +142,19 @@ static inline pcb_t *GetPcb_FromList(list_head *node){
 }
 
 static inline void PrintPcb_FromList(list_head *head){
-    printk("\n\n\n");
+    printl("\n\n\n");
     if(head -> next == head){
-        printk("NULL\n");
+        printl("NULL\n");
         return;
     }
     else{
         list_head *node = head -> next;
         while(node != head){
             pcb_t *print_pcb_list = GetPcb_FromList(node);
-            printk("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
+            printl("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
             node = node -> next;
         }
-        printk("NULL\n");
+        printl("NULL\n");
     }
 }
 #endif

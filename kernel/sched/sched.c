@@ -125,9 +125,10 @@ pid_t do_getpid(){
 
 int do_waitpid(pid_t pid){
     // Enque current_running to wait_queue
+    printl("[DO-Waitpid]: %d %s is waiting %d %s\n", current_running -> pid,
+    current_running -> name, pid,pcb[pid].name);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid == pid && pcb[i].status != TASK_EXITED){
-            current_running -> status = TASK_BLOCKED;
             do_block(&(current_running -> list), &(pcb[i].wait_list));
             return pid;
         }
@@ -136,17 +137,5 @@ int do_waitpid(pid_t pid){
 }
 
 void do_exit(void){
-    list_head *current_waiting_list = &(current_running -> wait_list);
-    list_head *temp_node = current_waiting_list;
-    // wakeup all waiting pcb_node
-    while(temp_node -> next != current_waiting_list){
-        list_head *temp_node_next = temp_node -> next;
-        pcb_t *deque_pcb_node = GetPcb_FromList(temp_node);
-        DequeNode_AccordList(current_waiting_list, temp_node);
-        do_unblock(temp_node);
-        temp_node = temp_node_next;
-    }
-    // collect space
     current_running -> status = TASK_EXITED;
-    do_scheduler();
 }
