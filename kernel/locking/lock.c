@@ -4,8 +4,6 @@
 #include <atomic.h>
 #include <printk.h> // newly added 
 
-mutex_lock_t mlocks[LOCK_NUM];
-
 void init_locks(void)
 {
     /* TODO: [p2-task2] initialize mlocks */

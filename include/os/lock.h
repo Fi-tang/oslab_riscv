@@ -51,6 +51,7 @@ typedef struct mutex_lock
     pcb_t *lock_owner; // newly added, only for debug!
 } mutex_lock_t;
 
+mutex_lock_t mlocks[LOCK_NUM]; // change from lock.c to lock.h
 void init_locks(void);
 
 void spin_lock_init(spin_lock_t *lock);

@@ -100,6 +100,7 @@ static void init_shell(void){
 
             pcb[0].pid = 0;
             strcpy(pcb[0].name, tasks[i].taskname);
+            pcb[0].status = TASK_READY;
             init_pcb_regs(&pcb[0].pcb_switchto_context, &pcb[0].pcb_user_regs_context, &pcb[0], BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4));
         }
         else if(strcmp(tasks[i].taskname, "shell") == 0){

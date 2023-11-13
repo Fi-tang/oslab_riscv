@@ -141,8 +141,15 @@ static inline pcb_t *GetPcb_FromList(list_head *node){
    return return_pcb;
 }
 
+// use wait_queue to find the whole pcb
+static inline pcb_t *GetPcb_FromWaitList(list_head *node){
+    unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> wait_list);
+    pcb_t *return_pcb = NULL;
+    return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+    return return_pcb;
+}
+
 static inline void PrintPcb_FromList(list_head *head){
-    printl("\n\n\n");
     if(head -> next == head){
         printl("NULL\n");
         return;

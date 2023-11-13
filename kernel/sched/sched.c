@@ -39,21 +39,23 @@ void do_scheduler(void)
         return;
     }
     else{
-        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);        
-
-        if(deque_pcb_node -> status != TASK_BLOCKED){
+        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
+        if(deque_pcb_node -> status == TASK_BLOCKED || deque_pcb_node -> status == TASK_EXITED){
+            return;
+        }
+        else{
             Enque_FromTail(&ready_queue, deque_node);
+            pcb_t *prev_running = current_running;
+            current_running = deque_pcb_node;
+
+            if(strcmp(prev_running -> name, "main") != 0 && prev_running -> status == TASK_RUNNING){
+                prev_running -> status = TASK_READY;
+            }
+            current_running -> status = TASK_RUNNING;
+            switch_to(prev_running, deque_pcb_node);
         }
-        pcb_t *prev_running = current_running;
-        current_running = deque_pcb_node;
-        
-        // Adding the following to change pcb state: [running] -> [ready]
-        if(strcmp(prev_running -> name, "main") != 0){
-            prev_running -> status = TASK_READY;
-        }
-        current_running -> status = TASK_RUNNING;
-        switch_to(prev_running, deque_pcb_node);
     }
+
     // TODO: [p2-task1] switch_to current_running
 }
 
@@ -82,6 +84,25 @@ void do_block(list_node_t *pcb_node, list_head *queue)
     pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
     get_block_pcb -> status = TASK_BLOCKED;
     Enque_FromTail(queue, pcb_node);
+   
+    //-------------------------------------- debugging start ------------------------------------------
+    pcb_t *get_wait_list_pcb = GetPcb_FromWaitList(queue); // debugging
+    if(get_wait_list_pcb -> pid > NUM_MAX_TASK || strcmp(get_wait_list_pcb -> name, "") == 0){
+        if(queue == &sleep_queue){
+            printl("Sleep queue\n");
+            PrintPcb_FromList(queue);  // debugging 
+        }
+        else{
+            printl("Lock queue\n");
+            PrintPcb_FromList(queue);  // debugging 
+        }
+    }
+    else{
+        printl("the next wait_list: [%d] %s:\n", get_wait_list_pcb -> pid, get_wait_list_pcb -> name);
+        PrintPcb_FromList(queue);  // debugging 
+    }
+    //--------------------------------- debugging end -------------------------------------------------
+
     do_scheduler();
 }
 
@@ -99,7 +120,7 @@ void do_unblock(list_node_t *pcb_node)
 void do_process_show(){
     printk("[Process Table]: \n");
     int count = 0;
-    for(int i = 0; i < NUM_MAX_TASK; i++){
+    for(int i = 1; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_RUNNING){
             printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\n",
             count, pcb[i].pid, pcb[i].name, "RUNNING");
@@ -137,5 +158,28 @@ int do_waitpid(pid_t pid){
 }
 
 void do_exit(void){
+    // first check, do I have un-released locks?
     current_running -> status = TASK_EXITED;
+    for(int i = 0; i < LOCK_NUM; i++){
+        if(mlocks[i].lock_owner == current_running){
+            do_mutex_lock_release(i);
+        }
+    }
+    // second, free all locked pcb
+    list_head *target_head = &(current_running -> wait_list);
+    if(target_head -> next == target_head){
+        return;
+    }
+    else{
+        while(target_head -> next != target_head){
+            list_head *deque_node = Deque_FromHead(&(current_running -> wait_list));
+            do_unblock(deque_node);
+        }
+    }
+    printl("Before final exit:\n");
+    PrintPcb_FromList(&(current_running -> wait_list));
+
+    if(FindNode_InQueue(&ready_queue, &(current_running -> list)) == 1){
+        DequeNode_AccordList(&ready_queue, &(current_running -> list));
+    }
 }
