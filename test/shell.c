@@ -94,6 +94,18 @@ void handle_single_command(char command_buffer[1000]){
     }
 }
 
+pid_t change_string_to_integer(char *Array){   // "125" -> "521"
+    int count = 1;
+    int sum = 0;
+    int i = 0;
+    while(Array[i] != '\0'){
+        sum += (Array[i] - '0') * count;
+        count *= 10;
+        i++;
+    }
+    return (pid_t)sum;
+}
+
 void handle_multiple_command(char command_buffer[1000], int spaceNum){
     char command_split[spaceNum + 1][1000];
     split_command_to_multiple_line(command_buffer, spaceNum, command_split);
@@ -109,6 +121,14 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
         } 
         pid_t task_start_id = sys_exec(taskname, spaceNum, input_argv);
         printf("Info: execute %s sucessfully, pid = %d ...\n", taskname, task_start_id);
+    }
+    else if(strcmp(command_split[0], "kill") == 0){
+        char *kill_pid_array;
+        strcpy(kill_pid_array, command_split[1]);
+        strrev(kill_pid_array);
+        pid_t kill_pid = change_string_to_integer(kill_pid_array);
+        printf("kill_pid = %d\n", kill_pid);
+        sys_kill(kill_pid);
     }
     else{
         printf("task-1: unhandled command!\n");

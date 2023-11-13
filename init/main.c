@@ -193,6 +193,7 @@ static void init_syscall(void)
     syscall[SYSCALL_WAITPID]        = (long (*)())do_waitpid;
     syscall[SYSCALL_EXIT]           = (long (*)())do_exit;
     syscall[SYSCALL_GETPID]         = (long (*)())do_getpid;
+    syscall[SYSCALL_KILL]           = (long (*)())do_kill;
 }
 /************************************************************/
 static void init_time(void){

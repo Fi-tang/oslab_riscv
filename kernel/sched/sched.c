@@ -157,6 +157,31 @@ int do_waitpid(pid_t pid){
     return 0;
 }
 
+int do_kill(pid_t pid){     // almost same as do_exit
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].pid == pid && pcb[i].status != TASK_EXITED){
+            pcb[i].status = TASK_EXITED;
+            for(int k = 0; k < LOCK_NUM; k++){
+                if(mlocks[k].lock_owner == &(pcb[i])){
+                    do_mutex_lock_release(k);
+                }
+            }
+
+            list_head *target_head = &(pcb[i].wait_list);
+            while(target_head -> next != target_head){
+                list_head *deque_node = Deque_FromHead(&(pcb[i].wait_list));
+                do_unblock(deque_node);
+            }
+
+            if(FindNode_InQueue(&ready_queue, &(pcb[i].wait_list)) == 1){
+                DequeNode_AccordList(&ready_queue, &(pcb[i].wait_list));
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void do_exit(void){
     // first check, do I have un-released locks?
     current_running -> status = TASK_EXITED;
