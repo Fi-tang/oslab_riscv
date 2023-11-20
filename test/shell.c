@@ -122,7 +122,14 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
             input_argv[i] = &(command_split[i + 1]);
         } 
         pid_t task_start_id = sys_exec(taskname, spaceNum, input_argv);
-        printf("Info: execute %s sucessfully, pid = %d ...\n", taskname, task_start_id);
+        // Judge if & exists
+
+        if(strcmp(command_split[spaceNum], "&") == 0){
+            printf("Info: execute %s sucessfully, pid = %d ...\n", taskname, task_start_id);
+        }
+        else{
+            sys_waitpid(task_start_id);
+        }
     }
     else if(strcmp(command_split[0], "kill") == 0){
         char *kill_pid_array;
