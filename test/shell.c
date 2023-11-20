@@ -88,6 +88,8 @@ void handle_single_command(char command_buffer[1000]){
     }
     else if(strcmp(command_buffer, "clear") == 0){
         sys_clear();
+        sys_move_cursor(0, SHELL_BEGIN);
+        printf("------------------- COMMAND -------------------\n");
     }
     else{
         printf("Error: Unknown Command %s\n", command_buffer);
@@ -114,7 +116,7 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
         char taskname[100];
         strcpy(taskname, command_split[1]);
         printf("starting task %s\n", taskname);
-        
+
         char *input_argv[spaceNum];
         for(int i = 0; i < spaceNum; i++){
             input_argv[i] = &(command_split[i + 1]);
@@ -136,13 +138,13 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
 }
 
 int main(void)
-{
+{   
     sys_move_cursor(0, SHELL_BEGIN);
     printf("------------------- COMMAND -------------------\n");
-    printf("> root@UCAS_OS: ");
 
     while (1)
-    {
+    {        
+        printf("> root@UCAS_OS: ");
         // TODO [P3-task1]: call syscall to read UART port
         int input_character;
         char command_buffer[1000];
@@ -183,9 +185,7 @@ int main(void)
             handle_multiple_command(command_buffer, spaceNum);
         }
         //============================================= Split finished =======================================================
-        // TODO [P3-task1]: ps, exec, kill, clear
-        
-        printf("> root@UCAS_OS: ");  
+        // TODO [P3-task1]: ps, exec, kill, clear 
         /************************************************************/
         /* Do not touch this comment. Reserved for future projects. */
         /************************************************************/    
