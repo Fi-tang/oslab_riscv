@@ -114,10 +114,10 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
         char taskname[100];
         strcpy(taskname, command_split[1]);
         printf("starting task %s\n", taskname);
-
-        char input_argv[spaceNum][1000];
+        
+        char *input_argv[spaceNum];
         for(int i = 0; i < spaceNum; i++){
-            strcpy(input_argv[i], command_split[i + 1]);
+            input_argv[i] = &(command_split[i + 1]);
         } 
         pid_t task_start_id = sys_exec(taskname, spaceNum, input_argv);
         printf("Info: execute %s sucessfully, pid = %d ...\n", taskname, task_start_id);
