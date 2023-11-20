@@ -129,7 +129,7 @@ void do_barrier_wait(int bar_idx){
     global_barrier[bar_idx].current_barrier_num += 1;
     if(global_barrier[bar_idx].current_barrier_num < global_barrier[bar_idx].target_barrier_num){
         // do_block
-        do_block(current_running, &(global_barrier[bar_idx].barrier_wait_list));
+        do_block(&(current_running -> list), &(global_barrier[bar_idx].barrier_wait_list));
     }
     else{
         list_head *target_head = &(global_barrier[bar_idx].barrier_wait_list);
