@@ -194,6 +194,11 @@ static void init_syscall(void)
     syscall[SYSCALL_EXIT]           = (long (*)())do_exit;
     syscall[SYSCALL_GETPID]         = (long (*)())do_getpid;
     syscall[SYSCALL_KILL]           = (long (*)())do_kill;
+
+    // P3-part2-barrier
+    syscall[SYSCALL_BARR_INIT]      = (long (*)())do_barrier_init;
+    syscall[SYSCALL_BARR_WAIT]      = (long (*)())do_barrier_wait;
+    syscall[SYSCALL_BARR_DESTROY]   = (long (*)())do_barrier_destroy;
 }
 /************************************************************/
 static void init_time(void){
@@ -236,6 +241,10 @@ int main(void)
     // Init screen (QAQ)
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n");
+
+    // Init barrier (newly added! o.0)
+    init_barriers();
+    printk("> [INIT] Barrier initialization succeeded.\n");
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's

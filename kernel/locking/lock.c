@@ -100,3 +100,54 @@ void do_mutex_lock_release(int mlock_idx)
         }
     }
 }
+
+//**************************barrier part********************
+void init_barriers(void){
+    for(int i = 0; i < BARRIER_NUM; i++){
+        global_barrier[i].current_barrier_num = 0;
+        global_barrier[i].target_barrier_num = 0;
+        global_barrier[i].barrier_key = 0;
+        Initialize_QueueNode(&(global_barrier[i].barrier_wait_list));
+    }
+}
+
+int do_barrier_init(int key, int goal){
+    for(int i = 0; i < BARRIER_NUM; i++){
+        if(global_barrier[i].barrier_key == 0){
+            global_barrier[i].barrier_key = key;
+            global_barrier[i].current_barrier_num = 0;
+            global_barrier[i].target_barrier_num = goal;
+            list_head *barrier_wait_head = &(global_barrier[i].barrier_wait_list);
+            barrier_wait_head -> next = barrier_wait_head;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void do_barrier_wait(int bar_idx){
+    global_barrier[bar_idx].current_barrier_num += 1;
+    if(global_barrier[bar_idx].current_barrier_num < global_barrier[bar_idx].target_barrier_num){
+        // do_block
+        do_block(current_running, &(global_barrier[bar_idx].barrier_wait_list));
+    }
+    else{
+        list_head *target_head = &(global_barrier[bar_idx].barrier_wait_list);
+        while(target_head -> next != target_head){
+            list_head *deque_node = Deque_FromHead(&(global_barrier[bar_idx].barrier_wait_list));
+            do_unblock(deque_node);
+        }
+    }
+}
+
+void do_barrier_destroy(int bar_idx){
+    global_barrier[bar_idx].current_barrier_num = 0;
+    global_barrier[bar_idx].target_barrier_num = 0;
+    global_barrier[bar_idx].barrier_key = 0;
+
+    list_head *target_head = &(global_barrier[bar_idx].barrier_wait_list);
+    while(target_head -> next != target_head){
+        list_head *deque_node = Deque_FromHead(&(global_barrier[bar_idx].barrier_wait_list));
+        do_unblock(deque_node);
+    }
+}
