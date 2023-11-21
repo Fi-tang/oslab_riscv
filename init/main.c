@@ -137,6 +137,9 @@ static void init_shell(void){
 
 
 pid_t do_exec(char *name, int argc, char *argv[]){
+    //***********************************************************
+    // the argv[] parameter now is all correct!
+    //**********************debugging part************************
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_EXITED){
@@ -160,7 +163,6 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             // write argc and argv to a0 and a1 register!
             pcb[i].pcb_user_regs_context.regs[10] = argc;
             pcb[i].pcb_user_regs_context.regs[11] = argv;
-
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
             return i;

@@ -34,8 +34,6 @@ void do_scheduler(void)
     // TODO: [p2-task1] Modify the current_running pointer.
     // printl("[DO_SCHEDULER]: enter do_scheduler\n");
     check_sleeping();
-    printl("[Scheduler]: check sleep: ");
-    PrintPcb_FromList(&sleep_queue);
     list_head *deque_node = Deque_FromHead(&ready_queue);
     if(deque_node == NULL){
         return;     // when ready_queue is empty! need to solve it!
@@ -75,7 +73,7 @@ void do_sleep(uint32_t sleep_time)
     // 2. set the wake up time for the blocked task
     // 3. reschedule because the current_running is blocked.
     printl("Sleep: [pid - %d] need to sleep %d seconds\n", current_running -> pid, sleep_time);
-    current_running -> wakeup_time = sleep_time * 10;         // only change for debug, later change to 1000
+    current_running -> wakeup_time = sleep_time * 100;         // only change for debug, later change to 1000
     do_block(&(current_running -> list), &sleep_queue);
 }
 
