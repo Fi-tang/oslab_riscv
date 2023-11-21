@@ -126,9 +126,7 @@ int do_barrier_init(int key, int goal){
 }
 
 void do_barrier_wait(int bar_idx){
-    printl("\n\n[Barrier_wait]\n");
     global_barrier[bar_idx].current_barrier_num += 1;
-    printl("[pid-%d] after: current_barrier_num = %d\n", current_running -> pid, global_barrier[bar_idx].current_barrier_num);
     if(global_barrier[bar_idx].current_barrier_num >= global_barrier[bar_idx].target_barrier_num){
         list_head *target_head = &(global_barrier[bar_idx].barrier_wait_list);
         while(target_head -> next != target_head){

@@ -135,6 +135,49 @@ static void init_shell(void){
     asm volatile("mv tp, %0" ::"r"(current_running));
 }
 
+void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
+    printl("\n\n[DO_writeArgvToMemory] \n");
+    printl("We now write %d [%s] user_sp = %x\n", pcb -> pid, pcb -> name, pcb -> user_sp);
+    if(argc == 0 || argc == 1)   return;
+    // need 8 bytes to allocate argv[0] - argv[1] - ... - argv[n]
+    printl("********************[First]: save space for argv[0] - argv[n] *************************\n");
+    reg_t avail_user_stack = pcb -> user_sp;
+    int count_mem_usage = 0;
+    for(int i = 0; i < argc; i++){
+        avail_user_stack -= 8;
+        count_mem_usage += 8;
+        printl("%d avail_user_stack = %x\n", i, avail_user_stack);
+    }
+    printl("argc = %d and avail_user_stack = %x\n", argc, avail_user_stack);
+    
+    printl("********************[Second]: assign string one by one ********************************\n");
+    for(int i = 0; i < argc; i++){
+        reg_t *unassigned_location = NULL;
+        unassigned_location = (reg_t *)(pcb -> user_sp - (argc - i - 1) * 8);
+                        // assign arv[0] --> 'test_barrier'
+        printl("This turn %d: [[%s]]\n", i, argv[i]);
+        int total_number = strlen(argv[i]) + 1;
+
+        avail_user_stack -= total_number;
+
+        char *string_mem = NULL;
+        string_mem = (char *)(avail_user_stack + 1);
+        *unassigned_location = string_mem;
+        printl("unassigned_location = %x it's context = %x offset = %d\n", unassigned_location, *unassigned_location, pcb -> user_sp - *(unassigned_location));
+
+        strncpy(string_mem, argv[i], strlen(argv[i]));
+
+        for(int k = 0; k < strlen(argv[i]); k++){
+            printl("%d %x is %c\n", k, string_mem + k, *(string_mem + k));
+        }
+        
+        count_mem_usage += total_number;
+    }
+
+    int sp_sub_num = (count_mem_usage / 128) + 1;
+    pcb -> user_sp = pcb -> user_sp - 128 * sp_sub_num;   // approximate
+    printl("pcb -> user_sp = %x count_mem_usage = %d\n", pcb -> user_sp, count_mem_usage);
+}
 
 pid_t do_exec(char *name, int argc, char *argv[]){
     //***********************************************************
@@ -163,6 +206,8 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             pcb[i].pcb_user_regs_context.regs[11] = argv;
 
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
+
+            do_writeArgvToMemory(&pcb[i], argc, argv);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
             return i;
