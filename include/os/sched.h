@@ -155,13 +155,25 @@ static inline void PrintPcb_FromList(list_head *head){
         return;
     }
     else{
-        list_head *node = head -> next;
-        while(node != head){
-            pcb_t *print_pcb_list = GetPcb_FromList(node);
-            printl("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
-            node = node -> next;
+        if(head == &sleep_queue){
+            list_head *node = head -> next;
+            while(node != head){
+                pcb_t *print_pcb_list = GetPcb_FromList(node);
+                printl("[%d]: %s [left %d seconds]-> ", print_pcb_list -> pid, print_pcb_list -> name
+                , print_pcb_list -> wakeup_time);
+                node = node -> next;
+            }
+            printl("NULL\n");
         }
-        printl("NULL\n");
+        else{
+            list_head *node = head -> next;
+            while(node != head){
+                pcb_t *print_pcb_list = GetPcb_FromList(node);
+                printl("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
+                node = node -> next;
+            }
+            printl("NULL\n");
+        }
     }
 }
 #endif

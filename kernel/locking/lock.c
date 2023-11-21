@@ -126,17 +126,30 @@ int do_barrier_init(int key, int goal){
 }
 
 void do_barrier_wait(int bar_idx){
+    printl("\n\n[Barrier_wait]\n");
+    printl("Enter Barrier_wait: READY_QUEUE\n");
+    PrintPcb_FromList(&ready_queue);
+    printl("[pid-%d] before: current_barrier_num = %d\n", current_running -> pid, global_barrier[bar_idx].current_barrier_num);
     global_barrier[bar_idx].current_barrier_num += 1;
-    if(global_barrier[bar_idx].current_barrier_num < global_barrier[bar_idx].target_barrier_num){
-        // do_block
-        do_block(&(current_running -> list), &(global_barrier[bar_idx].barrier_wait_list));
-    }
-    else{
+    printl("[pid-%d] after: current_barrier_num = %d\n", current_running -> pid, global_barrier[bar_idx].current_barrier_num);
+    if(global_barrier[bar_idx].current_barrier_num >= global_barrier[bar_idx].target_barrier_num){
+        printl("[release before:]!!!\n");
+        PrintPcb_FromList(&(global_barrier[bar_idx].barrier_wait_list));
         list_head *target_head = &(global_barrier[bar_idx].barrier_wait_list);
         while(target_head -> next != target_head){
             list_head *deque_node = Deque_FromHead(&(global_barrier[bar_idx].barrier_wait_list));
             do_unblock(deque_node);
         }
+        global_barrier[bar_idx].current_barrier_num = 0;
+        printl("[release after:]!!!\n");
+        PrintPcb_FromList(&(global_barrier[bar_idx].barrier_wait_list));
+        printl("[release step NOW READY_QUEUE]: \n");
+        PrintPcb_FromList(&ready_queue);
+    }
+    else{
+        printl("Need to wait in barrier: the [[ready_queue]]\n");
+        PrintPcb_FromList(&ready_queue);
+        do_block(&(current_running -> list), &(global_barrier[bar_idx].barrier_wait_list));
     }
 }
 

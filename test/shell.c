@@ -31,7 +31,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define SHELL_BEGIN 10
+#define SHELL_BEGIN 20
 
 int command_spaceNum(char command_buffer[1000]){
     int spaceNum = 0;

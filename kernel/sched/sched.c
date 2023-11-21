@@ -34,9 +34,11 @@ void do_scheduler(void)
     // TODO: [p2-task1] Modify the current_running pointer.
     // printl("[DO_SCHEDULER]: enter do_scheduler\n");
     check_sleeping();
+    printl("[Scheduler]: check sleep: ");
+    PrintPcb_FromList(&sleep_queue);
     list_head *deque_node = Deque_FromHead(&ready_queue);
     if(deque_node == NULL){
-        return;
+        return;     // when ready_queue is empty! need to solve it!
     }
     else{
         pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
@@ -47,6 +49,12 @@ void do_scheduler(void)
             Enque_FromTail(&ready_queue, deque_node);
             pcb_t *prev_running = current_running;
             current_running = deque_pcb_node;
+
+            // make sure that pid0 never return or exited
+            if(strcmp(prev_running -> name, "main") == 0){
+                prev_running -> status = TASK_EXITED;
+                do_exec("pid0", 0, NULL);
+            }
 
             if(strcmp(prev_running -> name, "main") != 0 && prev_running -> status == TASK_RUNNING){
                 prev_running -> status = TASK_READY;
@@ -66,7 +74,8 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. set the wake up time for the blocked task
     // 3. reschedule because the current_running is blocked.
-    current_running -> wakeup_time = sleep_time * 1000;
+    printl("Sleep: [pid - %d] need to sleep %d seconds\n", current_running -> pid, sleep_time);
+    current_running -> wakeup_time = sleep_time * 10;         // only change for debug, later change to 1000
     do_block(&(current_running -> list), &sleep_queue);
 }
 
@@ -84,24 +93,6 @@ void do_block(list_node_t *pcb_node, list_head *queue)
     pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
     get_block_pcb -> status = TASK_BLOCKED;
     Enque_FromTail(queue, pcb_node);
-   
-    //-------------------------------------- debugging start ------------------------------------------
-    pcb_t *get_wait_list_pcb = GetPcb_FromWaitList(queue); // debugging
-    if(get_wait_list_pcb -> pid > NUM_MAX_TASK || strcmp(get_wait_list_pcb -> name, "") == 0){
-        if(queue == &sleep_queue){
-            printl("Sleep queue\n");
-            PrintPcb_FromList(queue);  // debugging 
-        }
-        else{
-            printl("Lock queue\n");
-            PrintPcb_FromList(queue);  // debugging 
-        }
-    }
-    else{
-        printl("the next wait_list: [%d] %s:\n", get_wait_list_pcb -> pid, get_wait_list_pcb -> name);
-        PrintPcb_FromList(queue);  // debugging 
-    }
-    //--------------------------------- debugging end -------------------------------------------------
 
     do_scheduler();
 }
@@ -120,7 +111,7 @@ void do_unblock(list_node_t *pcb_node)
 void do_process_show(){
     printk("[Process Table]: \n");
     int count = 0;
-    for(int i = 1; i < NUM_MAX_TASK; i++){
+    for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_RUNNING){
             printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\n",
             count, pcb[i].pid, pcb[i].name, "RUNNING");
