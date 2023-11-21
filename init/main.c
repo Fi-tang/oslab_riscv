@@ -158,11 +158,11 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             long current_task_entry_address = load_task_img_by_name(task_num, name);
             pcb[i].status = TASK_READY;
 
-            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
-            
             // write argc and argv to a0 and a1 register!
             pcb[i].pcb_user_regs_context.regs[10] = argc;
             pcb[i].pcb_user_regs_context.regs[11] = argv;
+
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
             return i;

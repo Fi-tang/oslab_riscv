@@ -62,10 +62,6 @@ int main(int argc, char *argv[])
 
         char *argv[3] = {"test_barrier", buf_location, buf_handle};
         pids[i] = sys_exec(argv[0], 3, argv);
-        printf("\n\n");
-        for(int k = 0; k < 3; k++){
-            printf("%x argv[%d][%d]: %s\n", (void *)argv[k], i, k, argv[k]);
-        }
     }
 
     // Wait child processes to exit
