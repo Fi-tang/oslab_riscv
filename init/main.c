@@ -138,7 +138,11 @@ static void init_shell(void){
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     printl("\n\n[DO_writeArgvToMemory] \n");
     printl("We now write %d [%s] user_sp = %x\n", pcb -> pid, pcb -> name, pcb -> user_sp);
-    if(argc == 0 || argc == 1)   return;
+    if(argc == 0){
+        pcb -> pcb_user_regs_context.regs[10] = 0;
+        pcb -> pcb_user_regs_context.regs[11] = 0x0;
+        return;
+    }   
     // need 8 bytes to allocate argv[0] - argv[1] - ... - argv[n]
     printl("********************[First]: save space for argv[0] - argv[n] *************************\n");
     reg_t avail_user_stack = pcb -> user_sp;
@@ -174,9 +178,18 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
         count_mem_usage += total_number;
     }
 
+    printl("*******************************[Third] argv = &argv[0], allocate &argv *********************************************\n");
+
+    // write argc and argv to a0 and a1 register!
+    pcb -> pcb_user_regs_context.regs[10] = argc;
+    pcb -> pcb_user_regs_context.regs[11] = (pcb -> user_sp - ((argc - 1)  * 8));
+    printl("user_allocate_argv = %x\n", pcb -> pcb_user_regs_context.regs[11]);
+
     int sp_sub_num = (count_mem_usage / 128) + 1;
     pcb -> user_sp = pcb -> user_sp - 128 * sp_sub_num;   // approximate
     printl("pcb -> user_sp = %x count_mem_usage = %d\n", pcb -> user_sp, count_mem_usage);
+
+    
 }
 
 pid_t do_exec(char *name, int argc, char *argv[]){
@@ -200,10 +213,6 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             strcpy(pcb[i].name, name);
             long current_task_entry_address = load_task_img_by_name(task_num, name);
             pcb[i].status = TASK_READY;
-
-            // write argc and argv to a0 and a1 register!
-            pcb[i].pcb_user_regs_context.regs[10] = argc;
-            pcb[i].pcb_user_regs_context.regs[11] = argv;
 
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
