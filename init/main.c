@@ -135,25 +135,6 @@ static void init_shell(void){
     asm volatile("mv tp, %0" ::"r"(current_running));
 }
 
-void debugging_print_user_stack(pcb_t *pcb, int argc){
-    if(argc == 0 || argc == 1) return;
-    printl("\n\n\n++++++++++++++++++++++++++++++++++[Debugging pid %d : %s]\n", pcb -> pid, pcb -> name);
-    printl("user_stack_base = %x and user_sp = %x\n", pcb -> user_stack_base, pcb -> user_sp);
-    reg_t *start_satck_print = NULL;
-    for(int i = 0; i <= argc; i++){
-        start_satck_print = (reg_t *)(pcb -> user_stack_base - i * 8);
-        printl("The context of %x is %x\n", start_satck_print, *(start_satck_print));
-    }
-
-    printl("\n-------------------string part-------------------------------------\n");
-    char *start_string_print = NULL;
-    printl("user_stack_base = %x and user_sp = %x\n", pcb -> user_stack_base, pcb -> user_sp);
-    for(int i = 0; i < 40; i++){
-        start_string_print = (char *)(pcb -> user_stack_base - argc * 8 - i);
-        printl("The context of %x:\n", start_string_print);
-        printl("is %c\n",  *(start_string_print));
-    }
-}
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     printl("\n\n[DO_writeArgvToMemory] \n");
@@ -173,9 +154,7 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
         filled_with_zero = (char *)(pcb -> user_sp - i);
         *filled_with_zero = '\0';
     }
-    avail_user_stack -= 8;
-
-    for(int i = 0; i < argc; i++){
+    for(int i = 0; i <= argc; i++){
         avail_user_stack -= 8;
         count_mem_usage += 8;
         printl("%d avail_user_stack = %x\n", i, avail_user_stack);
@@ -184,8 +163,8 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     
     printl("************[Second]: assign string one by one *****************\n");
     for(int i = 0; i < argc; i++){
-        reg_t *unassigned_location = NULL;
-        unassigned_location = (reg_t *)(pcb -> user_sp - (argc - i) * 8);
+        char **unassigned_location = NULL;
+        unassigned_location = (char **)(pcb -> user_sp - (argc - i) * 8);
                         // assign arv[0] --> 'test_barrier'
         printl("This turn %d: [[%s]]\n", i, argv[i]);
         int total_number = strlen(argv[i]) + 1;
@@ -194,10 +173,14 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
 
         char *string_mem = NULL;
         string_mem = (char *)(avail_user_stack + 1);
-        *unassigned_location = string_mem;
-        printl("unassigned_location = %x it's context = %x offset = %d\n", unassigned_location, *unassigned_location, pcb -> user_sp - *(unassigned_location));
 
         strncpy(string_mem, argv[i], strlen(argv[i]));
+        printl("string_mem = %x it's context = %s\n",string_mem, string_mem);
+
+        *unassigned_location = string_mem;
+        printl("unassigned_location = %x it's context = %x\n", unassigned_location, *unassigned_location);
+
+        
 
         for(int k = 0; k < strlen(argv[i]); k++){
             printl("%d %x is %c\n", k, string_mem + k, *(string_mem + k));
@@ -248,8 +231,6 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             do_writeArgvToMemory(&pcb[i], argc, argv);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
-
-            debugging_print_user_stack(&pcb[i], argc);
             return i;
         }
     }
