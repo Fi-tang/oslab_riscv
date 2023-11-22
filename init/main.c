@@ -135,7 +135,6 @@ static void init_shell(void){
     asm volatile("mv tp, %0" ::"r"(current_running));
 }
 
-
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     printl("\n\n[DO_writeArgvToMemory] \n");
     printl("We now write %d [%s] user_sp = %x\n", pcb -> pid, pcb -> name, pcb -> user_sp);
@@ -179,8 +178,6 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
 
         *unassigned_location = string_mem;
         printl("unassigned_location = %x it's context = %x\n", unassigned_location, *unassigned_location);
-
-        
 
         for(int k = 0; k < strlen(argv[i]); k++){
             printl("%d %x is %c\n", k, string_mem + k, *(string_mem + k));
@@ -226,9 +223,9 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             long current_task_entry_address = load_task_img_by_name(task_num, name);
             pcb[i].status = TASK_READY;
 
-            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
-            
             do_writeArgvToMemory(&pcb[i], argc, argv);
+
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
             return i;
