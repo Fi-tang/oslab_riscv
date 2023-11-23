@@ -156,6 +156,7 @@ void kill_release_lock(pid_t pid){
     }
 }
 
+
 void kill_release_pcb_on_waitpid(pid_t pid){
     list_head *target_head = &(pcb[pid].wait_list);
     while(target_head -> next != target_head){
@@ -176,6 +177,20 @@ void kill_release_self_from_all_pcb(pid_t pid){
         }
     }
 }
+
+void kill_release_from_lock_queue(pid_t pid){
+    for(int k = 0; k < LOCK_NUM; k++){
+        if(mlocks[k].lock_owner != NULL && mlocks[k].lock_owner != &(pcb[pid])){
+            list_head *target_head = &(mlocks[k].block_queue);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue( &(mlocks[k].block_queue), &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList( &(mlocks[k].block_queue), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
+
 
 void kill_release_from_semaphore(pid_t pid){
     for(int i = 0; i < SEMAPHORE_NUM; i++){
@@ -227,12 +242,13 @@ int do_kill(pid_t pid){
     if(FindNode_InQueue(&sleep_queue, &(pcb[pid].list)) == 1){
         DequeNode_AccordList(&sleep_queue, &(pcb[pid].list));
     }
-
+    // step 7. remove it from other lock's wait_queue
+    kill_release_from_lock_queue(pid);
+    
     pcb[pid].status = TASK_EXITED;
 
     return 1;
 }
-
 
 void do_exit(void){
     // first check, do I have un-released locks?
