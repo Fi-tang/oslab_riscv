@@ -72,7 +72,7 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. set the wake up time for the blocked task
     // 3. reschedule because the current_running is blocked.
-    current_running -> wakeup_time = sleep_time * 1000;         // only change for debug, later change to 1000
+    current_running -> wakeup_time = sleep_time * 100;         // only change for debug, later change to 1000
     do_block(&(current_running -> list), &sleep_queue);
 }
 
@@ -155,14 +155,18 @@ int do_kill(pid_t pid){     // almost same as do_exit
                 }
             }
 
+            // free pcb_queue !
             list_head *target_head = &(pcb[i].wait_list);
             while(target_head -> next != target_head){
                 list_head *deque_node = Deque_FromHead(&(pcb[i].wait_list));
                 do_unblock(deque_node);
             }
 
-            if(FindNode_InQueue(&ready_queue, &(pcb[i].wait_list)) == 1){
-                DequeNode_AccordList(&ready_queue, &(pcb[i].wait_list));
+            if(FindNode_InQueue(&ready_queue, &(pcb[i].list)) == 1){
+                DequeNode_AccordList(&ready_queue, &(pcb[i].list));
+            }
+            if(FindNode_InQueue(&sleep_queue, &(pcb[i].list)) == 1){
+                DequeNode_AccordList(&sleep_queue, &(pcb[i].list));
             }
             return 1;
         }
