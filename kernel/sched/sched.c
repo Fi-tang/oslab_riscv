@@ -168,6 +168,20 @@ int do_kill(pid_t pid){     // almost same as do_exit
             if(FindNode_InQueue(&sleep_queue, &(pcb[i].list)) == 1){
                 DequeNode_AccordList(&sleep_queue, &(pcb[i].list));
             }
+            // if blocked in global_semaphore, the following is to free consumer
+            for(int i = 0; i < SEMAPHORE_NUM; i++){
+                if(global_semaphore[i].sem_key != 0){
+                    list_head *target_head = &(global_semaphore[i].sema_wait_list);
+                    if(target_head -> next != target_head){                                                 // semaphore_wait_list not empty!
+                        if(FindNode_InQueue(&(global_semaphore[i].sema_wait_list), &(pcb[i].list)) == 1){   // release pcb from semaphore_wait_list
+                            DequeNode_AccordList(&(global_semaphore[i].sema_wait_list), &(pcb[i].list));
+                        }
+                    }
+                }
+            }
+
+            // if blocked in global_barrier
+
             return 1;
         }
     }
