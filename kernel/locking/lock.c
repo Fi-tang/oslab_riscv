@@ -161,3 +161,43 @@ void init_semaphores(void){
     }
 }
 
+int do_semaphore_init(int key, int init){
+    for(int i = 0; i < SEMAPHORE_NUM; i++){
+        if(global_semaphore[i].sem_key == 0){
+            global_semaphore[i].sem_num = init;
+            global_semaphore[i].sem_key = key;
+            return i;
+        }
+    }
+    return -1;
+}
+
+// producer, means sem_num++;
+void do_semaphore_up(int sema_idx){
+    global_semaphore[sema_idx].sem_num++;
+    if(global_semaphore[sema_idx].sem_num <= 0){
+        list_head *deque_node = Deque_FromHead(&(global_semaphore[sema_idx].sema_wait_list));
+        if(deque_node != NULL){
+            do_unblock(deque_node);
+        }
+    }
+}
+
+// consumer, means sem_num--;
+void do_semaphore_down(int sema_idx){
+    global_semaphore[sema_idx].sem_num--;
+    if(global_semaphore[sema_idx].sem_num < 0){
+        do_block(&(current_running -> list), &(global_semaphore[sema_idx].sema_wait_list));
+    }
+}
+
+void do_semaphore_destroy(int sema_idx){
+    global_semaphore[sema_idx].sem_num = 0;
+    global_semaphore[sema_idx].sem_key = 0;
+
+    list_head *target_head = &(global_semaphore[sema_idx].sema_wait_list);
+    while(target_head -> next != target_head){
+        list_head *deque_node = Deque_FromHead(&(global_semaphore[sema_idx].sema_wait_list));
+        do_unblock(deque_node);
+    }
+}

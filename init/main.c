@@ -264,6 +264,12 @@ static void init_syscall(void)
     syscall[SYSCALL_BARR_INIT]      = (long (*)())do_barrier_init;
     syscall[SYSCALL_BARR_WAIT]      = (long (*)())do_barrier_wait;
     syscall[SYSCALL_BARR_DESTROY]   = (long (*)())do_barrier_destroy;
+
+    // P3-part2-semaphore
+    syscall[SYSCALL_SEM_INIT]       = (long (*)())do_semaphore_init;
+    syscall[SYSCALL_SEM_UP]         = (long (*)())do_semaphore_up;
+    syscall[SYSCALL_SEM_DOWN]       = (long (*)())do_semaphore_down;
+    syscall[SYSCALL_SEM_DESTROY]    = (long (*)())do_semaphore_destroy;
 }
 /************************************************************/
 static void init_time(void){

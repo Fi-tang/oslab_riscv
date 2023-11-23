@@ -32,5 +32,9 @@
 #define SYSCALL_MBOX_CLOSE 53
 #define SYSCALL_MBOX_SEND 54
 #define SYSCALL_MBOX_RECV 55
+#define SYSCALL_SEM_INIT 56     // newly added!
+#define SYSCALL_SEM_UP  57      // newly added!
+#define SYSCALL_SEM_DOWN 58     // newly added!
+#define SYSCALL_SEM_DESTROY 59  // newly added!
 
 #endif
