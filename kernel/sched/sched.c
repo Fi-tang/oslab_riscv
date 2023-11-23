@@ -162,6 +162,16 @@ int do_kill(pid_t pid){     // almost same as do_exit
                 do_unblock(deque_node);
             }
 
+            // deque_from current_running 's block_queue, remain problem, can still be reallocated
+            if(current_running -> pid != pid){
+                list_head *target_head = &(current_running -> wait_list);
+                if(target_head -> next != target_head){
+                    if(FindNode_InQueue(&(current_running -> wait_list), &(pcb[i].list)) == 1){
+                        DequeNode_AccordList(&(current_running -> wait_list), &(pcb[i].list));
+                    }
+                }
+            }
+
             if(FindNode_InQueue(&ready_queue, &(pcb[i].list)) == 1){
                 DequeNode_AccordList(&ready_queue, &(pcb[i].list));
             }
@@ -169,12 +179,14 @@ int do_kill(pid_t pid){     // almost same as do_exit
                 DequeNode_AccordList(&sleep_queue, &(pcb[i].list));
             }
             // if blocked in global_semaphore, the following is to free consumer
+            // consumer can not be killed!
             for(int i = 0; i < SEMAPHORE_NUM; i++){
                 if(global_semaphore[i].sem_key != 0){
                     list_head *target_head = &(global_semaphore[i].sema_wait_list);
                     if(target_head -> next != target_head){                                                 // semaphore_wait_list not empty!
                         if(FindNode_InQueue(&(global_semaphore[i].sema_wait_list), &(pcb[i].list)) == 1){   // release pcb from semaphore_wait_list
                             DequeNode_AccordList(&(global_semaphore[i].sema_wait_list), &(pcb[i].list));
+                            break;
                         }
                     }
                 }
