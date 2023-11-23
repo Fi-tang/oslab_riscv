@@ -136,15 +136,12 @@ static void init_shell(void){
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
-    printl("\n\n[DO_writeArgvToMemory] \n");
-    printl("We now write %d [%s] user_sp = %x\n", pcb -> pid, pcb -> name, pcb -> user_sp);
     if(argc == 0){
         pcb -> pcb_user_regs_context.regs[10] = 0;
         pcb -> pcb_user_regs_context.regs[11] = 0x0;
         return;
     }   
     // need 8 bytes to allocate argv[0] - argv[1] - ... - argv[n]
-    printl("************[First]: save space for argv[0] - argv[n] ***************\n");
     reg_t avail_user_stack = pcb -> user_sp;
     int count_mem_usage = 0;
     
@@ -156,16 +153,12 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     for(int i = 0; i <= argc; i++){
         avail_user_stack -= 8;
         count_mem_usage += 8;
-        printl("%d avail_user_stack = %x\n", i, avail_user_stack);
     }
-    printl("argc = %d and avail_user_stack = %x\n", argc, avail_user_stack);
     
-    printl("************[Second]: assign string one by one *****************\n");
     for(int i = 0; i < argc; i++){
         char **unassigned_location = NULL;
         unassigned_location = (char **)(pcb -> user_sp - (argc - i) * 8);
                         // assign arv[0] --> 'test_barrier'
-        printl("This turn %d: [[%s]]\n", i, argv[i]);
         int total_number = strlen(argv[i]) + 1;
 
         avail_user_stack -= total_number;
@@ -174,31 +167,19 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
         string_mem = (char *)(avail_user_stack + 1);
 
         strncpy(string_mem, argv[i], strlen(argv[i]));
-        printl("string_mem = %x it's context = %s\n",string_mem, string_mem);
 
         *unassigned_location = string_mem;
-        printl("unassigned_location = %x it's context = %x\n", unassigned_location, *unassigned_location);
-
-        for(int k = 0; k < strlen(argv[i]); k++){
-            printl("%d %x is %c\n", k, string_mem + k, *(string_mem + k));
-        }
-        
         count_mem_usage += total_number;
     }
-
-    printl("****************[Third] argv = &argv[0] ***********************\n");
 
     // write argc and argv to a0 and a1 register!
     pcb -> pcb_user_regs_context.regs[10] = argc;
     pcb -> pcb_user_regs_context.regs[11] = (pcb -> user_sp - (argc * 8));
-    printl("user_allocate_argv = %x\n", pcb -> pcb_user_regs_context.regs[11]);
 
     pcb -> user_sp = pcb -> user_sp - count_mem_usage;
     while(pcb -> user_sp % 128 != 0){
         pcb -> user_sp -= 1;
     }
-    printl("pcb -> user_sp = %x count_mem_usage = %d\n", pcb -> user_sp, count_mem_usage);
-    
 }
 
 pid_t do_exec(char *name, int argc, char *argv[]){

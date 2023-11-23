@@ -145,80 +145,101 @@ int do_waitpid(pid_t pid){
     return 0;
 }
 
-int do_kill(pid_t pid){     // almost same as do_exit
-    for(int i = 0; i < NUM_MAX_TASK; i++){
-        if(pcb[i].pid == pid && pcb[i].status != TASK_EXITED){
-            pcb[i].status = TASK_EXITED;
-            for(int k = 0; k < LOCK_NUM; k++){
-                if(mlocks[k].lock_owner == &(pcb[i])){
-                    do_mutex_lock_release(k);
-                }
-            }
-
-            // free pcb_queue !
-            list_head *target_head = &(pcb[i].wait_list);
-            while(target_head -> next != target_head){
-                list_head *deque_node = Deque_FromHead(&(pcb[i].wait_list));
-                do_unblock(deque_node);
-            }
-
-            // deque_from current_running 's block_queue, remain problem, can still be reallocated
-            if(current_running -> pid != pid){
-                list_head *target_head = &(current_running -> wait_list);
-                if(target_head -> next != target_head){
-                    if(FindNode_InQueue(&(current_running -> wait_list), &(pcb[i].list)) == 1){
-                        DequeNode_AccordList(&(current_running -> wait_list), &(pcb[i].list));
-                    }
-                }
-            }
-
-            if(FindNode_InQueue(&ready_queue, &(pcb[i].list)) == 1){
-                DequeNode_AccordList(&ready_queue, &(pcb[i].list));
-            }
-            if(FindNode_InQueue(&sleep_queue, &(pcb[i].list)) == 1){
-                DequeNode_AccordList(&sleep_queue, &(pcb[i].list));
-            }
-            // if blocked in global_semaphore, the following is to free consumer
-            // consumer can not be killed!
-            for(int i = 0; i < SEMAPHORE_NUM; i++){
-                if(global_semaphore[i].sem_key != 0){
-                    list_head *target_head = &(global_semaphore[i].sema_wait_list);
-                    if(target_head -> next != target_head){                                                 // semaphore_wait_list not empty!
-                        if(FindNode_InQueue(&(global_semaphore[i].sema_wait_list), &(pcb[i].list)) == 1){   // release pcb from semaphore_wait_list
-                            DequeNode_AccordList(&(global_semaphore[i].sema_wait_list), &(pcb[i].list));
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // if blocked in global_barrier
-
-            return 1;
+/**
+the following are kill-releated function
+*/
+void kill_release_lock(pid_t pid){
+    for(int k = 0; k < LOCK_NUM; k++){
+        if(mlocks[k].lock_owner == &(pcb[pid])){
+            do_mutex_lock_release(k);
         }
     }
-    return 0;
 }
+
+void kill_release_pcb_on_waitpid(pid_t pid){
+    list_head *target_head = &(pcb[pid].wait_list);
+    while(target_head -> next != target_head){
+        list_head *deque_node = Deque_FromHead(&(pcb[pid].wait_list));
+        do_unblock(deque_node);
+    }
+}
+
+void kill_release_self_from_all_pcb(pid_t pid){
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(i != pid && pcb[i].status != TASK_EXITED){
+            list_head *target_head = &(pcb[i].wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue( &(pcb[i].wait_list) , &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList(&(pcb[i].wait_list), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
+
+void kill_release_from_semaphore(pid_t pid){
+    for(int i = 0; i < SEMAPHORE_NUM; i++){
+        if(global_semaphore[i].sem_key != 0){
+            list_head *target_head = &(global_semaphore[i].sema_wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue(&(global_semaphore[i].sema_wait_list), &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList(&(global_semaphore[i].sema_wait_list), &(pcb[pid].list));
+                    // assume only be blocked at one semaphore
+                }
+            }
+        }
+    }
+}
+
+void kill_release_from_barrier(pid_t pid){
+    for(int i = 0; i < BARRIER_NUM; i++){
+        if(global_barrier[i].barrier_key != 0){
+            list_head *target_head = &(global_barrier[i].barrier_wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue(&(global_barrier[i].barrier_wait_list), &pcb[pid].list) == 1){
+                    while(target_head -> next != target_head){
+                        list_head *deque_node = Deque_FromHead(&(global_barrier[i].barrier_wait_list));
+                        do_unblock(deque_node);                             // this turn, free all
+                    }
+                    global_barrier[i].target_barrier_num -= 1;              // next turn, only need to count (target_barrier_num - 1)'s process
+                }
+            }
+        }
+    }
+}
+
+int do_kill(pid_t pid){
+    // the killed pcb is current_running
+    // step 1. if it hold locks, free all lock
+    kill_release_lock(pid);
+    // step 2. if it has pcb blocked on own wait_list
+    kill_release_pcb_on_waitpid(pid);
+    // step 3. if it is blocked on other pcb
+    kill_release_self_from_all_pcb(pid);
+    // step 4. if it is blocked on semaphore
+    kill_release_from_semaphore(pid);
+    // step 5. if it is blocked on barrier
+    kill_release_from_barrier(pid);
+    // step 6. remove it from ready_queue or sleep_queue
+    if(FindNode_InQueue(&ready_queue , &(pcb[pid].list)) == 1){
+        DequeNode_AccordList(&ready_queue, &(pcb[pid].list));
+    }
+    if(FindNode_InQueue(&sleep_queue, &(pcb[pid].list)) == 1){
+        DequeNode_AccordList(&sleep_queue, &(pcb[pid].list));
+    }
+
+    pcb[pid].status = TASK_EXITED;
+
+    return 1;
+}
+
 
 void do_exit(void){
     // first check, do I have un-released locks?
     current_running -> status = TASK_EXITED;
-    for(int i = 0; i < LOCK_NUM; i++){
-        if(mlocks[i].lock_owner == current_running){
-            do_mutex_lock_release(i);
-        }
-    }
+    kill_release_lock(current_running -> pid);
     // second, free all locked pcb
-    list_head *target_head = &(current_running -> wait_list);
-    if(target_head -> next == target_head){
-        return;
-    }
-    else{
-        while(target_head -> next != target_head){
-            list_head *deque_node = Deque_FromHead(&(current_running -> wait_list));
-            do_unblock(deque_node);
-        }
-    }
+    kill_release_pcb_on_waitpid(current_running -> pid);
     printl("Before final exit:\n");
     PrintPcb_FromList(&(current_running -> wait_list));
 
