@@ -99,9 +99,14 @@ void do_condition_destroy(int cond_idx);
 typedef struct semaphore
 {
     // TODO [P3-TASK2 semaphore]
+    int sem_num;                // total_sem_number
+    int sem_key;                // sign of allocation or not  
+    list_head sema_wait_list;   // wait_queue
 } semaphore_t;
 
 #define SEMAPHORE_NUM 16
+
+semaphore_t global_semaphore[SEMAPHORE_NUM];    // newly added!
 
 void init_semaphores(void);
 int do_semaphore_init(int key, int init);

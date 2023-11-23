@@ -151,3 +151,13 @@ void do_barrier_destroy(int bar_idx){
         do_unblock(deque_node);
     }
 }
+
+//****************semaphore part **************************
+void init_semaphores(void){
+    for(int i = 0; i < SEMAPHORE_NUM; i++){
+        global_semaphore[i].sem_num = 0;
+        global_semaphore[i].sem_key = 0;
+        Initialize_QueueNode(&(global_semaphore[i].sema_wait_list));
+    }
+}
+

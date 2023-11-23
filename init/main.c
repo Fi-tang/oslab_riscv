@@ -186,7 +186,7 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
         count_mem_usage += total_number;
     }
 
-    printl("****************[Third] argv = &argv[0], allocate &argv ******************\n");
+    printl("****************[Third] argv = &argv[0] ***********************\n");
 
     // write argc and argv to a0 and a1 register!
     pcb -> pcb_user_regs_context.regs[10] = argc;
@@ -310,6 +310,10 @@ int main(void)
     // Init barrier (newly added! o.0)
     init_barriers();
     printk("> [INIT] Barrier initialization succeeded.\n");
+
+    // Init semaphore (newly added! o.0)
+    init_semaphores();
+    printk("> [INIT] Semaphores initialization succeeded. \n");
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
