@@ -153,3 +153,116 @@ void do_barrier_destroy(int bar_idx){
 }
 
 //****************semaphore part **************************
+void init_semaphores(void){
+    for(int i = 0; i < SEMAPHORE_NUM; i++){
+        global_semaphore_resource[i].sem_number = 0;
+        global_semaphore_resource[i].sem_key = 0;
+        global_semaphore_resource[i].occupied_or_not = 0;   // unoccupied!
+        Initialize_QueueNode(&(global_semaphore_resource[i].sema_wait_list));
+    }
+}
+
+int do_semaphore_init(int key, int init){
+    for(int i = 0; i < SEMAPHORE_NUM; i++){
+        if(global_semaphore_resource[i].occupied_or_not == 0){
+            global_semaphore_resource[i].sem_number = init;
+            global_semaphore_resource[i].sem_key = key;
+            global_semaphore_resource[i].occupied_or_not = 1;
+            return i;
+        }
+    }
+    return -1;
+}
+
+// consumer --
+void do_semaphore_down(int sema_idx){
+    global_semaphore_resource[sema_idx].sem_number -= 1;
+    if(global_semaphore_resource[sema_idx].sem_number < 0){
+        do_block(&(current_running -> list), &(global_semaphore_resource[sema_idx].sema_wait_list));
+    }
+}
+
+// producer ++
+void do_semaphore_up(int sema_idx){
+    global_semaphore_resource[sema_idx].sem_number += 1;
+    if(global_semaphore_resource[sema_idx].sem_number <= 0){
+        list_head *deque_node = Deque_FromHead(&(global_semaphore_resource[sema_idx].sema_wait_list));
+        if(deque_node != NULL){
+            do_unblock(deque_node);
+        }
+    }
+}
+
+void do_semaphore_destroy(int sema_idx){
+    global_semaphore_resource[sema_idx].sem_number = 0;
+    global_semaphore_resource[sema_idx].sem_key = 0;
+    global_semaphore_resource[sema_idx].occupied_or_not = 0;
+    list_head *target_head = &(global_semaphore_resource[sema_idx].sema_wait_list);
+    while(target_head -> next != target_head){
+        list_head *deque_node = Deque_FromHead(&(global_semaphore_resource[sema_idx].sema_wait_list));
+        do_unblock(deque_node);
+    }
+}
+
+//*********************** BoundedBuffer part *****************************
+void init_BoundedBuffer(void){
+    for(int i = 0; i < BOUNDEDBUFFER_NUM; i++){
+        global_bounded_buffer[i].count = 0;
+        global_bounded_buffer[i].mutex_sem_idx = -1;
+        global_bounded_buffer[i].fullBuffer_sem_idx = -1;
+        global_bounded_buffer[i].emptyBuffer_sem_idx = -1;
+    }
+}
+
+int do_BoundedBuffer_init(int key, int init){
+    for(int i = 0; i < BOUNDEDBUFFER_NUM; i++){
+        if(global_bounded_buffer[i].mutex_sem_idx == -1 &&  global_bounded_buffer[i].fullBuffer_sem_idx == -1 && global_bounded_buffer[i].emptyBuffer_sem_idx == -1){
+            global_bounded_buffer[i].mutex_sem_idx = do_semaphore_init(key, 1);
+            global_bounded_buffer[i].BoundedBuffer_mutex = global_semaphore_resource[global_bounded_buffer[i].mutex_sem_idx];
+            global_bounded_buffer[i].fullBuffer_sem_idx = do_semaphore_init(key, 0);
+            global_bounded_buffer[i].BoundedBuffer_fullBuffers = global_semaphore_resource[global_bounded_buffer[i].fullBuffer_sem_idx];
+            global_bounded_buffer[i].emptyBuffer_sem_idx = do_semaphore_init(key, init);
+            global_bounded_buffer[i].BoundedBuffer_emptyBuffers = global_semaphore_resource[global_bounded_buffer[i].emptyBuffer_sem_idx];
+            return i;
+        }
+    }
+    return -1;
+}
+
+// producer ++
+void do_BoundedBuffer_up(int boundedbuffer_idx){
+    // emptyBuffer -> down
+    do_semaphore_down(global_bounded_buffer[boundedbuffer_idx].emptyBuffer_sem_idx);
+    // lock -> down
+    do_semaphore_down(global_bounded_buffer[boundedbuffer_idx].mutex_sem_idx);
+    // add an element 
+    global_bounded_buffer[boundedbuffer_idx].count++;
+    // lock -> up
+    do_semaphore_up(global_bounded_buffer[boundedbuffer_idx].mutex_sem_idx);
+    // fullBuffer -> up
+    do_semaphore_up(global_bounded_buffer[boundedbuffer_idx].fullBuffer_sem_idx);
+}
+
+// consumer --
+void do_BoundedBuffer_down(int boundedbuffer_idx){
+    // fullBuffer -> down
+    do_semaphore_down(global_bounded_buffer[boundedbuffer_idx].fullBuffer_sem_idx);
+    // lock -> down
+    do_semaphore_down(global_bounded_buffer[boundedbuffer_idx].mutex_sem_idx);
+    // remove an element
+    global_bounded_buffer[boundedbuffer_idx].count--;
+    // lock -> up
+    do_semaphore_up(global_bounded_buffer[boundedbuffer_idx].mutex_sem_idx);
+    // emptyBuffer -> up
+    do_semaphore_up(global_bounded_buffer[boundedbuffer_idx].emptyBuffer_sem_idx);
+}
+
+void do_BoundedBuffer_destroy(int boundedbuffer_idx){
+    do_semaphore_destroy(global_bounded_buffer[boundedbuffer_idx].mutex_sem_idx);
+    do_semaphore_destroy(global_bounded_buffer[boundedbuffer_idx].fullBuffer_sem_idx);
+    do_semaphore_destroy(global_bounded_buffer[boundedbuffer_idx].emptyBuffer_sem_idx);
+    global_bounded_buffer[boundedbuffer_idx].count = 0;
+    global_bounded_buffer[boundedbuffer_idx].mutex_sem_idx = -1;
+    global_bounded_buffer[boundedbuffer_idx].fullBuffer_sem_idx = -1;
+    global_bounded_buffer[boundedbuffer_idx].emptyBuffer_sem_idx = -1;
+}
