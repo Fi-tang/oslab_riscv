@@ -115,29 +115,6 @@ void do_semaphore_up(int sema_idx);
 void do_semaphore_down(int sema_idx);
 void do_semaphore_destroy(int sema_idx);
 
-/**
-newly added! 
-for implement producer-consumer on semaphore 
-*/
-typedef struct BoundedBuffer{
-    int count;
-    semaphore_t BoundedBuffer_mutex;        // new semaphore(1)
-    semaphore_t BoundedBuffer_fullBuffers;  // hinder consumer, new semaphore(0)
-    semaphore_t BoundedBuffer_emptyBuffers; // allow producer, new semaphore(n)
-    int mutex_sem_idx;
-    int fullBuffer_sem_idx;
-    int emptyBuffer_sem_idx;
-} BoundedBuffer_t;
-
-#define BOUNDEDBUFFER_NUM 16
-
-BoundedBuffer_t global_bounded_buffer[BOUNDEDBUFFER_NUM];   // bounded_buffer_base
-
-void init_BoundedBuffer(void);
-int do_BoundedBuffer_init(int key, int init);
-void do_BoundedBuffer_up(int boundedbuffer_idx);
-void do_BoundedBuffer_down(int boundedbuffer_idx);
-void do_BoundedBuffer_destroy(int boundedbuffer_idx);
 
 #define MAX_MBOX_LENGTH (64)
 

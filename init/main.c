@@ -247,10 +247,10 @@ static void init_syscall(void)
     syscall[SYSCALL_BARR_DESTROY]   = (long (*)())do_barrier_destroy;
 
     // P3-part2-semaphore-producer-consumer
-    syscall[SYSCALL_BOUNDEDBUFFER_INIT]     = (long (*)())do_BoundedBuffer_init;
-    syscall[SYSCALL_BOUNDEDBUFFER_UP]       = (long (*)())do_BoundedBuffer_up;
-    syscall[SYSCALL_BOUNDEDBUFFER_DOWN]     = (long (*)())do_BoundedBuffer_down;
-    syscall[SYSCALL_BOUNDEDBUFFER_DESTROY]  = (long (*)())do_BoundedBuffer_destroy;
+    syscall[SYSCALL_SEMA_INIT]     = (long (*)())do_semaphore_init;
+    syscall[SYSCALL_SEMA_UP]       = (long (*)())do_semaphore_up;
+    syscall[SYSCALL_SEMA_DOWN]     = (long (*)())do_semaphore_down;
+    syscall[SYSCALL_SEMA_DESTROY]  = (long (*)())do_semaphore_destroy;
 }
 /************************************************************/
 static void init_time(void){
@@ -301,10 +301,6 @@ int main(void)
     // Init semaphore (newly added! o.0)
     init_semaphores();
     printk("> [INIT] Semaphores initialization succeeded.\n");
-
-    // Init semaphore_related boundedbuffer (newly added! o.0)
-    init_BoundedBuffer();
-    printk("> [INIT] BoundedBuffer initialization succeeded. \n");
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
