@@ -191,21 +191,6 @@ void kill_release_from_lock_queue(pid_t pid){
     }
 }
 
-
-void kill_release_from_semaphore(pid_t pid){
-    for(int i = 0; i < SEMAPHORE_NUM; i++){
-        if(global_semaphore[i].sem_key != 0){
-            list_head *target_head = &(global_semaphore[i].sema_wait_list);
-            if(target_head -> next != target_head){
-                if(FindNode_InQueue(&(global_semaphore[i].sema_wait_list), &(pcb[pid].list)) == 1){
-                    DequeNode_AccordList(&(global_semaphore[i].sema_wait_list), &(pcb[pid].list));
-                    // assume only be blocked at one semaphore
-                }
-            }
-        }
-    }
-}
-
 void kill_release_from_barrier(pid_t pid){
     for(int i = 0; i < BARRIER_NUM; i++){
         if(global_barrier[i].barrier_key != 0){
@@ -232,7 +217,7 @@ int do_kill(pid_t pid){
     // step 3. if it is blocked on other pcb
     kill_release_self_from_all_pcb(pid);
     // step 4. if it is blocked on semaphore
-    kill_release_from_semaphore(pid);
+
     // step 5. if it is blocked on barrier
     kill_release_from_barrier(pid);
     // step 6. remove it from ready_queue or sleep_queue
