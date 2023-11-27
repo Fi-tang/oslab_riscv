@@ -85,9 +85,14 @@ void do_barrier_destroy(int bar_idx);
 typedef struct condition
 {
     // TODO [P3-TASK2 condition]
+    int numWaiting;         // num of processes wait on this condition
+    list_head condition_wait_list;
+    int condition_key;      // -1 means unoccpuied
 } condition_t;
 
 #define CONDITION_NUM 16
+
+condition_t global_condition[CONDITION_NUM];
 
 void init_conditions(void);
 int do_condition_init(int key);

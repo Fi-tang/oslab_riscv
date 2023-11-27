@@ -203,3 +203,75 @@ void do_semaphore_destroy(int sema_idx){
         do_unblock(deque_node);
     }
 }
+
+//*************************************Condition part *************************************************
+void init_conditions(void){
+    for(int i = 0; i < CONDITION_NUM; i++){
+        global_condition[i].numWaiting = 0;
+        Initialize_QueueNode(&(global_condition[i].condition_wait_list));
+        global_condition[i].condition_key = -1;
+    }
+}
+
+int do_condition_init(int key){
+    for(int i = 0; i < CONDITION_NUM; i++){
+        if(global_condition[i].condition_key == -1){
+            global_condition[i].numWaiting = 0;
+            global_condition[i].condition_key = key;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void do_condition_wait(int cond_idx, int mutex_idx){
+    global_condition[cond_idx].numWaiting++;    // another process to sleep
+    // rewrite do_block start
+    list_node_t *pcb_node = &(current_running -> list);
+    if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
+        DequeNode_AccordList(&ready_queue, pcb_node);
+    }
+    pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
+    get_block_pcb -> status = TASK_BLOCKED;
+    Enque_FromTail( &(global_condition[cond_idx].condition_wait_list), pcb_node);
+    printl("[Do_condition_wait]:condition_wait_list\n");
+    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
+    // rewrite do_block end
+    do_mutex_lock_release(mutex_idx);
+    printl("[Do_condition_wait]: locklist\n");
+    PrintPcb_FromList(&(mlocks[mutex_idx].block_queue));
+    do_scheduler();
+    do_mutex_lock_acquire(mutex_idx);
+}
+
+void do_condition_signal(int cond_idx){
+    if(global_condition[cond_idx].numWaiting > 0){
+       list_head *deque_node = Deque_FromHead(&(global_condition[cond_idx].condition_wait_list));
+       if(deque_node != NULL){
+            do_unblock(deque_node);
+       }
+       global_condition[cond_idx].numWaiting--;
+    }
+    printl("[Do_condition_signal]:condition_wait_list\n");
+    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
+}
+
+void do_condition_broadcast(int cond_idx){
+    while(global_condition[cond_idx].numWaiting > 0){
+        list_head *deque_node = Deque_FromHead(&(global_condition[cond_idx].condition_wait_list));
+        if(deque_node != NULL){
+            do_unblock(deque_node);
+        }
+        global_condition[cond_idx].numWaiting--;
+    }
+    printl("[Do_condition_broadcast]:condition_wait_list\n");
+    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
+}
+
+void do_condition_destroy(int cond_idx){
+    do_condition_broadcast(cond_idx);
+    global_condition[cond_idx].numWaiting = 0;
+    global_condition[cond_idx].condition_key = -1;
+    printl("[Do_condition_destroy]:condition_wait_list\n");
+    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
+}
