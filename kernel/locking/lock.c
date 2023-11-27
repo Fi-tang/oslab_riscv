@@ -234,12 +234,8 @@ void do_condition_wait(int cond_idx, int mutex_idx){
     pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
     get_block_pcb -> status = TASK_BLOCKED;
     Enque_FromTail( &(global_condition[cond_idx].condition_wait_list), pcb_node);
-    printl("[Do_condition_wait]:condition_wait_list\n");
-    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
     // rewrite do_block end
     do_mutex_lock_release(mutex_idx);
-    printl("[Do_condition_wait]: locklist\n");
-    PrintPcb_FromList(&(mlocks[mutex_idx].block_queue));
     do_scheduler();
     do_mutex_lock_acquire(mutex_idx);
 }
@@ -252,8 +248,6 @@ void do_condition_signal(int cond_idx){
        }
        global_condition[cond_idx].numWaiting--;
     }
-    printl("[Do_condition_signal]:condition_wait_list\n");
-    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
 }
 
 void do_condition_broadcast(int cond_idx){
@@ -264,14 +258,16 @@ void do_condition_broadcast(int cond_idx){
         }
         global_condition[cond_idx].numWaiting--;
     }
-    printl("[Do_condition_broadcast]:condition_wait_list\n");
-    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
 }
 
 void do_condition_destroy(int cond_idx){
     do_condition_broadcast(cond_idx);
     global_condition[cond_idx].numWaiting = 0;
     global_condition[cond_idx].condition_key = -1;
-    printl("[Do_condition_destroy]:condition_wait_list\n");
-    PrintPcb_FromList(&(global_condition[cond_idx].condition_wait_list));
+    printl("current_ready_queue:\n");
+    PrintPcb_FromList(&ready_queue);
+    printl("lock_queue:\n");
+    PrintPcb_FromList(&(mlocks[0].block_queue));
+    printl("condition_destroy:\n");
+    PrintPcb_FromList(&(global_condition[0].condition_wait_list));
 }

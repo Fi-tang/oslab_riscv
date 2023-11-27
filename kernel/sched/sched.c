@@ -222,6 +222,19 @@ void kill_release_from_semaphore(pid_t pid){
     }
 }
 
+void kill_release_from_condition(pid_t pid){
+    for(int i = 0; i < CONDITION_NUM; i++){
+        if(global_condition[i].condition_key != -1){
+            list_head *target_head = &(global_condition[i].condition_wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue(&(global_condition[i].condition_wait_list), &(pcb[i].list)) == 1){
+                    DequeNode_AccordList(&(global_condition[i].condition_wait_list), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
+
 int do_kill(pid_t pid){
     // the killed pcb is current_running
     // step 1. if it hold locks, free all lock
@@ -234,15 +247,19 @@ int do_kill(pid_t pid){
     kill_release_from_semaphore(pid);
     // step 5. if it is blocked on barrier
     kill_release_from_barrier(pid);
-    // step 6. remove it from ready_queue or sleep_queue
+    // step 6. remove it from condition
+    kill_release_from_condition(pid);
+    // step 7. remove it from ready_queue or sleep_queue
     if(FindNode_InQueue(&ready_queue , &(pcb[pid].list)) == 1){
         DequeNode_AccordList(&ready_queue, &(pcb[pid].list));
     }
     if(FindNode_InQueue(&sleep_queue, &(pcb[pid].list)) == 1){
         DequeNode_AccordList(&sleep_queue, &(pcb[pid].list));
     }
-    // step 7. remove it from other lock's wait_queue
+    // step 8. remove it from other lock's wait_queue
     kill_release_from_lock_queue(pid);
+   
+
     
     pcb[pid].status = TASK_EXITED;
 
@@ -251,6 +268,7 @@ int do_kill(pid_t pid){
 
 void do_exit(void){
     // first check, do I have un-released locks?
+    printl("[Exit]: %d - %s exited!\n", current_running -> pid, current_running -> name);
     current_running -> status = TASK_EXITED;
     kill_release_lock(current_running -> pid);
     // second, free all locked pcb
