@@ -320,14 +320,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
     int start_length = global_mailbox[mbox_idx].valid_count;
     if(start_length + msg_length > MAX_MBOX_LENGTH){
         // block_part
-        list_head *pcb_node =  &(current_running -> list);
-        if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
-            DequeNode_AccordList(&ready_queue, pcb_node);
-        }
-        pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
-        get_block_pcb -> status = TASK_BLOCKED;
-        list_head *queue = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
-        Enque_FromTail(queue, pcb_node);
+        do_block( &(current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
         // block_part
         return 0;
     }
@@ -351,14 +344,7 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     int total_number = global_mailbox[mbox_idx].valid_count;
     if(total_number < msg_length){  // need to block
     // block_part
-        list_head *pcb_node =  &(current_running -> list);
-        if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
-            DequeNode_AccordList(&ready_queue, pcb_node);
-        }
-        pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
-        get_block_pcb -> status = TASK_BLOCKED;
-        list_head *queue = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
-        Enque_FromTail(queue, pcb_node);
+        do_block(&(current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
     // block_part
         return 0;
     }
