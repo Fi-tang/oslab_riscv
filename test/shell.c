@@ -47,7 +47,6 @@ int command_spaceNum(char command_buffer[1000]){
         }
     }
     // step-1: get spaceNum
-    printf("spaceNum = %d\n", spaceNum);
     return spaceNum;
 }
 
@@ -73,11 +72,6 @@ void split_command_to_multiple_line(char command_buffer[1000], int spaceNum, cha
             }
         }
         command_split[m][split_count] = '\0';
-        printf("\n");
-    }
-    printf("[After parsing]: \n");
-    for(int m = 0; m < spaceNum + 1; m++){  
-        printf("%d %s\n",m, command_split[m]);
     }
 }
 
@@ -115,7 +109,6 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
     if(strcmp(command_split[0], "exec") == 0){
         char taskname[100];
         strcpy(taskname, command_split[1]);
-        printf("starting task %s\n", taskname);
 
         char *input_argv[spaceNum];
         for(int i = 0; i < spaceNum; i++){
@@ -178,7 +171,6 @@ int main(void)
             }
         }
         command_buffer[command_real_index] = '\0';
-        printf("COMMAND_LINE: %s\n", command_buffer);
         //=============================================== Input finished ====================================================
         // TODO [P3-task1]: parse input
         // note: backspace maybe 8('\b') or 127(delete)

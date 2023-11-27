@@ -258,9 +258,7 @@ int do_kill(pid_t pid){
     }
     // step 8. remove it from other lock's wait_queue
     kill_release_from_lock_queue(pid);
-   
 
-    
     pcb[pid].status = TASK_EXITED;
 
     return 1;

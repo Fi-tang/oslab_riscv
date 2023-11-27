@@ -264,10 +264,4 @@ void do_condition_destroy(int cond_idx){
     do_condition_broadcast(cond_idx);
     global_condition[cond_idx].numWaiting = 0;
     global_condition[cond_idx].condition_key = -1;
-    printl("current_ready_queue:\n");
-    PrintPcb_FromList(&ready_queue);
-    printl("lock_queue:\n");
-    PrintPcb_FromList(&(mlocks[0].block_queue));
-    printl("condition_destroy:\n");
-    PrintPcb_FromList(&(global_condition[0].condition_wait_list));
 }
