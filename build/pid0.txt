@@ -685,32 +685,52 @@ Disassembly of section .text:
 
 00000000520305a2 <sys_mbox_send>:
     520305a2:	1101                	addi	sp,sp,-32
-    520305a4:	ec22                	sd	s0,24(sp)
-    520305a6:	1000                	addi	s0,sp,32
-    520305a8:	87aa                	mv	a5,a0
-    520305aa:	feb43023          	sd	a1,-32(s0)
-    520305ae:	8732                	mv	a4,a2
-    520305b0:	fef42623          	sw	a5,-20(s0)
-    520305b4:	87ba                	mv	a5,a4
-    520305b6:	fef42423          	sw	a5,-24(s0)
-    520305ba:	0001                	nop
-    520305bc:	853e                	mv	a0,a5
-    520305be:	6462                	ld	s0,24(sp)
-    520305c0:	6105                	addi	sp,sp,32
-    520305c2:	8082                	ret
+    520305a4:	ec06                	sd	ra,24(sp)
+    520305a6:	e822                	sd	s0,16(sp)
+    520305a8:	1000                	addi	s0,sp,32
+    520305aa:	87aa                	mv	a5,a0
+    520305ac:	feb43023          	sd	a1,-32(s0)
+    520305b0:	8732                	mv	a4,a2
+    520305b2:	fef42623          	sw	a5,-20(s0)
+    520305b6:	87ba                	mv	a5,a4
+    520305b8:	fef42423          	sw	a5,-24(s0)
+    520305bc:	fec42583          	lw	a1,-20(s0)
+    520305c0:	fe043603          	ld	a2,-32(s0)
+    520305c4:	fe842683          	lw	a3,-24(s0)
+    520305c8:	4781                	li	a5,0
+    520305ca:	4701                	li	a4,0
+    520305cc:	03600513          	li	a0,54
+    520305d0:	a47ff0ef          	jal	ra,52030016 <invoke_syscall>
+    520305d4:	87aa                	mv	a5,a0
+    520305d6:	2781                	sext.w	a5,a5
+    520305d8:	853e                	mv	a0,a5
+    520305da:	60e2                	ld	ra,24(sp)
+    520305dc:	6442                	ld	s0,16(sp)
+    520305de:	6105                	addi	sp,sp,32
+    520305e0:	8082                	ret
 
-00000000520305c4 <sys_mbox_recv>:
-    520305c4:	1101                	addi	sp,sp,-32
-    520305c6:	ec22                	sd	s0,24(sp)
-    520305c8:	1000                	addi	s0,sp,32
-    520305ca:	87aa                	mv	a5,a0
-    520305cc:	feb43023          	sd	a1,-32(s0)
-    520305d0:	8732                	mv	a4,a2
-    520305d2:	fef42623          	sw	a5,-20(s0)
-    520305d6:	87ba                	mv	a5,a4
-    520305d8:	fef42423          	sw	a5,-24(s0)
-    520305dc:	0001                	nop
-    520305de:	853e                	mv	a0,a5
-    520305e0:	6462                	ld	s0,24(sp)
-    520305e2:	6105                	addi	sp,sp,32
-    520305e4:	8082                	ret
+00000000520305e2 <sys_mbox_recv>:
+    520305e2:	1101                	addi	sp,sp,-32
+    520305e4:	ec06                	sd	ra,24(sp)
+    520305e6:	e822                	sd	s0,16(sp)
+    520305e8:	1000                	addi	s0,sp,32
+    520305ea:	87aa                	mv	a5,a0
+    520305ec:	feb43023          	sd	a1,-32(s0)
+    520305f0:	8732                	mv	a4,a2
+    520305f2:	fef42623          	sw	a5,-20(s0)
+    520305f6:	87ba                	mv	a5,a4
+    520305f8:	fef42423          	sw	a5,-24(s0)
+    520305fc:	fec42583          	lw	a1,-20(s0)
+    52030600:	fe043603          	ld	a2,-32(s0)
+    52030604:	fe842683          	lw	a3,-24(s0)
+    52030608:	4781                	li	a5,0
+    5203060a:	4701                	li	a4,0
+    5203060c:	03700513          	li	a0,55
+    52030610:	a07ff0ef          	jal	ra,52030016 <invoke_syscall>
+    52030614:	87aa                	mv	a5,a0
+    52030616:	2781                	sext.w	a5,a5
+    52030618:	853e                	mv	a0,a5
+    5203061a:	60e2                	ld	ra,24(sp)
+    5203061c:	6442                	ld	s0,16(sp)
+    5203061e:	6105                	addi	sp,sp,32
+    52030620:	8082                	ret

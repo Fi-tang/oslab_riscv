@@ -273,7 +273,8 @@ void init_mbox(){
         global_mailbox[i].mailbox_Buffer[0] = '\0';
         global_mailbox[i].valid_count = 0;
         global_mailbox[i].visited = 0;
-        Initialize_QueueNode(&(global_mailbox[i].mailbox_wait_list));
+        Initialize_QueueNode(&(global_mailbox[i].mailbox_send_wait_list));
+        Initialize_QueueNode(&(global_mailbox[i].mailbox_recv_wait_list));
     }
 }
 
@@ -303,9 +304,83 @@ void do_mbox_close(int mbox_idx){
     global_mailbox[mbox_idx].mailbox_Buffer[0] = '\0';
     global_mailbox[mbox_idx].valid_count = 0;
     global_mailbox[mbox_idx].visited = 0;
-    list_head *target_head = &(global_mailbox[mbox_idx].mailbox_wait_list);
-    while(target_head -> next != target_head){
-        list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_wait_list));
-        do_unblock(deque_node);
+    list_head *target_send_head = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
+    while(target_send_head -> next != target_send_head){
+        list_head *deque_send_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_send_wait_list));
+        do_unblock(deque_send_node);
+    }
+    list_head *target_recv_head = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
+    while(target_recv_head -> next != target_recv_head){
+        list_head *deque_recv_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+        do_unblock(deque_recv_node);
+    }
+}
+
+int do_mbox_send(int mbox_idx, void * msg, int msg_length){
+    int start_length = global_mailbox[mbox_idx].valid_count;
+    if(start_length + msg_length > MAX_MBOX_LENGTH){
+        // block_part
+        list_head *pcb_node =  &(current_running -> list);
+        if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
+            DequeNode_AccordList(&ready_queue, pcb_node);
+        }
+        pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
+        get_block_pcb -> status = TASK_BLOCKED;
+        list_head *queue = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
+        Enque_FromTail(queue, pcb_node);
+        // block_part
+        return 0;
+    }
+    else{
+        char *msg_ptr = (char *)msg;
+        for(int i = 0; i < msg_length; i++){
+            global_mailbox[mbox_idx].mailbox_Buffer[start_length + i] = msg_ptr[i];
+        }
+        global_mailbox[mbox_idx].valid_count += msg_length;
+        // Wakeup --- receive_queue
+        list_head *target_head = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
+        while(target_head -> next != target_head){
+            list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+            do_unblock(deque_node);
+        }
+        return msg_length;
+    }
+}
+
+int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
+    int total_number = global_mailbox[mbox_idx].valid_count;
+    if(total_number < msg_length){  // need to block
+    // block_part
+        list_head *pcb_node =  &(current_running -> list);
+        if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
+            DequeNode_AccordList(&ready_queue, pcb_node);
+        }
+        pcb_t *get_block_pcb = GetPcb_FromList(pcb_node);
+        get_block_pcb -> status = TASK_BLOCKED;
+        list_head *queue = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
+        Enque_FromTail(queue, pcb_node);
+    // block_part
+        return 0;
+    }
+    else{
+        char *msg_ptr = (char *)msg;
+        for(int i = 0; i < msg_length; i++){
+            msg_ptr[i] = global_mailbox[mbox_idx].mailbox_Buffer[i];
+        }
+        // copy the rest to the front
+        // [ msg_ptr ][valid_number]
+        // move proceduler
+        int count = 0;
+        for(int k = msg_length; k < total_number; k++){
+            global_mailbox[mbox_idx].mailbox_Buffer[count++] = global_mailbox[mbox_idx].mailbox_Buffer[k];
+        }
+        global_mailbox[mbox_idx].valid_count -= msg_length;
+        // Wakeup ---- SendQueue
+        list_head *target_head = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
+        while(target_head -> next != target_head){
+            list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_send_wait_list));
+            do_unblock(deque_node);
+        }
+        return msg_length;
     }
 }

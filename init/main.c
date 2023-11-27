@@ -262,6 +262,8 @@ static void init_syscall(void)
     // P3-part2-mailbox
     syscall[SYSCALL_MBOX_OPEN]     = (long (*)())do_mbox_open;
     syscall[SYSCALL_MBOX_CLOSE]    = (long (*)())do_mbox_close;
+    syscall[SYSCALL_MBOX_SEND]     = (long (*)())do_mbox_send;
+    syscall[SYSCALL_MBOX_RECV]     = (long (*)())do_mbox_recv;
 }
 /************************************************************/
 static void init_time(void){

@@ -132,7 +132,8 @@ typedef struct mailbox
     char mailbox_Buffer[MAX_MBOX_LENGTH];       // context that mailbox store
     int valid_count;                            // valid character number
     int visited;                                // visit times
-    list_head mailbox_wait_list;                // mailbox_waitlist
+    list_head mailbox_send_wait_list;           // full, send_block
+    list_head mailbox_recv_wait_list;           // empty, recv_block
 } mailbox_t;
 
 #define MBOX_NUM 16
