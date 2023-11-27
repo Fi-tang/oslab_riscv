@@ -265,3 +265,47 @@ void do_condition_destroy(int cond_idx){
     global_condition[cond_idx].numWaiting = 0;
     global_condition[cond_idx].condition_key = -1;
 }
+
+//*****************************mailbox part************************************************************
+void init_mbox(){
+    for(int i = 0; i < MBOX_NUM; i++){
+        global_mailbox[i].mailbox_name[0] = '\0';       // Note!: this kind of initialization, strcmp(global_mailbox[i].mailbox_name, "") == 0
+        global_mailbox[i].mailbox_Buffer[0] = '\0';
+        global_mailbox[i].valid_count = 0;
+        global_mailbox[i].visited = 0;
+        Initialize_QueueNode(&(global_mailbox[i].mailbox_wait_list));
+    }
+}
+
+// return a mailbox_name according to name
+int do_mbox_open(char *name){
+    for(int i = 0; i < MBOX_NUM; i++){
+        if(strcmp(global_mailbox[i].mailbox_name, name) == 0){
+            global_mailbox[i].visited++;
+            return i;
+        }
+    }
+
+    for(int i = 0; i < MBOX_NUM; i++){
+        if(global_mailbox[i].mailbox_name[0] == '\0'){
+            strcpy(global_mailbox[i].mailbox_name, name);
+            global_mailbox[i].mailbox_Buffer[0] = '\0';
+            global_mailbox[i].valid_count = 0;
+            global_mailbox[i].visited = 1;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void do_mbox_close(int mbox_idx){
+    global_mailbox[mbox_idx].mailbox_name[0] = '\0';
+    global_mailbox[mbox_idx].mailbox_Buffer[0] = '\0';
+    global_mailbox[mbox_idx].valid_count = 0;
+    global_mailbox[mbox_idx].visited = 0;
+    list_head *target_head = &(global_mailbox[mbox_idx].mailbox_wait_list);
+    while(target_head -> next != target_head){
+        list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_wait_list));
+        do_unblock(deque_node);
+    }
+}

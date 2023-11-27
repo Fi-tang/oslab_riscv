@@ -215,6 +215,7 @@ void sys_semaphore_destroy(int sema_idx)
 int sys_mbox_open(char * name)
 {
     /* TODO: [p3-task2] call invoke_syscall to implement sys_mbox_open */
+    return invoke_syscall(SYSCALL_MBOX_OPEN, (long)name, 0, 0, 0, 0);
 }
 
 void sys_mbox_close(int mbox_id)

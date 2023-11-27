@@ -123,12 +123,22 @@ void do_semaphore_destroy(int sema_idx);
 
 #define MAX_MBOX_LENGTH (64)
 
+#define MAILBOX_NAME_LENGTH (16)
+
 typedef struct mailbox
 {
     // TODO [P3-TASK2 mailbox]
+    char mailbox_name[MAILBOX_NAME_LENGTH];      // name
+    char mailbox_Buffer[MAX_MBOX_LENGTH];       // context that mailbox store
+    int valid_count;                            // valid character number
+    int visited;                                // visit times
+    list_head mailbox_wait_list;                // mailbox_waitlist
 } mailbox_t;
 
 #define MBOX_NUM 16
+
+mailbox_t global_mailbox[MBOX_NUM];
+
 void init_mbox();
 int do_mbox_open(char *name);
 void do_mbox_close(int mbox_idx);

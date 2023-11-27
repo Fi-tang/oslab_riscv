@@ -258,6 +258,10 @@ static void init_syscall(void)
     syscall[SYSCALL_COND_SIGNAL]  = (long (*)())do_condition_signal;
     syscall[SYSCALL_COND_BROADCAST] = (long (*)())do_condition_broadcast;
     syscall[SYSCALL_COND_DESTROY]  = (long (*)())do_condition_destroy;
+
+    // P3-part2-mailbox
+    syscall[SYSCALL_MBOX_OPEN]     = (long (*)())do_mbox_open;
+    syscall[SYSCALL_MBOX_CLOSE]    = (long (*)())do_mbox_close;
 }
 /************************************************************/
 static void init_time(void){
@@ -312,6 +316,10 @@ int main(void)
     // Init condition (newly added! o.0)
     init_conditions();
     printk("> [INIT] Condition initialization succeeded.\n");
+
+    // Init mailbox (newly added! o.0)
+    init_mbox();
+    printk("> [INIT] Mailbox initialization succeeded.\n");
 
     // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
     // NOTE: The function of sstatus.sie is different from sie's
