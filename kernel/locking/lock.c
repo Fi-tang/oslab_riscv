@@ -322,7 +322,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
         // block_part
         do_block( &(current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
         // block_part
-        return 0;
+        return 1;
     }
     else{
         char *msg_ptr = (char *)msg;
@@ -336,7 +336,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
             list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_recv_wait_list));
             do_unblock(deque_node);
         }
-        return msg_length;
+        return 0;
     }
 }
 
@@ -346,7 +346,7 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     // block_part
         do_block(&(current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
     // block_part
-        return 0;
+        return 1;
     }
     else{
         char *msg_ptr = (char *)msg;
@@ -367,6 +367,6 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
             list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_send_wait_list));
             do_unblock(deque_node);
         }
-        return msg_length;
+        return 0;
     }
 }
