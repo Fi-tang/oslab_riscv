@@ -318,7 +318,7 @@ void do_mbox_close(int mbox_idx){
 
 int do_mbox_send(int mbox_idx, void * msg, int msg_length){
     while(1){
-        printl("\n\n[Send]: current_running [%d]: %s\n", current_running -> pid, current_running -> name);
+        printl("\n\n[Send]: current_running [%d]: %s mailbox[%d]\n", current_running -> pid, current_running -> name, mbox_idx);
         printl("[Send]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
 
         int start_length = global_mailbox[mbox_idx].valid_count;
@@ -338,6 +338,11 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
 
             global_mailbox[mbox_idx].valid_count += msg_length;
             // Wakeup --- receive_queue
+
+            if( (&(global_mailbox[mbox_idx].mailbox_recv_wait_list )) -> next != &(global_mailbox[mbox_idx].mailbox_recv_wait_list)){
+                printl("[Send]: recv_wait_list Release before\n");
+                PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+            }
             list_head *target_head = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
             while(target_head -> next != target_head){
                 list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_recv_wait_list));
@@ -350,8 +355,6 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
             PrintPcb_FromList(&ready_queue);
             printl("[Send]: send_wait_list \n");
             PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
-            printl("[Send]: recv_wait_list \n");
-            PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
             //*************debug**************
             return blocked_times;
         }
@@ -360,7 +363,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
 
 int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     while(1){
-        printl("\n\n[Receive]: current_running [%d]: %s\n", current_running -> pid, current_running -> name);
+        printl("\n\n[Receive]: current_running [%d]: %s mailbox[%d]\n", current_running -> pid, current_running -> name, mbox_idx);
         printl("[Receive]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
 
         int total_number = global_mailbox[mbox_idx].valid_count;
@@ -389,6 +392,12 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
             }
             global_mailbox[mbox_idx].valid_count -= msg_length;
             // Wakeup ---- SendQueue
+
+            if( (&(global_mailbox[mbox_idx].mailbox_send_wait_list )) -> next != &(global_mailbox[mbox_idx].mailbox_send_wait_list)){
+                printl("[Receive]: send_wait_list Release before\n");
+                PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
+            }
+
             list_head *target_head = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
             while(target_head -> next != target_head){
                 list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_send_wait_list));
@@ -399,8 +408,6 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
             printl("[Receive]: Option-2, not-blocked!\n");
             printl("[Receive]: ready_queue \n");
             PrintPcb_FromList(&ready_queue);
-            printl("[Receive]: send_wait_list \n");
-            PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
             printl("[Receive]: recv_wait_list \n");
             PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
             //*************debug**************
