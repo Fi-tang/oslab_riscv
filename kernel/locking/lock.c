@@ -317,91 +317,94 @@ void do_mbox_close(int mbox_idx){
 }
 
 int do_mbox_send(int mbox_idx, void * msg, int msg_length){
-    printl("\n\n[Send]: current_running [%d]: %s\n", current_running -> pid, current_running -> name);
-    printl("[Send]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
+    while(1){
+        printl("\n\n[Send]: current_running [%d]: %s\n", current_running -> pid, current_running -> name);
+        printl("[Send]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
 
-    int start_length = global_mailbox[mbox_idx].valid_count;
-    if(start_length + msg_length > MAX_MBOX_LENGTH){
-        // block_part
-        printl("[Send]: Option-1, blocked!\n");
-        do_block( &(current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
-        // block_part
-        return 1;
-    }
-    else{
-        char *msg_ptr = (char *)msg;
-        for(int i = 0; i < msg_length; i++){
-            global_mailbox[mbox_idx].mailbox_Buffer[start_length + i] = msg_ptr[i];
+        int start_length = global_mailbox[mbox_idx].valid_count;
+        int blocked_times = 0;
+        if(start_length + msg_length > MAX_MBOX_LENGTH){
+            // block_part
+            printl("[Send]: Option-1, blocked!\n");
+            blocked_times++;
+            do_block( &(current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
+            // block_part
         }
+        else{
+            char *msg_ptr = (char *)msg;
+            for(int i = 0; i < msg_length; i++){
+                global_mailbox[mbox_idx].mailbox_Buffer[start_length + i] = msg_ptr[i];
+            }
 
+            global_mailbox[mbox_idx].valid_count += msg_length;
+            // Wakeup --- receive_queue
+            list_head *target_head = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
+            while(target_head -> next != target_head){
+                list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+                do_unblock(deque_node);
+            }
 
-        global_mailbox[mbox_idx].valid_count += msg_length;
-        // Wakeup --- receive_queue
-        list_head *target_head = &(global_mailbox[mbox_idx].mailbox_recv_wait_list);
-        while(target_head -> next != target_head){
-            list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_recv_wait_list));
-            do_unblock(deque_node);
+            //**************debug**************
+            printl("[Send]: Option-2, not-blocked!\n");
+            printl("[Send]: ready_queue \n");
+            PrintPcb_FromList(&ready_queue);
+            printl("[Send]: send_wait_list \n");
+            PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
+            printl("[Send]: recv_wait_list \n");
+            PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+            //*************debug**************
+            return blocked_times;
         }
-
-
-        //**************debug**************
-        printl("[Send]: Option-2, not-blocked!\n");
-        printl("[Send]: ready_queue \n");
-        PrintPcb_FromList(&ready_queue);
-        printl("[Send]: send_wait_list \n");
-        PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
-        printl("[Send]: recv_wait_list \n");
-        PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
-        //*************debug**************
-        return 0;
     }
 }
 
 int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
-    printl("\n\n[Receive]: current_running [%d]: %s\n", current_running -> pid, current_running -> name);
-    printl("[Receive]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
+    while(1){
+        printl("\n\n[Receive]: current_running [%d]: %s\n", current_running -> pid, current_running -> name);
+        printl("[Receive]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
 
+        int total_number = global_mailbox[mbox_idx].valid_count;
+        int blocked_times = 0;
+        if(total_number < msg_length){  // need to block
+        // block_part
+            printl("[Receive]: Option-1, blocked!\n");
+            blocked_times++;
+            do_block(&(current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+        // block_part
+        }
+        else{
+            char *msg_ptr = (char *)msg;
+            for(int i = 0; i < msg_length; i++){
+                msg_ptr[i] = global_mailbox[mbox_idx].mailbox_Buffer[i];
+            }
+            // copy the rest to the front
+            // [ msg_ptr ][valid_number]
+            // move proceduler
+            int count = 0;
+            for(int k = msg_length; k < total_number; k++){
+                global_mailbox[mbox_idx].mailbox_Buffer[count++] = global_mailbox[mbox_idx].mailbox_Buffer[k];
+            }
+            for(int m = count; m < total_number; m++){
+                global_mailbox[mbox_idx].mailbox_Buffer[count++] = '\0';
+            }
+            global_mailbox[mbox_idx].valid_count -= msg_length;
+            // Wakeup ---- SendQueue
+            list_head *target_head = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
+            while(target_head -> next != target_head){
+                list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_send_wait_list));
+                do_unblock(deque_node);
+            }
 
-    int total_number = global_mailbox[mbox_idx].valid_count;
-    if(total_number < msg_length){  // need to block
-    // block_part
-        printl("[Receive]: Option-1, blocked!\n");
-        do_block(&(current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
-    // block_part
-        return 1;
-    }
-    else{
-        char *msg_ptr = (char *)msg;
-        for(int i = 0; i < msg_length; i++){
-            msg_ptr[i] = global_mailbox[mbox_idx].mailbox_Buffer[i];
+            //**************debug**************
+            printl("[Receive]: Option-2, not-blocked!\n");
+            printl("[Receive]: ready_queue \n");
+            PrintPcb_FromList(&ready_queue);
+            printl("[Receive]: send_wait_list \n");
+            PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
+            printl("[Receive]: recv_wait_list \n");
+            PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+            //*************debug**************
+            return blocked_times;
         }
-        // copy the rest to the front
-        // [ msg_ptr ][valid_number]
-        // move proceduler
-        int count = 0;
-        for(int k = msg_length; k < total_number; k++){
-            global_mailbox[mbox_idx].mailbox_Buffer[count++] = global_mailbox[mbox_idx].mailbox_Buffer[k];
-        }
-        for(int m = count; m < total_number; m++){
-            global_mailbox[mbox_idx].mailbox_Buffer[count++] = '\0';
-        }
-        global_mailbox[mbox_idx].valid_count -= msg_length;
-        // Wakeup ---- SendQueue
-        list_head *target_head = &(global_mailbox[mbox_idx].mailbox_send_wait_list);
-        while(target_head -> next != target_head){
-            list_head *deque_node = Deque_FromHead(&(global_mailbox[mbox_idx].mailbox_send_wait_list));
-            do_unblock(deque_node);
-        }
-
-        //**************debug**************
-        printl("[Receive]: Option-2, not-blocked!\n");
-        printl("[Receive]: ready_queue \n");
-        PrintPcb_FromList(&ready_queue);
-        printl("[Receive]: send_wait_list \n");
-        PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
-        printl("[Receive]: recv_wait_list \n");
-        PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
-        //*************debug**************
-        return 0;
     }
 }
