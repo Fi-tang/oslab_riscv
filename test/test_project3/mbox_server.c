@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     sys_move_cursor(0, print_location);
     printf("[Server] server started");
     sys_sleep(1);
-
+    
     for (;;)
     {
         blockedCount += sys_mbox_recv(handle_mq, &header, sizeof(MsgHeader_t));

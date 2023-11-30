@@ -323,6 +323,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
     int start_length = global_mailbox[mbox_idx].valid_count;
     if(start_length + msg_length > MAX_MBOX_LENGTH){
         // block_part
+        printl("[Send]: Option-1, blocked!\n");
         do_block( &(current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
         // block_part
         return 1;
@@ -364,6 +365,7 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     int total_number = global_mailbox[mbox_idx].valid_count;
     if(total_number < msg_length){  // need to block
     // block_part
+        printl("[Receive]: Option-1, blocked!\n");
         do_block(&(current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
     // block_part
         return 1;
@@ -392,12 +394,12 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
         }
 
         //**************debug**************
-        printl("[Send]: Option-2, not-blocked!\n");
-        printl("[Send]: ready_queue \n");
+        printl("[Receive]: Option-2, not-blocked!\n");
+        printl("[Receive]: ready_queue \n");
         PrintPcb_FromList(&ready_queue);
-        printl("[Send]: send_wait_list \n");
+        printl("[Receive]: send_wait_list \n");
         PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_send_wait_list));
-        printl("[Send]: recv_wait_list \n");
+        printl("[Receive]: recv_wait_list \n");
         PrintPcb_FromList( &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
         //*************debug**************
         return 0;
