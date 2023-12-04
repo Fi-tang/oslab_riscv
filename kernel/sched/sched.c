@@ -235,6 +235,26 @@ void kill_release_from_condition(pid_t pid){
     }
 }
 
+void kill_release_from_mailbox(pid_t pid){
+    for(int i = 0; i < MBOX_NUM; i++){
+        if(strcmp(global_mailbox[i].mailbox_name, "") != 0){
+            list_head *target_send_head = &(global_mailbox[i].mailbox_send_wait_list);
+            if(target_send_head -> next != target_send_head){
+                if(FindNode_InQueue( &(global_mailbox[i].mailbox_send_wait_list) , &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList(&(global_mailbox[i].mailbox_send_wait_list), &(pcb[pid].list));
+                }
+            }
+
+            list_head *target_recv_head = &(global_mailbox[i].mailbox_recv_wait_list);
+            if(target_recv_head -> next != target_recv_head){
+                if(FindNode_InQueue( &(global_mailbox[i].mailbox_recv_wait_list), &(pcb[pid].list) ) == 1){
+                    DequeNode_AccordList( &(global_mailbox[i].mailbox_recv_wait_list), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
+
 int do_kill(pid_t pid){
     // the killed pcb is current_running
     // step 1. if it hold locks, free all lock
@@ -256,8 +276,11 @@ int do_kill(pid_t pid){
     if(FindNode_InQueue(&sleep_queue, &(pcb[pid].list)) == 1){
         DequeNode_AccordList(&sleep_queue, &(pcb[pid].list));
     }
+    
     // step 8. remove it from other lock's wait_queue
     kill_release_from_lock_queue(pid);
+    // step 9. remove it from mailbox's send or receive wait list
+    kill_release_from_mailbox(pid);
 
     pcb[pid].status = TASK_EXITED;
 
