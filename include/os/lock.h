@@ -123,7 +123,7 @@ void do_semaphore_destroy(int sema_idx);
 
 #define MAX_MBOX_LENGTH (64)
 
-#define MAILBOX_NAME_LENGTH (16)
+#define MAILBOX_NAME_LENGTH (64)
 
 typedef struct mailbox
 {

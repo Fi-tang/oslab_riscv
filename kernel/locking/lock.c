@@ -288,7 +288,7 @@ int do_mbox_open(char *name){
     }
 
     for(int i = 0; i < MBOX_NUM; i++){
-        if(global_mailbox[i].mailbox_name[0] == '\0'){
+        if(strcmp(global_mailbox[i].mailbox_name, "") == 0){
             strcpy(global_mailbox[i].mailbox_name, name);
             global_mailbox[i].mailbox_Buffer[0] = '\0';
             global_mailbox[i].valid_count = 0;
