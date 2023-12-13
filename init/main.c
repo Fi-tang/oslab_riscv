@@ -267,6 +267,17 @@ static void init_syscall(void)
     syscall[SYSCALL_MBOX_SEND]     = (long (*)())do_mbox_send;
     syscall[SYSCALL_MBOX_RECV]     = (long (*)())do_mbox_recv;
 }
+
+static int print_cpuid(void){
+    int x;
+    get_current_cpu_id();
+    asm volatile(
+        "mv %0, a0"
+        : "=r"(x) :
+    );
+    return x;
+}
+
 /************************************************************/
 static void init_time(void){
     // assume sstatus.sie = 1, and sie.stie = 1
@@ -284,12 +295,11 @@ int main(void)
 
     // Init task information (〃'▽'〃)
     init_task_info();
-
     // Init Process Control Blocks |•'-'•) ✧
     // only used for printk
     init_shell();
     printk("> [INIT] Shell initialization succeeded.\n");
-
+    
     // Read CPU frequency (｡•ᴗ-)_
     time_base = bios_read_fdt(TIMEBASE);
 
@@ -308,6 +318,9 @@ int main(void)
     // Init screen (QAQ)
     init_screen();
     printk("> [INIT] SCREEN initialization succeeded.\n");
+
+    // Newly added, print cpu_id
+    printk("> [Current cpu_id]: %d\n", print_cpuid());
 
     // Init barrier (newly added! o.0)
     init_barriers();
