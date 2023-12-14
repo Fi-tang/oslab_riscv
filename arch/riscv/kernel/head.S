@@ -7,6 +7,7 @@
 #include <csr.h>
 
 #define KERNEL_STACK		0x50500000
+#define SUBCORE_STACK   0x50600000
 
 .section ".entry_function","ax"
 ENTRY(_start)
@@ -25,12 +26,20 @@ clean_loop:
   blt t0, t1, clean_loop
 
 clean_done: 
+  csrr a0, CSR_MHARTID
+  bnez a0, second_core
 
   /* TODO: [p1-task2] setup C environment */
   lui sp, %hi(KERNEL_STACK)
   addi sp,sp, %lo(KERNEL_STACK)  // assign stack pointer
 
   j main     // jump to main function 
+
+second_core:
+  lui sp, %hi(SUBCORE_STACK)
+  addi sp, sp, %lo(SUBCORE_STACK)
+
+  j main
 
 loop:
   wfi

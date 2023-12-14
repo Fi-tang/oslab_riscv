@@ -1,4 +1,5 @@
 #include <asm/biosdef.h>
+#include <csr.h> // newly added
 
 // os size location (os_size could be sectors [p1-task3] or bytes [p1-task4])
 .equ os_size_loc, 0x502001fc
@@ -40,8 +41,6 @@ main:
     jal bios_func_entry				 // start calling sd_read
 
 	// TODO: [p1-task4] load task-related arguments and pass them to kernel
-
-
 	// TODO: [p1-task2] jump to kernel to start UCAS-OS
 	j kernel 				        // jump to kernel, assign it never returns, so just use "j" instead of "jal"
 	/************************************************************/
@@ -51,6 +50,16 @@ secondary:
 	 * 2. let stvec pointer to kernel_main
 	 * 3. enable software interrupt for ipi
 	 */
+	// 1. Mask all interrupts
+	csrw CSR_SIE, zero
+	csrw CSR_SIP, zero
+
+	// 2. let stvec pointer to kernel_main 
+	lui s0, %hi(kernel)
+	addi s0, s0, %lo(kernel)
+	csrw CSR_STVEC, s0
+
+	// 3. enable software interrupt for ipi 
 
 wait_for_wakeup:
 	wfi
@@ -65,4 +74,3 @@ stop:
 .data
 
 msg: .string "It's a bootloader...\n\r"
-

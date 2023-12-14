@@ -291,8 +291,8 @@ static void init_time(void){
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
+    int cpuid = print_cpuid();
     init_jmptab();
-
     // Init task information (〃'▽'〃)
     init_task_info();
     // Init Process Control Blocks |•'-'•) ✧
@@ -320,8 +320,8 @@ int main(void)
     printk("> [INIT] SCREEN initialization succeeded.\n");
 
     // Newly added, print cpu_id
-    printk("> [Current cpu_id]: %d\n", print_cpuid());
-
+    printk("> [Current cpu_id]: %d\n", cpuid);
+    
     // Init barrier (newly added! o.0)
     init_barriers();
     printk("> [INIT] Barrier initialization succeeded.\n");
@@ -355,7 +355,6 @@ int main(void)
         // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
         enable_preempt();
         asm volatile("wfi");
-    }
-
+    }  
     return 0;
 }
