@@ -60,6 +60,9 @@ secondary:
 	csrw CSR_STVEC, s0
 
 	// 3. enable software interrupt for ipi 
+	csrr s0, CSR_SIE
+	ori s0, s0, SIE_SSIE
+	csrw CSR_SIE, s0 
 
 wait_for_wakeup:
 	wfi
