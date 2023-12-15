@@ -339,14 +339,13 @@ int main(void)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
-        // Newly added, send ipi(inter-process-interrupt)
+         // Newly added, send ipi(inter-process-interrupt)
         send_ipi(NULL);
-
         // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
         // NOTE: The function of sstatus.sie is different from sie's
         // Init time interrupt 
-        init_time();
-        printk("> [INIT] Time interrupt initialization succeed.\n");
+        // init_time();
+        // printk("> [INIT] Time interrupt initialization succeed.\n");
 
         // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
         //   and then execute them.
@@ -356,18 +355,25 @@ int main(void)
             // If you do non-preemptive scheduling, it's used to surrender control
             // do_scheduler();
 
-            // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-            enable_preempt();
-            asm volatile("wfi");
+            // // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+            // enable_preempt();
+            // asm volatile("wfi");
         }  
     }
     else{
-          // Newly added, print cpu_id
-        printk("> [Current cpu_id]: %d\n", cpuid);
+        init_shell();
+        printk("> [INIT core-1] Shell initialization succeeded.\n");
         
+        setup_exception();
+        printk("> [INIT core-1] Interrupt processing initialization succeeded.\n");
+        // Newly added, print cpu_id
+        printk("> [Current cpu_id]: %d\n", cpuid); 
+
         while(1){
-            
+
         }
     }
+
+   
     return 0;
 }
