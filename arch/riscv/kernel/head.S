@@ -16,7 +16,7 @@ ENTRY(_start)
   csrw CSR_SIP, zero
 
   csrr a0, CSR_MHARTID
-  bnez a0, second_core
+  bnez a0, second_core    // sub-core should not clean-bss again!!!
 
   /* TODO: [p1-task2] clear BSS for flat non-ELF images */
   la t0, edata       	 // i = __bss_start

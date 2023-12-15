@@ -345,7 +345,7 @@ int main(void)
         // NOTE: The function of sstatus.sie is different from sie's
         // Init time interrupt 
         // init_time();
-        // printk("> [INIT] Time interrupt initialization succeed.\n");
+        // printk("> [INIT Core %d] Time interrupt initialization succeed.\n", print_cpuid());
 
         // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
         //   and then execute them.
@@ -366,12 +366,12 @@ int main(void)
         */
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid); 
-
-        while(1){
-
+        setup_exception();
+        printk("> [Core-1] set stvec initialization succeeded.\n");
+        while(1)
+        {
+            
         }
     }
-
-   
     return 0;
 }
