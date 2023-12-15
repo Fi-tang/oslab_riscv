@@ -361,11 +361,9 @@ int main(void)
         }  
     }
     else{
-        init_shell();
-        printk("> [INIT core-1] Shell initialization succeeded.\n");
-        
-        setup_exception();
-        printk("> [INIT core-1] Interrupt processing initialization succeeded.\n");
+        /**
+        currently, the bug is pcb = NULL and current_running = 0;
+        */
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid); 
 
