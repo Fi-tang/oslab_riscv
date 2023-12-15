@@ -64,6 +64,10 @@ secondary:
 	ori s0, s0, SIE_SSIE
 	csrw CSR_SIE, s0 
 
+	csrr s0, CSR_SSTATUS
+	ori s0, s0, SR_SIE
+	csrw CSR_SSTATUS, s0
+
 wait_for_wakeup:
 	wfi
 	j wait_for_wakeup

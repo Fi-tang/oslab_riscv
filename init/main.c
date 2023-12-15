@@ -292,69 +292,82 @@ int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
     int cpuid = print_cpuid();
-    init_jmptab();
-    // Init task information (〃'▽'〃)
-    init_task_info();
-    // Init Process Control Blocks |•'-'•) ✧
-    // only used for printk
-    init_shell();
-    printk("> [INIT] Shell initialization succeeded.\n");
-    
-    // Read CPU frequency (｡•ᴗ-)_
-    time_base = bios_read_fdt(TIMEBASE);
+    if(cpuid == 0){
+        init_jmptab();
+        // Init task information (〃'▽'〃)
+        init_task_info();
+        // Init Process Control Blocks |•'-'•) ✧
+        // only used for printk
+        init_shell();
+        printk("> [INIT] Shell initialization succeeded.\n");
+        
+        // Read CPU frequency (｡•ᴗ-)_
+        time_base = bios_read_fdt(TIMEBASE);
 
-    // Init lock mechanism o(´^｀)o
-    init_locks();
-    printk("> [INIT] Lock mechanism initialization succeeded.\n");
+        // Init lock mechanism o(´^｀)o
+        init_locks();
+        printk("> [INIT] Lock mechanism initialization succeeded.\n");
 
-    // Init interrupt (^_^)
-    init_exception();
-    printk("> [INIT] Interrupt processing initialization succeeded.\n");
+        // Init interrupt (^_^)
+        init_exception();
+        printk("> [INIT] Interrupt processing initialization succeeded.\n");
 
-    // Init system call table (0_0)
-    init_syscall();
-    printk("> [INIT] System call initialized successfully.\n");
+        // Init system call table (0_0)
+        init_syscall();
+        printk("> [INIT] System call initialized successfully.\n");
 
-    // Init screen (QAQ)
-    init_screen();
-    printk("> [INIT] SCREEN initialization succeeded.\n");
+        // Init screen (QAQ)
+        init_screen();
+        printk("> [INIT] SCREEN initialization succeeded.\n");
 
-    // Newly added, print cpu_id
-    printk("> [Current cpu_id]: %d\n", cpuid);
-    
-    // Init barrier (newly added! o.0)
-    init_barriers();
-    printk("> [INIT] Barrier initialization succeeded.\n");
+        // Newly added, print cpu_id
+        printk("> [Current cpu_id]: %d\n", cpuid);
+        
+        // Init barrier (newly added! o.0)
+        init_barriers();
+        printk("> [INIT] Barrier initialization succeeded.\n");
 
-    // Init semaphore (newly added! o.0)
-    init_semaphores();
-    printk("> [INIT] Semaphores initialization succeeded.\n");
+        // Init semaphore (newly added! o.0)
+        init_semaphores();
+        printk("> [INIT] Semaphores initialization succeeded.\n");
 
-    // Init condition (newly added! o.0)
-    init_conditions();
-    printk("> [INIT] Condition initialization succeeded.\n");
+        // Init condition (newly added! o.0)
+        init_conditions();
+        printk("> [INIT] Condition initialization succeeded.\n");
 
-    // Init mailbox (newly added! o.0)
-    init_mbox();
-    printk("> [INIT] Mailbox initialization succeeded.\n");
+        // Init mailbox (newly added! o.0)
+        init_mbox();
+        printk("> [INIT] Mailbox initialization succeeded.\n");
 
-    // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
-    // NOTE: The function of sstatus.sie is different from sie's
-    // Init time interrupt 
-    init_time();
-    printk("> [INIT] Time interrupt initialization succeed.\n");
+        // Newly added, send ipi(inter-process-interrupt)
+        send_ipi(NULL);
 
-    // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
-    //   and then execute them.
-    // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
-    while (1)
-    {
-        // If you do non-preemptive scheduling, it's used to surrender control
-        // do_scheduler();
+        // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
+        // NOTE: The function of sstatus.sie is different from sie's
+        // Init time interrupt 
+        init_time();
+        printk("> [INIT] Time interrupt initialization succeed.\n");
 
-        // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-        enable_preempt();
-        asm volatile("wfi");
-    }  
+        // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
+        //   and then execute them.
+        // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
+        while (1)
+        {
+            // If you do non-preemptive scheduling, it's used to surrender control
+            // do_scheduler();
+
+            // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+            enable_preempt();
+            asm volatile("wfi");
+        }  
+    }
+    else{
+          // Newly added, print cpu_id
+        printk("> [Current cpu_id]: %d\n", cpuid);
+        
+        while(1){
+            
+        }
+    }
     return 0;
 }

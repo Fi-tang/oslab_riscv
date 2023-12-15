@@ -9,7 +9,7 @@ Disassembly of section .text:
     50200004:	e905                	bnez	a0,50200034 <secondary>
     50200006:	48a5                	li	a7,9
     50200008:	50200537          	lui	a0,0x50200
-    5020000c:	05e50513          	addi	a0,a0,94 # 5020005e <__DATA_BEGIN__>
+    5020000c:	06a50513          	addi	a0,a0,106 # 5020006a <__DATA_BEGIN__>
     50200010:	ff14f0ef          	jal	ra,50150000 <bios_func_entry>
     50200014:	48ad                	li	a7,11
     50200016:	50201537          	lui	a0,0x50201
@@ -30,11 +30,14 @@ Disassembly of section .text:
     50200048:	10402473          	csrr	s0,sie
     5020004c:	00246413          	ori	s0,s0,2
     50200050:	10441073          	csrw	sie,s0
+    50200054:	10002473          	csrr	s0,sstatus
+    50200058:	00246413          	ori	s0,s0,2
+    5020005c:	10041073          	csrw	sstatus,s0
 
-0000000050200054 <wait_for_wakeup>:
-    50200054:	10500073          	wfi
-    50200058:	bff5                	j	50200054 <wait_for_wakeup>
+0000000050200060 <wait_for_wakeup>:
+    50200060:	10500073          	wfi
+    50200064:	bff5                	j	50200060 <wait_for_wakeup>
 
-000000005020005a <stop>:
-    5020005a:	a001                	j	5020005a <stop>
-    5020005c:	0001                	nop
+0000000050200066 <stop>:
+    50200066:	a001                	j	50200066 <stop>
+    50200068:	0001                	nop
