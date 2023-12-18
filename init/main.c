@@ -346,7 +346,9 @@ int main(void)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
-         // Newly added, send ipi(inter-process-interrupt)
+        kernel_spin_lock_acquire(&Large_Kernel_Lock);
+
+        // Newly added, send ipi(inter-process-interrupt)
         send_ipi(NULL);
         // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
         // NOTE: The function of sstatus.sie is different from sie's
@@ -357,6 +359,8 @@ int main(void)
         // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
         //   and then execute them.
         // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
+        
+
         while (1)
         {
             // If you do non-preemptive scheduling, it's used to surrender control
@@ -373,7 +377,8 @@ int main(void)
         */
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid); 
-
+        kernel_spin_lock_acquire(&Large_Kernel_Lock);
+        printk("Can still acquire lock\n");
         while(1)
         {
             

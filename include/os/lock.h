@@ -156,6 +156,6 @@ typedef struct kernel_spin_lock{
 kernel_spin_lock Large_Kernel_Lock;
 
 void kernel_spin_lock_init(kernel_spin_lock *lock);
-void kernel_spin_lock_lock(kernel_spin_lock *lock);
+void kernel_spin_lock_acquire(kernel_spin_lock *lock);
 void kernel_spin_lock_release(kernel_spin_lock *lock);
 #endif
