@@ -416,26 +416,42 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     }
 }
 
+// implement cpu related cpu
+void init_global_cpu(){
+    int cpuid = get_current_cpu_id();
+    global_cpu[cpuid].cpu_id = cpuid;
+}
+
+struct cpu *get_current_cpu(){
+    return &(global_cpu[get_current_cpu_id()]);
+}
+
 
 //*******************************************************************************************
 // implement Large_Kernel_lock
 void kernel_spin_lock_init(kernel_spin_lock *lock){
     lock -> spin_lock_state = 0;
+    lock -> cpu_own_this_lock = NULL;
 }
 
 
 void kernel_spin_lock_acquire(kernel_spin_lock *lock){
+    struct cpu *mycpu = get_current_cpu();
+    if(lock -> spin_lock_state == 1 && lock -> cpu_own_this_lock == mycpu){
+        return;
+    }
     while(atomic_swap_d(1, &(lock -> spin_lock_state)) != 0){
         ;  // spin
     }
-
+    lock -> cpu_own_this_lock = mycpu;
 }
 
 void kernel_spin_lock_release(kernel_spin_lock *lock){
-    if(lock -> spin_lock_state == 0){
-        return ; // already release lock
+    if(lock -> cpu_own_this_lock != get_current_cpu() || lock -> spin_lock_state == 0){
+        return ; // this cpu do not hold the lock, can not release
     }
     while(atomic_swap_d(0, &(lock -> spin_lock_state)) != 1){
         ;
     }
+    lock -> cpu_own_this_lock = NULL;
 }

@@ -297,6 +297,8 @@ int main(void)
     // Init jump table provided by kernel and bios(ΦωΦ)
     int cpuid = print_cpuid();
     if(cpuid == 0){
+        init_global_cpu();
+
         init_jmptab();
         // Init task information (〃'▽'〃)
         init_task_info();
@@ -345,9 +347,10 @@ int main(void)
         // Init mailbox (newly added! o.0)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
+    
 
         kernel_spin_lock_acquire(&Large_Kernel_Lock);
-
+        kernel_spin_lock_release(&Large_Kernel_Lock);
         // Newly added, send ipi(inter-process-interrupt)
         send_ipi(NULL);
         // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
@@ -376,9 +379,14 @@ int main(void)
         currently, the bug is pcb = NULL and current_running = 0;
         */
         // Newly added, print cpu_id
-        printk("> [Current cpu_id]: %d\n", cpuid); 
+        init_global_cpu();
+
+        printk("> [Current cpu_id]: %d\n", cpuid);
+        
+        kernel_spin_lock_release(&Large_Kernel_Lock);
         kernel_spin_lock_acquire(&Large_Kernel_Lock);
-        printk("Can still acquire lock\n");
+        kernel_spin_lock_acquire(&Large_Kernel_Lock);
+        printk("> [I have the lock!!!!]\n");
         while(1)
         {
             

@@ -147,10 +147,19 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length);
 int do_mbox_recv(int mbox_idx, void * msg, int msg_length);
 
 /************************************************************/
+typedef struct cpu{
+    int cpu_id;
+} cpu;
+
+cpu global_cpu[2];
+
+void init_global_cpu();             // fill global_cpu
+struct cpu *get_current_cpu();      // return pointer
 
 // Newly added, implement large_kernel_spin_lock
 typedef struct kernel_spin_lock{
     volatile int spin_lock_state;   // 0: unlocked, 1: locked
+    struct cpu *cpu_own_this_lock;  // used for debug
 } kernel_spin_lock;
 
 kernel_spin_lock Large_Kernel_Lock;
