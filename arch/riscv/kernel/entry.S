@@ -209,12 +209,13 @@ ENTRY(ret_from_exception)
   
 interrupt_case: 
   RESTORE_CONTEXT
+  call kernel_spin_lock_release
   sret
 ENDPROC(ret_from_exception)
 
 ENTRY(exception_handler_entry)
-
   /* TODO: [p2-task3] save context via the provided macro */
+  call kernel_spin_lock_acquire
   SAVE_CONTEXT
 
   /* TODO: [p2-task3] load ret_from_exception into $ra so that we can return to

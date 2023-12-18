@@ -6,6 +6,8 @@
 #include <printk.h>
 #include <assert.h>
 #include <screen.h>
+// newly added
+#include <os/lock.h>
 
 #define SCAUSE_IRQ_FLAG   (1UL << 63) // newly added!
 
@@ -38,8 +40,7 @@ void interrupt_helper(regs_context_t *regs, uint64_t stval, uint64_t scause)
     // regs -> regs[13],
     // regs -> regs[14]);
     
-
-    current_running -> pcb_user_regs_context.scause = scause;
+    global_cpu[get_current_cpu_id()].cpu_current_running -> pcb_user_regs_context.scause = scause;
     if((scause & SCAUSE_IRQ_FLAG) == SCAUSE_IRQ_FLAG){
          // ![IMPORTANT]: interrupt do not need sepc + 4
         irq_table[scause & 0xffff](regs, stval, scause); 

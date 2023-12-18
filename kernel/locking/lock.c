@@ -73,12 +73,12 @@ void do_mutex_lock_acquire(int mlock_idx)
     */
     while(1){
         if(spin_lock_try_acquire(&(mlocks[mlock_idx].lock)) == 1){
-            mlocks[mlock_idx].lock_owner = current_running;
+            mlocks[mlock_idx].lock_owner = global_cpu[get_current_cpu_id()].cpu_current_running;
             spin_lock_acquire(&(mlocks[mlock_idx].lock));
             break;
         }
         else{
-            do_block(&(current_running -> list), &(mlocks[mlock_idx].block_queue));
+            do_block(&(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &(mlocks[mlock_idx].block_queue));
         }
     }
 }
@@ -136,7 +136,7 @@ void do_barrier_wait(int bar_idx){
         global_barrier[bar_idx].current_barrier_num = 0;
     }
     else{
-        do_block(&(current_running -> list), &(global_barrier[bar_idx].barrier_wait_list));
+        do_block(&(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &(global_barrier[bar_idx].barrier_wait_list));
     }
 }
 
@@ -178,7 +178,7 @@ int do_semaphore_init(int key, int init){
 void do_semaphore_down(int sema_idx){
     global_semaphore_resource[sema_idx].sem_number -= 1;
     if(global_semaphore_resource[sema_idx].sem_number < 0){
-        do_block(&(current_running -> list), &(global_semaphore_resource[sema_idx].sema_wait_list));
+        do_block(&(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &(global_semaphore_resource[sema_idx].sema_wait_list));
     }
 }
 
@@ -227,7 +227,7 @@ int do_condition_init(int key){
 void do_condition_wait(int cond_idx, int mutex_idx){
     global_condition[cond_idx].numWaiting++;    // another process to sleep
     // rewrite do_block start
-    list_node_t *pcb_node = &(current_running -> list);
+    list_node_t *pcb_node = &(global_cpu[get_current_cpu_id()].cpu_current_running -> list);
     if(FindNode_InQueue(&ready_queue, pcb_node) == 1){
         DequeNode_AccordList(&ready_queue, pcb_node);
     }
@@ -318,7 +318,7 @@ void do_mbox_close(int mbox_idx){
 
 int do_mbox_send(int mbox_idx, void * msg, int msg_length){
     while(1){
-        printl("\n\n[Send]: current_running [%d]: %s mailbox[%d]\n", current_running -> pid, current_running -> name, mbox_idx);
+        printl("\n\n[Send]: current_running [%d]: %s mailbox[%d]\n", global_cpu[get_current_cpu_id()].cpu_current_running -> pid, global_cpu[get_current_cpu_id()].cpu_current_running -> name, mbox_idx);
         printl("[Send]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
 
         int start_length = global_mailbox[mbox_idx].valid_count;
@@ -327,7 +327,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
             // block_part
             printl("[Send]: Option-1, blocked!\n");
             blocked_times++;
-            do_block( &(current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
+            do_block( &(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &(global_mailbox[mbox_idx].mailbox_send_wait_list));
             // block_part
         }
         else{
@@ -363,7 +363,7 @@ int do_mbox_send(int mbox_idx, void * msg, int msg_length){
 
 int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     while(1){
-        printl("\n\n[Receive]: current_running [%d]: %s mailbox[%d]\n", current_running -> pid, current_running -> name, mbox_idx);
+        printl("\n\n[Receive]: current_running [%d]: %s mailbox[%d]\n", global_cpu[get_current_cpu_id()].cpu_current_running -> pid, global_cpu[get_current_cpu_id()].cpu_current_running -> name, mbox_idx);
         printl("[Receive]: valid_count_before: %d\n", global_mailbox[mbox_idx].valid_count);
 
         int total_number = global_mailbox[mbox_idx].valid_count;
@@ -372,7 +372,7 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
         // block_part
             printl("[Receive]: Option-1, blocked!\n");
             blocked_times++;
-            do_block(&(current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
+            do_block(&(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &(global_mailbox[mbox_idx].mailbox_recv_wait_list));
         // block_part
         }
         else{
@@ -420,6 +420,7 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
 void init_global_cpu(){
     int cpuid = get_current_cpu_id();
     global_cpu[cpuid].cpu_id = cpuid;
+    global_cpu[cpuid].cpu_current_running = &pid0_pcb;
 }
 
 struct cpu *get_current_cpu(){
@@ -435,7 +436,8 @@ void kernel_spin_lock_init(kernel_spin_lock *lock){
 }
 
 
-void kernel_spin_lock_acquire(kernel_spin_lock *lock){
+void kernel_spin_lock_acquire(){
+    kernel_spin_lock *lock = &Large_Kernel_Lock;
     struct cpu *mycpu = get_current_cpu();
     if(lock -> spin_lock_state == 1 && lock -> cpu_own_this_lock == mycpu){
         return;
@@ -446,7 +448,8 @@ void kernel_spin_lock_acquire(kernel_spin_lock *lock){
     lock -> cpu_own_this_lock = mycpu;
 }
 
-void kernel_spin_lock_release(kernel_spin_lock *lock){
+void kernel_spin_lock_release(){
+    kernel_spin_lock *lock = &Large_Kernel_Lock;
     if(lock -> cpu_own_this_lock != get_current_cpu() || lock -> spin_lock_state == 0){
         return ; // this cpu do not hold the lock, can not release
     }

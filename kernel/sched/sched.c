@@ -45,8 +45,8 @@ void do_scheduler(void)
         }
         else{
             Enque_FromTail(&ready_queue, deque_node);
-            pcb_t *prev_running = current_running;
-            current_running = deque_pcb_node;
+            pcb_t *prev_running = global_cpu[get_current_cpu_id()].cpu_current_running;
+            global_cpu[get_current_cpu_id()].cpu_current_running = deque_pcb_node;
 
             // make sure that pid0 never return or exited
             if(strcmp(prev_running -> name, "main") == 0){
@@ -57,7 +57,7 @@ void do_scheduler(void)
             if(strcmp(prev_running -> name, "main") != 0 && prev_running -> status == TASK_RUNNING){
                 prev_running -> status = TASK_READY;
             }
-            current_running -> status = TASK_RUNNING;
+            global_cpu[get_current_cpu_id()].cpu_current_running -> status = TASK_RUNNING;
             switch_to(prev_running, deque_pcb_node);
         }
     }
@@ -72,8 +72,8 @@ void do_sleep(uint32_t sleep_time)
     // 1. block the current_running
     // 2. set the wake up time for the blocked task
     // 3. reschedule because the current_running is blocked.
-    current_running -> wakeup_time = sleep_time * 100;         // only change for debug, later change to 1000
-    do_block(&(current_running -> list), &sleep_queue);
+    global_cpu[get_current_cpu_id()].cpu_current_running -> wakeup_time = sleep_time * 100;         // only change for debug, later change to 1000
+    do_block(&(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &sleep_queue);
 }
 
 /**
@@ -128,17 +128,17 @@ void do_process_show(){
 }
 
 pid_t do_getpid(){
-    return current_running -> pid;
+    return global_cpu[get_current_cpu_id()].cpu_current_running -> pid;
 }
 
 
 int do_waitpid(pid_t pid){
     // Enque current_running to wait_queue
-    printl("[DO-Waitpid]: %d %s is waiting %d %s\n", current_running -> pid,
-    current_running -> name, pid,pcb[pid].name);
+    printl("[DO-Waitpid]: %d %s is waiting %d %s\n", global_cpu[get_current_cpu_id()].cpu_current_running -> pid,
+    global_cpu[get_current_cpu_id()].cpu_current_running -> name, pid,pcb[pid].name);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].pid == pid && pcb[i].status != TASK_EXITED){
-            do_block(&(current_running -> list), &(pcb[i].wait_list));
+            do_block(&(global_cpu[get_current_cpu_id()].cpu_current_running -> list), &(pcb[i].wait_list));
             return pid;
         }
     }
@@ -289,15 +289,15 @@ int do_kill(pid_t pid){
 
 void do_exit(void){
     // first check, do I have un-released locks?
-    printl("[Exit]: %d - %s exited!\n", current_running -> pid, current_running -> name);
-    current_running -> status = TASK_EXITED;
-    kill_release_lock(current_running -> pid);
+    printl("[Exit]: %d - %s exited!\n", global_cpu[get_current_cpu_id()].cpu_current_running -> pid, global_cpu[get_current_cpu_id()].cpu_current_running -> name);
+    global_cpu[get_current_cpu_id()].cpu_current_running -> status = TASK_EXITED;
+    kill_release_lock(global_cpu[get_current_cpu_id()].cpu_current_running -> pid);
     // second, free all locked pcb
-    kill_release_pcb_on_waitpid(current_running -> pid);
+    kill_release_pcb_on_waitpid(global_cpu[get_current_cpu_id()].cpu_current_running -> pid);
     printl("Before final exit:\n");
-    PrintPcb_FromList(&(current_running -> wait_list));
+    PrintPcb_FromList(&(global_cpu[get_current_cpu_id()].cpu_current_running -> wait_list));
 
-    if(FindNode_InQueue(&ready_queue, &(current_running -> list)) == 1){
-        DequeNode_AccordList(&ready_queue, &(current_running -> list));
+    if(FindNode_InQueue(&ready_queue, &(global_cpu[get_current_cpu_id()].cpu_current_running -> list)) == 1){
+        DequeNode_AccordList(&ready_queue, &(global_cpu[get_current_cpu_id()].cpu_current_running -> list));
     }
 }

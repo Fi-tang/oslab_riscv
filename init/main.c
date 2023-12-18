@@ -268,16 +268,6 @@ static void init_syscall(void)
     syscall[SYSCALL_MBOX_RECV]     = (long (*)())do_mbox_recv;
 }
 
-static int print_cpuid(void){
-    int x;
-    get_current_cpu_id();
-    asm volatile(
-        "mv %0, a0"
-        : "=r"(x) :
-    );
-    return x;
-}
-
 /************************************************************/
 static void init_time(void){
     // assume sstatus.sie = 1, and sie.stie = 1
@@ -295,7 +285,7 @@ static void init_large_kernel(void){
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
-    int cpuid = print_cpuid();
+    int cpuid = get_current_cpu_id();
     if(cpuid == 0){
         init_global_cpu();
 
@@ -347,31 +337,26 @@ int main(void)
         // Init mailbox (newly added! o.0)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
-    
 
-        kernel_spin_lock_acquire(&Large_Kernel_Lock);
-        kernel_spin_lock_release(&Large_Kernel_Lock);
         // Newly added, send ipi(inter-process-interrupt)
         send_ipi(NULL);
+
         // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
         // NOTE: The function of sstatus.sie is different from sie's
         // Init time interrupt 
-        // init_time();
-        // printk("> [INIT Core %d] Time interrupt initialization succeed.\n", print_cpuid());
+        init_time();
+        printk("> [INIT Core %d] Time interrupt initialization succeed.\n", get_current_cpu_id());
 
         // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
         //   and then execute them.
         // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
-        
-
         while (1)
         {
             // If you do non-preemptive scheduling, it's used to surrender control
-            // do_scheduler();
 
             // // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-            // enable_preempt();
-            // asm volatile("wfi");
+            enable_preempt();
+            asm volatile("wfi");
         }  
     }
     else{
@@ -382,15 +367,25 @@ int main(void)
         init_global_cpu();
 
         printk("> [Current cpu_id]: %d\n", cpuid);
-        
-        kernel_spin_lock_release(&Large_Kernel_Lock);
-        kernel_spin_lock_acquire(&Large_Kernel_Lock);
-        kernel_spin_lock_acquire(&Large_Kernel_Lock);
-        printk("> [I have the lock!!!!]\n");
-        while(1)
-        {
-            
-        }
+
+        // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
+        // NOTE: The function of sstatus.sie is different from sie's
+        // Init time interrupt 
+        // init_time();
+        // printk("> [INIT Core %d] Time interrupt initialization succeed.\n", get_current_cpu_id());
+
+        // // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
+        // //   and then execute them.
+        // // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
+        // while (1)
+        // {
+        //     // If you do non-preemptive scheduling, it's used to surrender control
+
+        //     // // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+        //     enable_preempt();
+        //     asm volatile("wfi");
+        // }  
+        while(1){}
     }
     return 0;
 }

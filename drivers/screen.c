@@ -5,6 +5,16 @@
 #include <os/irq.h>
 #include <os/kernel.h>
 
+// newly added
+#include <os/list.h>
+#include <os/lock.h>
+#include <os/sched.h>
+#include <os/time.h>
+#include <os/mm.h>
+#include <screen.h>
+#include <printk.h>
+#include <assert.h>
+
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   50
 #define SCREEN_LOC(x, y) ((y) * SCREEN_WIDTH + (x))
@@ -39,17 +49,17 @@ static void screen_write_ch(char ch)
 {
     if (ch == '\n')
     {
-        current_running->cursor_x = 0;
-        current_running->cursor_y++;
+        global_cpu[get_current_cpu_id()].cpu_current_running ->cursor_x = 0;
+        global_cpu[get_current_cpu_id()].cpu_current_running->cursor_y++;
     }
     else if(ch == 8 || ch == 127){
-        current_running->cursor_x--;
-        new_screen[SCREEN_LOC(current_running -> cursor_x, current_running -> cursor_y)] = ' ';
+        global_cpu[get_current_cpu_id()].cpu_current_running->cursor_x--;
+        new_screen[SCREEN_LOC(global_cpu[get_current_cpu_id()].cpu_current_running -> cursor_x, global_cpu[get_current_cpu_id()].cpu_current_running -> cursor_y)] = ' ';
     }
     else
     {
-        new_screen[SCREEN_LOC(current_running->cursor_x, current_running->cursor_y)] = ch;
-        current_running->cursor_x++;
+        new_screen[SCREEN_LOC(global_cpu[get_current_cpu_id()].cpu_current_running->cursor_x, global_cpu[get_current_cpu_id()].cpu_current_running->cursor_y)] = ch;
+        global_cpu[get_current_cpu_id()].cpu_current_running->cursor_x++;
     }
 }
 
@@ -70,15 +80,15 @@ void screen_clear(void)
             new_screen[SCREEN_LOC(j, i)] = ' ';
         }
     }
-    current_running->cursor_x = 0;
-    current_running->cursor_y = 0;
+    global_cpu[get_current_cpu_id()].cpu_current_running->cursor_x = 0;
+    global_cpu[get_current_cpu_id()].cpu_current_running->cursor_y = 0;
     screen_reflush();
 }
 
 void screen_move_cursor(int x, int y)
 {
-    current_running->cursor_x = x;
-    current_running->cursor_y = y;
+    global_cpu[get_current_cpu_id()].cpu_current_running->cursor_x = x;
+    global_cpu[get_current_cpu_id()].cpu_current_running->cursor_y = y;
     vt100_move_cursor(x, y);
 }
 
@@ -102,7 +112,6 @@ void screen_write(char *buff)
 void screen_reflush(void)
 {
     int i, j;
-
     /* here to reflush screen buffer to serial port */
     for (i = 0; i < SCREEN_HEIGHT; i++)
     {
@@ -119,5 +128,5 @@ void screen_reflush(void)
     }
 
     /* recover cursor position */
-    vt100_move_cursor(current_running->cursor_x, current_running->cursor_y);
+    vt100_move_cursor(global_cpu[get_current_cpu_id()].cpu_current_running->cursor_x, global_cpu[get_current_cpu_id()].cpu_current_running->cursor_y);
 }

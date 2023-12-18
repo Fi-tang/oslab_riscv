@@ -148,7 +148,8 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length);
 
 /************************************************************/
 typedef struct cpu{
-    int cpu_id;
+    int cpu_id;                 
+    pcb_t *cpu_current_running;  // Every cpu should have it's own current_running
 } cpu;
 
 cpu global_cpu[2];
@@ -165,6 +166,6 @@ typedef struct kernel_spin_lock{
 kernel_spin_lock Large_Kernel_Lock;
 
 void kernel_spin_lock_init(kernel_spin_lock *lock);
-void kernel_spin_lock_acquire(kernel_spin_lock *lock);
-void kernel_spin_lock_release(kernel_spin_lock *lock);
+void kernel_spin_lock_acquire();
+void kernel_spin_lock_release();
 #endif
