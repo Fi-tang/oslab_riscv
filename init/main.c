@@ -86,7 +86,7 @@ static void init_shell(void){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     Initialize_QueueNode(&ready_queue); 
     for(int i = 0; i <= task_num; i++){
-        if(strcmp(tasks[i].taskname, "main") == 0){
+        if(strcmp(tasks[i].taskname, "pid0") == 0){
             pcb[0].kernel_sp = allocKernelPage(1);
             pcb[0].user_sp = allocUserPage(1);
 
@@ -100,8 +100,11 @@ static void init_shell(void){
 
             pcb[0].pid = 0;
             strcpy(pcb[0].name, tasks[i].taskname);
+            long current_task_entry_address = load_task_img_by_name(task_num, pcb[0].name);
             pcb[0].status = TASK_READY;
-            init_pcb_regs(&pcb[0].pcb_switchto_context, &pcb[0].pcb_user_regs_context, &pcb[0], BOOT_LOADER_ADDRESS + (TASK_SIZE >> 4));
+            init_pcb_regs(&pcb[0].pcb_switchto_context, &pcb[0].pcb_user_regs_context, &pcb[0], current_task_entry_address);
+
+            Enque_FromTail(&ready_queue, &pcb[0].list);
         }
         else if(strcmp(tasks[i].taskname, "shell") == 0){
             pcb[1].kernel_sp = allocKernelPage(1);
@@ -117,7 +120,7 @@ static void init_shell(void){
             Initialize_QueueNode(&pcb[1].wait_list);
 
             pcb[1].pid = 1;
-            strcpy(pcb[1].name, tasks[1].taskname);
+            strcpy(pcb[1].name, tasks[i].taskname);
             long current_task_entry_address = load_task_img_by_name(task_num, pcb[1].name);
             pcb[1].status = TASK_READY;
             init_pcb_regs(&pcb[1].pcb_switchto_context, &pcb[1].pcb_user_regs_context, &pcb[1], current_task_entry_address);
@@ -131,8 +134,8 @@ static void init_shell(void){
         pcb[i].status = TASK_EXITED;
     }
 
-    current_running = &pcb[0];
-    asm volatile("mv tp, %0" ::"r"(current_running));
+    current_running = &pid0_pcb;
+    asm volatile("mv tp, %0" ::"r"(global_cpu[get_current_cpu_id()].cpu_current_running));
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){

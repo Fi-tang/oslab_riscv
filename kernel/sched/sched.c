@@ -49,19 +49,13 @@ void do_scheduler(void)
             global_cpu[get_current_cpu_id()].cpu_current_running = deque_pcb_node;
 
             // make sure that pid0 never return or exited
-            if(strcmp(prev_running -> name, "main") == 0){
-                prev_running -> status = TASK_EXITED;
-                do_exec("pid0", 0, NULL);
-            }
-
-            if(strcmp(prev_running -> name, "main") != 0 && prev_running -> status == TASK_RUNNING){
+            if(prev_running -> status == TASK_RUNNING){
                 prev_running -> status = TASK_READY;
             }
             global_cpu[get_current_cpu_id()].cpu_current_running -> status = TASK_RUNNING;
             switch_to(prev_running, deque_pcb_node);
         }
     }
-
     // TODO: [p2-task1] switch_to current_running
 }
 
