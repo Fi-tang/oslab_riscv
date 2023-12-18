@@ -288,6 +288,10 @@ static void init_time(void){
     clock_trigger_next_interrupt();
 }
 
+static void init_large_kernel(void){
+    kernel_spin_lock_init(&Large_Kernel_Lock);
+}
+
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
@@ -319,6 +323,9 @@ int main(void)
         // Init screen (QAQ)
         init_screen();
         printk("> [INIT] SCREEN initialization succeeded.\n");
+
+        init_large_kernel();
+        printk("> [INIT] LARGE_KERNEL_LOCK initialization succeeded. \n");
 
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid);
@@ -366,8 +373,7 @@ int main(void)
         */
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid); 
-        setup_exception();
-        printk("> [Core-1] set stvec initialization succeeded.\n");
+
         while(1)
         {
             

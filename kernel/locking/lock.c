@@ -415,3 +415,31 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
         }
     }
 }
+
+
+//*******************************************************************************************
+// implement Large_Kernel_lock
+void kernel_spin_lock_init(kernel_spin_lock *lock){
+    lock -> spin_lock_state = 0;
+}
+
+
+void kernel_spin_lock_lock(kernel_spin_lock *lock){
+    if(lock -> spin_lock_state == 1){
+        // current_cpu holding lock;
+        return;
+    }
+    while(atomic_swap_d(1, &(lock -> spin_lock_state)) != 0){
+        ;  // spin
+    }
+
+}
+
+void kernel_spin_lock_release(kernel_spin_lock *lock){
+    if(lock -> spin_lock_state == 0){
+        return ; // already release lock
+    }
+    while(atomic_swap_d(0, &(lock -> spin_lock_state)) != 1){
+        ;
+    }
+}

@@ -148,4 +148,14 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length);
 
 /************************************************************/
 
+// Newly added, implement large_kernel_spin_lock
+typedef struct kernel_spin_lock{
+    volatile int spin_lock_state;   // 0: unlocked, 1: locked
+} kernel_spin_lock;
+
+kernel_spin_lock Large_Kernel_Lock;
+
+void kernel_spin_lock_init(kernel_spin_lock *lock);
+void kernel_spin_lock_lock(kernel_spin_lock *lock);
+void kernel_spin_lock_release(kernel_spin_lock *lock);
 #endif
