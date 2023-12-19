@@ -82,7 +82,7 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
     user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
 }
 
-static void init_shell(void){
+static void init_pid0(void){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     Initialize_QueueNode(&ready_queue); 
     for(int i = 0; i <= task_num; i++){
@@ -106,30 +106,9 @@ static void init_shell(void){
 
             Enque_FromTail(&ready_queue, &pcb[0].list);
         }
-        else if(strcmp(tasks[i].taskname, "shell") == 0){
-            pcb[1].kernel_sp = allocKernelPage(1);
-            pcb[1].user_sp = allocUserPage(1);
-            
-            pcb[1].kernel_stack_base = pcb[1].kernel_sp;
-            pcb[1].user_stack_base = pcb[1].user_sp;
-
-            pcb[1].cursor_x = 1;
-            pcb[1].cursor_y = 1;
-           
-            Initialize_QueueNode(&pcb[1].list);
-            Initialize_QueueNode(&pcb[1].wait_list);
-
-            pcb[1].pid = 1;
-            strcpy(pcb[1].name, tasks[i].taskname);
-            long current_task_entry_address = load_task_img_by_name(task_num, pcb[1].name);
-            pcb[1].status = TASK_READY;
-            init_pcb_regs(&pcb[1].pcb_switchto_context, &pcb[1].pcb_user_regs_context, &pcb[1], current_task_entry_address);
-            
-            Enque_FromTail(&ready_queue, &pcb[1].list);
-        }
     }
 
-    for(int i = 2; i < NUM_MAX_TASK; i++){
+    for(int i = 1; i < NUM_MAX_TASK; i++){
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
@@ -297,8 +276,8 @@ int main(void)
         init_task_info();
         // Init Process Control Blocks |•'-'•) ✧
         // only used for printk
-        init_shell();
-        printk("> [INIT] Shell initialization succeeded.\n");
+        init_pid0();
+        printk("> [INIT] Pid0 initialization succeeded.\n");
         
         // Read CPU frequency (｡•ᴗ-)_
         time_base = bios_read_fdt(TIMEBASE);

@@ -24,40 +24,63 @@ pcb_t * volatile current_running;
 /* global process id */
 pid_t process_id = 1;
 
-void do_scheduler(void)
-{
+void do_scheduler(void){
     // TODO: [p2-task3] Check sleep queue to wake up PCBs
-
     /************************************************************/
     /* Do not touch this comment. Reserved for future projects. */
     /************************************************************/
     // TODO: [p2-task1] Modify the current_running pointer.
-    // printl("[DO_SCHEDULER]: enter do_scheduler\n");
     check_sleeping();
-    list_head *deque_node = Deque_FromHead(&ready_queue);
-    if(deque_node == NULL){
-        return;     // when ready_queue is empty! need to solve it!
+    
+    int current_cpu = get_current_cpu_id();
+    printl("[Scheduler]: %s\n", global_cpu[current_cpu].cpu_current_running -> name);
+    PrintPcb_FromList(&ready_queue);
+    printl("total count_number = %d\n", CountNum_AccordList(&ready_queue));
+
+    int ready_queue_num = CountNum_AccordList(&ready_queue);
+    if(ready_queue_num == 1){
+        // only pid0 in ready_queue
+        // check if "shell" has been started
+        int shell_has_started = -1;
+        for(int i = 0; i < NUM_MAX_TASK; i++){
+            if(strcmp(pcb[i].name, "shell") == 0 && pcb[i].status != TASK_EXITED){
+                shell_has_started = i;
+                break;
+            }
+        }
+
+        if(shell_has_started == -1){
+            int shell_pid = do_exec("shell", 0, NULL);
+            pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
+            global_cpu[current_cpu].cpu_current_running = &pcb[shell_pid];
+            global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
+            switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
+        }   
+        else{
+            switch_to(global_cpu[current_cpu].cpu_current_running, global_cpu[current_cpu].cpu_current_running);
+        }
     }
     else{
+        // have at least one other pcb block
+        list_head *deque_node = Deque_FromHead(&ready_queue);
         pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
-        if(deque_pcb_node -> status == TASK_BLOCKED || deque_pcb_node -> status == TASK_EXITED){
-            return;
-        }
-        else{
+        if(strcmp(deque_pcb_node -> name, "pid0") == 0){
             Enque_FromTail(&ready_queue, deque_node);
-            pcb_t *prev_running = global_cpu[get_current_cpu_id()].cpu_current_running;
-            global_cpu[get_current_cpu_id()].cpu_current_running = deque_pcb_node;
-
-            // make sure that pid0 never return or exited
-            if(prev_running -> status == TASK_RUNNING){
-                prev_running -> status = TASK_READY;
-            }
-            global_cpu[get_current_cpu_id()].cpu_current_running -> status = TASK_RUNNING;
-            switch_to(prev_running, deque_pcb_node);
+            deque_node = Deque_FromHead(&ready_queue); // the next is different from head
+            deque_pcb_node = GetPcb_FromList(deque_node);
         }
+        Enque_FromTail(&ready_queue, deque_node);
+        pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
+        global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
+        if(prev_running -> status == TASK_RUNNING){
+            prev_running -> status = TASK_READY;
+        }
+        global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
+        // TODO: [p2-task1] switch_to current_running
+        switch_to(prev_running, deque_pcb_node);
     }
-    // TODO: [p2-task1] switch_to current_running
 }
+
 
 void do_sleep(uint32_t sleep_time)
 {

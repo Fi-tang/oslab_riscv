@@ -121,4 +121,16 @@ static inline void DequeNode_AccordList(list_head *head, list_head *node){
     find_prev -> next = node -> next;
     node -> next -> prev = find_prev;
 }
+
+// count Number from queue
+static inline int CountNum_AccordList(list_head *head){
+    list_head *target_head = head -> next;
+    int count = 0;
+    while(target_head != head){
+        count++;
+        target_head = target_head -> next;
+    }
+    return count;
+}
+
 #endif
