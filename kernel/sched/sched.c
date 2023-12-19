@@ -38,7 +38,7 @@ void do_scheduler(void){
     printl("total count_number = %d\n", CountNum_AccordList(&ready_queue));
 
     int ready_queue_num = CountNum_AccordList(&ready_queue);
-    if(ready_queue_num == 1){
+    if(ready_queue_num == 2){
         // only pid0 in ready_queue
         // check if "shell" has been started
         int shell_has_started = -1;
@@ -64,7 +64,7 @@ void do_scheduler(void){
         // have at least one other pcb block
         list_head *deque_node = Deque_FromHead(&ready_queue);
         pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
-        if(strcmp(deque_pcb_node -> name, "pid0") == 0){
+        while(strcmp(deque_pcb_node -> name, "pid0") == 0 || strcmp(deque_pcb_node -> name, "pid1") == 0){
             Enque_FromTail(&ready_queue, deque_node);
             deque_node = Deque_FromHead(&ready_queue); // the next is different from head
             deque_pcb_node = GetPcb_FromList(deque_node);
@@ -77,7 +77,7 @@ void do_scheduler(void){
         }
         global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
         // TODO: [p2-task1] switch_to current_running
-        switch_to(prev_running, deque_pcb_node);
+        switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
     }
 }
 

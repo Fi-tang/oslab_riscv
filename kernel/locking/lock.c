@@ -420,7 +420,12 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
 void init_global_cpu(){
     int cpuid = get_current_cpu_id();
     global_cpu[cpuid].cpu_id = cpuid;
-    global_cpu[cpuid].cpu_current_running = &pcb[0];
+    if(cpuid == 0){
+        global_cpu[cpuid].cpu_current_running = &pcb[0];
+    }
+    else{
+        global_cpu[cpuid].cpu_current_running = &pcb[1];
+    }
 }
 
 struct cpu *get_current_cpu(){

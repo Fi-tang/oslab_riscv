@@ -82,33 +82,42 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
     user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
 }
 
-static void init_pid0(void){
+static void assign_initial_pcb(char *name, int alloc_index){
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    pcb[alloc_index].kernel_sp = allocKernelPage(1);
+    pcb[alloc_index].user_sp = allocUserPage(1);
+
+    pcb[alloc_index].kernel_stack_base = pcb[alloc_index].kernel_sp;
+    pcb[alloc_index].user_stack_base = pcb[alloc_index].user_sp;
+
+    pcb[alloc_index].cursor_x = alloc_index;
+    pcb[alloc_index].cursor_y = alloc_index;
+    Initialize_QueueNode(&pcb[alloc_index].list);
+    Initialize_QueueNode(&pcb[alloc_index].wait_list);
+
+    pcb[alloc_index].pid = alloc_index;
+    strcpy(pcb[alloc_index].name, name);
+    long current_task_entry_address = load_task_img_by_name(task_num, pcb[alloc_index].name);
+    pcb[alloc_index].status = TASK_READY;
+    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[0], current_task_entry_address);
+
+    Enque_FromTail(&ready_queue, &pcb[alloc_index].list);
+}
+
+
+static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] always point to pid1
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     Initialize_QueueNode(&ready_queue); 
     for(int i = 0; i <= task_num; i++){
         if(strcmp(tasks[i].taskname, "pid0") == 0){
-            pcb[0].kernel_sp = allocKernelPage(1);
-            pcb[0].user_sp = allocUserPage(1);
-
-            pcb[0].kernel_stack_base = pcb[0].kernel_sp;
-            pcb[0].user_stack_base = pcb[0].user_sp;
-
-            pcb[0].cursor_x = 0;
-            pcb[0].cursor_y = 0;
-            Initialize_QueueNode(&pcb[0].list);
-            Initialize_QueueNode(&pcb[0].wait_list);
-
-            pcb[0].pid = 0;
-            strcpy(pcb[0].name, tasks[i].taskname);
-            long current_task_entry_address = load_task_img_by_name(task_num, pcb[0].name);
-            pcb[0].status = TASK_READY;
-            init_pcb_regs(&pcb[0].pcb_switchto_context, &pcb[0].pcb_user_regs_context, &pcb[0], current_task_entry_address);
-
-            Enque_FromTail(&ready_queue, &pcb[0].list);
+            assign_initial_pcb(tasks[i].taskname, 0);
+        }
+        if(strcmp(tasks[i].taskname, "pid1") == 0){
+            assign_initial_pcb(tasks[i].taskname, 1);
         }
     }
 
-    for(int i = 1; i < NUM_MAX_TASK; i++){
+    for(int i = 2; i < NUM_MAX_TASK; i++){
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
@@ -276,7 +285,7 @@ int main(void)
         init_task_info();
         // Init Process Control Blocks |•'-'•) ✧
         // only used for printk
-        init_pid0();
+        init_pcb_loop();
         printk("> [INIT] Pid0 initialization succeeded.\n");
         
         // Read CPU frequency (｡•ᴗ-)_
@@ -320,23 +329,27 @@ int main(void)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
-        // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
-        // NOTE: The function of sstatus.sie is different from sie's
-        // Init time interrupt 
         init_time();
-        printk("> [INIT Core %d] Time interrupt initialization succeed.\n", get_current_cpu_id());
+        printk("> [INIT] Time initialization succeeded.\n");
 
-        // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
-        //   and then execute them.
-        // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
-        while (1)
-        {
+        while(1){
             // If you do non-preemptive scheduling, it's used to surrender control
-
-            // // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+            // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
             enable_preempt();
             asm volatile("wfi");
-        }  
+        } 
+    }
+    else{
+        // init_global_cpu();      // init global_cpu struct
+        // // Newly added, print cpu_id
+        // printk("> [Current cpu_id]: %d\n", cpuid);
+
+        // setup_exception();
+        // printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
+
+        // init_time();
+        // printk("> [INIT-%d] Time initialization succeeded.\n", cpuid);
+        // while(1){}
     }
     return 0;
 }
