@@ -439,9 +439,7 @@ void kernel_spin_lock_init(kernel_spin_lock *lock){
 void kernel_spin_lock_acquire(){
     kernel_spin_lock *lock = &Large_Kernel_Lock;
     struct cpu *mycpu = get_current_cpu();
-    if(lock -> spin_lock_state == 1 && lock -> cpu_own_this_lock == mycpu){
-        return;
-    }
+
     while(atomic_swap_d(1, &(lock -> spin_lock_state)) != 0){
         ;  // spin
     }
@@ -450,9 +448,6 @@ void kernel_spin_lock_acquire(){
 
 void kernel_spin_lock_release(){
     kernel_spin_lock *lock = &Large_Kernel_Lock;
-    if(lock -> cpu_own_this_lock != get_current_cpu() || lock -> spin_lock_state == 0){
-        return ; // this cpu do not hold the lock, can not release
-    }
     while(atomic_swap_d(0, &(lock -> spin_lock_state)) != 1){
         ;
     }

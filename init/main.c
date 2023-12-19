@@ -341,9 +341,6 @@ int main(void)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
-        // Newly added, send ipi(inter-process-interrupt)
-        send_ipi(NULL);
-
         // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
         // NOTE: The function of sstatus.sie is different from sie's
         // Init time interrupt 
@@ -361,34 +358,6 @@ int main(void)
             enable_preempt();
             asm volatile("wfi");
         }  
-    }
-    else{
-        /**
-        currently, the bug is pcb = NULL and current_running = 0;
-        */
-        // Newly added, print cpu_id
-        init_global_cpu();
-
-        printk("> [Current cpu_id]: %d\n", cpuid);
-
-        // TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
-        // NOTE: The function of sstatus.sie is different from sie's
-        // Init time interrupt 
-        // init_time();
-        // printk("> [INIT Core %d] Time interrupt initialization succeed.\n", get_current_cpu_id());
-
-        // // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
-        // //   and then execute them.
-        // // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
-        // while (1)
-        // {
-        //     // If you do non-preemptive scheduling, it's used to surrender control
-
-        //     // // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-        //     enable_preempt();
-        //     asm volatile("wfi");
-        // }  
-        while(1){}
     }
     return 0;
 }

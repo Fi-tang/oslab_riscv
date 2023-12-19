@@ -208,15 +208,15 @@ ENTRY(ret_from_exception)
   csrw CSR_SEPC, s0
   
 interrupt_case: 
-  RESTORE_CONTEXT
   call kernel_spin_lock_release
+  RESTORE_CONTEXT
   sret
 ENDPROC(ret_from_exception)
 
 ENTRY(exception_handler_entry)
   /* TODO: [p2-task3] save context via the provided macro */
-  call kernel_spin_lock_acquire
   SAVE_CONTEXT
+  call kernel_spin_lock_acquire
 
   /* TODO: [p2-task3] load ret_from_exception into $ra so that we can return to
    * ret_from_exception when interrupt_help complete.
@@ -230,14 +230,6 @@ ENTRY(exception_handler_entry)
 
   mv t0, tp 
   addi t0, t0, PCB_USER_REGS_CONTEXT_OFFSET
-  
-
-  sd a0, OFFSET_REG_A0(t0)
-  sd a1, OFFSET_REG_A1(t0)
-  sd a2, OFFSET_REG_A2(t0)
-  sd a3, OFFSET_REG_A3(t0)
-  sd a4, OFFSET_REG_A4(t0)
-  sd a5, OFFSET_REG_A5(t0)
 
   ld a0, OFFSET_REG_REGS_POINTER(t0)
   csrr a1, CSR_STVAL 
