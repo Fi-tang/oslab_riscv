@@ -329,6 +329,8 @@ int main(void)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
+        send_ipi(NULL);
+
         init_time();
         printk("> [INIT] Time initialization succeeded.\n");
 
@@ -340,12 +342,12 @@ int main(void)
         } 
     }
     else{
-        // init_global_cpu();      // init global_cpu struct
-        // // Newly added, print cpu_id
-        // printk("> [Current cpu_id]: %d\n", cpuid);
+        init_global_cpu();      // init global_cpu struct
+        // Newly added, print cpu_id
+        printk("> [Current cpu_id]: %d\n", cpuid);
 
-        // setup_exception();
-        // printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
+        setup_exception();
+        printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
 
         // init_time();
         // printk("> [INIT-%d] Time initialization succeeded.\n", cpuid);
