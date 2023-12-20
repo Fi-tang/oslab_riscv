@@ -426,6 +426,7 @@ void init_global_cpu(){
     else{
         global_cpu[cpuid].cpu_current_running = &pcb[1];
     }
+    asm volatile("mv tp, %0" ::"r"(global_cpu[get_current_cpu_id()].cpu_current_running));
 }
 
 struct cpu *get_current_cpu(){

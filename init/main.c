@@ -123,7 +123,6 @@ static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] alway
     }
 
     current_running = &pid0_pcb;
-    asm volatile("mv tp, %0" ::"r"(global_cpu[get_current_cpu_id()].cpu_current_running));
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
@@ -331,15 +330,13 @@ int main(void)
 
         send_ipi(NULL);
 
-        init_time();
-        printk("> [INIT] Time initialization succeeded.\n");
-
-        while(1){
-            // If you do non-preemptive scheduling, it's used to surrender control
-            // If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
-            enable_preempt();
-            asm volatile("wfi");
-        } 
+        while(1){}
+        // init_time();
+        // printk("> [INIT] Time initialization succeeded.\n", cpuid);
+        // while(1){
+        //     enable_preempt();
+        //     asm volatile("wfi");
+        // }
     }
     else{
         init_global_cpu();      // init global_cpu struct
@@ -349,9 +346,14 @@ int main(void)
         setup_exception();
         printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
 
-        // init_time();
-        // printk("> [INIT-%d] Time initialization succeeded.\n", cpuid);
-        // while(1){}
+        init_time();
+        printk("> [INIT-%d] Time initialization succeeded.\n", cpuid);
+        
+        while(1){
+            enable_preempt();
+            asm volatile("wfi");
+        }
+      
     }
     return 0;
 }
