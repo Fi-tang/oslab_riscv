@@ -33,9 +33,6 @@ void do_scheduler(void){
     check_sleeping();
     
     int current_cpu = get_current_cpu_id();
-    printl("[Scheduler]: %s\n", global_cpu[current_cpu].cpu_current_running -> name);
-    PrintPcb_FromList(&ready_queue);
-    printl("total count_number = %d\n", CountNum_AccordList(&ready_queue));
 
     int ready_queue_num = CountNum_AccordList(&ready_queue);
     if(ready_queue_num == 2){
@@ -57,7 +54,7 @@ void do_scheduler(void){
             switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
         }   
         else{
-            switch_to(global_cpu[current_cpu].cpu_current_running, global_cpu[current_cpu].cpu_current_running);
+            switch_to(global_cpu[current_cpu].cpu_current_running, &pcb[current_cpu]);
         }
     }
     else{

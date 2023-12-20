@@ -70,6 +70,10 @@ void handle_irq_timer(regs_context_t *regs, uint64_t stval, uint64_t scause)
     do_scheduler();
 }
 
+void handle_irq_soft(){
+    asm volatile("csrw 0x144, zero");  // CSR_SIP = 0x144
+}
+
 void init_exception()
 {
     /* TODO: [p2-task3] initialize exc_table */
@@ -87,7 +91,7 @@ void init_exception()
     /* TODO: [p2-task4] initialize irq_table */
     /* NOTE: handle_int, handle_other, etc.*/
     irq_table[IRQC_U_SOFT]         = (handler_t)handle_other;
-    irq_table[IRQC_S_SOFT]         = (handler_t)handle_other;
+    irq_table[IRQC_S_SOFT]         = (handler_t)handle_irq_soft;
     irq_table[IRQC_M_SOFT]         = (handler_t)handle_other;
     irq_table[IRQC_U_TIMER]        = (handler_t)handle_other;
     irq_table[IRQC_S_TIMER]        = (handler_t)handle_irq_timer;
@@ -120,5 +124,9 @@ void handle_other(regs_context_t *regs, uint64_t stval, uint64_t scause)
            regs->sstatus, regs->sbadaddr, regs->scause);
     printk("sepc: 0x%lx\n\r", regs->sepc);
     printk("tval: 0x%lx cause: 0x%lx\n", stval, scause);
+    long x;
+    asm volatile("csrr %0, 0x104\n"
+    ::"r"(x));
+    printk("sie:  0x%lx\n", x);
     assert(0);
 }

@@ -306,6 +306,7 @@ int main(void)
 
         init_large_kernel();
         printk("> [INIT] LARGE_KERNEL_LOCK initialization succeeded. \n");
+        
 
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid);
@@ -327,8 +328,8 @@ int main(void)
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
         send_ipi(NULL);
-
         kernel_spin_lock_acquire();
+       
         init_time();
         kernel_spin_lock_release();
         while(1){
@@ -345,14 +346,12 @@ int main(void)
         setup_exception();
         printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
         
-        // while(1){}
-        init_time();
-        kernel_spin_lock_acquire();
+        // init_time();
+        kernel_spin_lock_release();
         while(1){
             enable_preempt();
             asm volatile("wfi");
         }
-      
     }
     return 0;
 }
