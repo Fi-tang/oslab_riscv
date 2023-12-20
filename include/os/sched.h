@@ -105,7 +105,6 @@ extern list_head sleep_queue;
 /* lock_queue can be implemented on lock.h*/
 
 /* current running task PCB */
-extern pcb_t * volatile current_running;
 extern pid_t process_id;
 
 extern pcb_t pcb[NUM_MAX_TASK];

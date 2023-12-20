@@ -121,8 +121,6 @@ static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] alway
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
-
-    current_running = &pid0_pcb;
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
@@ -332,7 +330,8 @@ int main(void)
 
         while(1){}
         // init_time();
-        // printk("> [INIT] Time initialization succeeded.\n", cpuid);
+        // printk("> [INIT] Time initialization succeeded.\n");
+
         // while(1){
         //     enable_preempt();
         //     asm volatile("wfi");
@@ -345,7 +344,8 @@ int main(void)
 
         setup_exception();
         printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
-
+        
+        // while(1){}
         init_time();
         printk("> [INIT-%d] Time initialization succeeded.\n", cpuid);
         
