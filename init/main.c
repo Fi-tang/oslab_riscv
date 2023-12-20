@@ -328,16 +328,16 @@ int main(void)
 
         send_ipi(NULL);
 
-        while(1){}
-        // init_time();
-        // printk("> [INIT] Time initialization succeeded.\n");
-
-        // while(1){
-        //     enable_preempt();
-        //     asm volatile("wfi");
-        // }
+        kernel_spin_lock_acquire();
+        init_time();
+        kernel_spin_lock_release();
+        while(1){
+            enable_preempt();
+            asm volatile("wfi");
+        }
     }
     else{
+        kernel_spin_lock_acquire();
         init_global_cpu();      // init global_cpu struct
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid);
@@ -347,8 +347,7 @@ int main(void)
         
         // while(1){}
         init_time();
-        printk("> [INIT-%d] Time initialization succeeded.\n", cpuid);
-        
+        kernel_spin_lock_acquire();
         while(1){
             enable_preempt();
             asm volatile("wfi");

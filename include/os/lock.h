@@ -168,4 +168,5 @@ kernel_spin_lock Large_Kernel_Lock;
 void kernel_spin_lock_init(kernel_spin_lock *lock);
 void kernel_spin_lock_acquire();
 void kernel_spin_lock_release();
+
 #endif

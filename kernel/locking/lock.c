@@ -444,12 +444,10 @@ void kernel_spin_lock_init(kernel_spin_lock *lock){
 
 void kernel_spin_lock_acquire(){
     kernel_spin_lock *lock = &Large_Kernel_Lock;
-    struct cpu *mycpu = get_current_cpu();
-
     while(atomic_swap_d(1, &(lock -> spin_lock_state)) != 0){
         ;  // spin
     }
-    lock -> cpu_own_this_lock = mycpu;
+    lock -> cpu_own_this_lock = get_current_cpu();
 }
 
 void kernel_spin_lock_release(){
