@@ -98,7 +98,7 @@ static void assign_initial_pcb(char *name, int alloc_index){
     pcb[alloc_index].pid = alloc_index;
     strcpy(pcb[alloc_index].name, name);
     long current_task_entry_address = load_task_img_by_name(task_num, pcb[alloc_index].name);
-    pcb[alloc_index].status = TASK_READY;
+    pcb[alloc_index].status = TASK_RUNNING;
     init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[0], current_task_entry_address);
 
     Enque_FromTail(&ready_queue, &pcb[alloc_index].list);
@@ -259,9 +259,6 @@ static void init_syscall(void)
 /************************************************************/
 static void init_time(void){
     // assume sstatus.sie = 1, and sie.stie = 1
-    asm volatile(
-        "addi a0, zero, 0x20\n"
-        "csrw sie, a0\n");
     time_elapsed = 0;
     clock_trigger_next_interrupt();
 }
@@ -342,12 +339,13 @@ int main(void)
         init_global_cpu();      // init global_cpu struct
         // Newly added, print cpu_id
         printk("> [Current cpu_id]: %d\n", cpuid);
-
+        
         setup_exception();
         printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
         
-        // init_time();
+        init_time();
         kernel_spin_lock_release();
+
         while(1){
             enable_preempt();
             asm volatile("wfi");
