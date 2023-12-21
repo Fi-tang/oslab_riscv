@@ -27,10 +27,53 @@ pid_t process_id = 1;
 void do_scheduler(void){
     int current_cpu = get_current_cpu_id();
     printl("[Scheduler]: [cpu:%d] %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> name);
-    switch_to(global_cpu[current_cpu].cpu_current_running, global_cpu[current_cpu].cpu_current_running);
+    PrintPcb_FromList(&ready_queue);
+
+    // First check the ready_queue
+    int ready_queue_num = CountNum_AccordList(&ready_queue);
+    if(ready_queue_num == 0){
+        // means ready_queue empty
+        // check if "shell" has started!
+        int shell_has_started = -1;
+        for(int i = 0; i < NUM_MAX_TASK; i++){
+            if(strcmp(pcb[i].name, "shell") == 0 && pcb[i].status != TASK_EXITED){
+                shell_has_started = i;
+                break;
+            }
+        }
+        if(shell_has_started == -1){
+            do_exec("shell", 0, NULL);
+        }
+        // the ready_queue is empty, do nothing!
+    }
+    else{
+        // ready_queue not empty
+        list_head *deque_node = NULL;
+        for(int i = 0; i < ready_queue_num; i++){
+            list_head *temp_node = Deque_FromHead(&ready_queue);
+            pcb_t *temp_pcb_node = GetPcb_FromList(temp_node);
+            printl("[%d] is %s\n", i, temp_pcb_node -> name);
+            if(strcmp(temp_pcb_node -> name, "pid0") != 0 && strcmp(temp_pcb_node -> name, "pid1") != 0){
+                deque_node = temp_node;
+            } 
+            Enque_FromTail(&ready_queue, temp_node);
+            break;
+        }
+
+        if(deque_node != NULL){
+            DequeNode_AccordList(&ready_queue, deque_node);
+            pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
+
+            pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
+            global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
+            prev_running -> status = TASK_READY;
+            global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
+            Enque_FromTail(&ready_queue, &(prev_running -> list));
+            switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
+        }
+        // else do nothing
+    }
 }
-
-
 
 void do_sleep(uint32_t sleep_time)
 {
