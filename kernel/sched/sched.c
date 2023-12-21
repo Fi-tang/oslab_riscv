@@ -52,7 +52,7 @@ void do_scheduler(void){
         for(int i = 0; i < ready_queue_num; i++){
             list_head *temp_node = Deque_FromHead(&ready_queue);
             pcb_t *temp_pcb_node = GetPcb_FromList(temp_node);
-            printl("[%d] is %s\n", i, temp_pcb_node -> name);
+            printl("check--[%d] is %s\n", i, temp_pcb_node -> name);
             if(strcmp(temp_pcb_node -> name, "pid0") != 0 && strcmp(temp_pcb_node -> name, "pid1") != 0){
                 deque_node = temp_node;
             } 
@@ -66,9 +66,11 @@ void do_scheduler(void){
 
             pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
             global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
-            prev_running -> status = TASK_READY;
             global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
-            Enque_FromTail(&ready_queue, &(prev_running -> list));
+            if(prev_running -> status == TASK_RUNNING){
+                prev_running -> status = TASK_READY;
+                Enque_FromTail(&ready_queue, &(prev_running -> list));
+            }
             switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
         }
         // else do nothing
