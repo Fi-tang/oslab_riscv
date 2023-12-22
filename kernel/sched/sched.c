@@ -26,9 +26,11 @@ pid_t process_id = 1;
 
 void do_scheduler(void){
     int current_cpu = get_current_cpu_id();
-    printl("[Scheduler]: [cpu:%d] %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> name);
+    printl("[Scheduler]: [cpu:%d] %d: %s\n", current_cpu, 
+    global_cpu[current_cpu].cpu_current_running -> pid,global_cpu[current_cpu].cpu_current_running -> name);
     PrintPcb_FromList(&ready_queue);
 
+    check_sleeping();  // error_occurs when check sleeping
     // First check the ready_queue
     int ready_queue_num = CountNum_AccordList(&ready_queue);
     if(ready_queue_num == 0){
@@ -52,7 +54,6 @@ void do_scheduler(void){
         for(int i = 0; i < ready_queue_num; i++){
             list_head *temp_node = Deque_FromHead(&ready_queue);
             pcb_t *temp_pcb_node = GetPcb_FromList(temp_node);
-            printl("check--[%d] is %s\n", i, temp_pcb_node -> name);
             if(strcmp(temp_pcb_node -> name, "pid0") != 0 && strcmp(temp_pcb_node -> name, "pid1") != 0){
                 deque_node = temp_node;
             } 

@@ -195,8 +195,6 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
-            printl("[Do_Exec]: pcb[%d]: %s\n", pcb[i].pid, pcb[i].name);
-            PrintPcb_FromList(&ready_queue);
             return i;
         }
     }
