@@ -49,8 +49,25 @@ void do_scheduler(void){
     // First judge the ready_queue
     int count_ready_queue = CountNum_AccordList(&ready_queue);
     if(count_ready_queue == 0){
-        do_exec("shell", 0, NULL);      // need to start shell
-        return;
+        int has_started_shell = -1;
+        for(int k = 0; k < NUM_MAX_TASK; k++){
+            if(strcmp(pcb[k].name, "shell") == 0 && pcb[k].status != TASK_EXITED){
+                has_started_shell = k;
+                break;
+            }
+        }
+        if(has_started_shell == -1){
+            do_exec("shell", 0, NULL);      // need to start shell
+            return;
+        }
+        else{   // has started shell, and queue empty!
+            if(global_cpu[current_cpu].cpu_current_running -> status == TASK_RUNNING){
+                printl("It's okay\n");
+            }
+            else{ // In practice, it never occurs
+                printl("What????????????????????????????????????????\n");
+            }
+        }
     }
     else{
         // check if there has useful_pcb_info
@@ -80,7 +97,7 @@ void do_scheduler(void){
                 pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
                 global_cpu[current_cpu].cpu_current_running = useless_pcb_node;
                 useless_pcb_node -> status = TASK_RUNNING;
-                
+
                 switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
             }           
         }
