@@ -119,6 +119,7 @@ static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] alway
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
+    do_exec("shell", 0, NULL);
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){

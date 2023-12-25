@@ -27,82 +27,28 @@ pid_t process_id = 1;
 void do_scheduler(void){
     check_sleeping();  // First check sleep queue!
     int current_cpu = get_current_cpu_id();
-    //************************start scheduler****************
-    // First judge the ready_queue
-    int count_ready_queue = CountNum_AccordList(&ready_queue);
-    if(count_ready_queue == 0){
-        int has_started_shell = -1;
-        for(int k = 0; k < NUM_MAX_TASK; k++){
-            if(strcmp(pcb[k].name, "shell") == 0 && pcb[k].status != TASK_EXITED){
-                has_started_shell = k;
-                break;
-            }
-        }
-        if(has_started_shell == -1){
-            do_exec("shell", 0, NULL);      // need to start shell
-            return;
-        }
-        /**
-        the case is: there does not exist the situation that:
-        1. ready_queue is empty
-        2. shell has already started, and somehow been blocked!
-        3. the global_cpu[current_cpu].cpu_current_running -> status != TASK_RUNNING
-        (the prev_running task also somehow been blocked!
-        because when it meets 1 && 2, the prev_running can only be pid0 and pid1, they will never be blocked!)
-        */
+
+    pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
+    // only let useful pcb_information Enque ready_queue!
+    if(strcmp(prev_running -> name, "pid0") != 0 && strcmp(prev_running -> name, "pid1") != 0 && prev_running -> status == TASK_RUNNING){
+        prev_running -> status = TASK_READY;
+        Enque_FromTail(&ready_queue, &(prev_running -> list));
+    }
+    if(strcmp(prev_running -> name, "pid0") == 0 || strcmp(prev_running -> name, "pid1") == 0){
+        prev_running -> status = TASK_READY;
+    }
+
+    int ready_queue_num = CountNum_AccordList(&ready_queue);
+    if(ready_queue_num == 0){
+        global_cpu[current_cpu].cpu_current_running = &pcb[current_cpu];
     }
     else{
-        // check if there has useful_pcb_info
-        int has_useful_pcb_info = -1;
-        for(int i = 0; i < count_ready_queue; i++){
-            list_head *deque_node = Deque_FromHead(&ready_queue);
-            pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
-            Enque_FromTail(&ready_queue, deque_node);
-            if(strcmp(deque_pcb_node -> name, "pid0") != 0 && strcmp(deque_pcb_node -> name, "pid1") != 0){
-                has_useful_pcb_info = deque_pcb_node -> pid;
-                break;
-            }
-        }
-        if(has_useful_pcb_info == -1){
-            // has not find any useful pcb_info, do not scheduler
-            //**********************end scheduler **********************
-            // judge whether the prev_running can still run
-            bool prev_running_valid = false;
-            if(global_cpu[current_cpu].cpu_current_running -> status == TASK_RUNNING){
-                prev_running_valid = true;
-                return;
-            }
-            else{   // the current_running should not be rescheduler, also scheduler pid0 or pid1
-                list_head *useless_node = Deque_FromHead(&ready_queue);
-                pcb_t *useless_pcb_node = GetPcb_FromList(useless_node);
-                // the prev_running does not have to enqueue
-                pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
-                global_cpu[current_cpu].cpu_current_running = useless_pcb_node;
-                useless_pcb_node -> status = TASK_RUNNING;
-
-                switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
-            }           
-        }
-        else{
-            // has find useful pcb_info
-            list_head *target_node = &(pcb[has_useful_pcb_info].list);
-            DequeNode_AccordList(&ready_queue, target_node);
-            pcb_t *target_pcb_node = GetPcb_FromList(target_node);
-            pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
-            if(prev_running -> status == TASK_RUNNING){
-                prev_running -> status = TASK_READY;
-                Enque_FromTail(&ready_queue, &(prev_running -> list));
-            }
-            target_pcb_node -> status = TASK_RUNNING;
-            global_cpu[current_cpu].cpu_current_running = target_pcb_node;
-
-            //**********************end scheduler **********************
-            // debug line [after part]
-            //****************** leave space for switch_to *****************
-            // TODO: switch_to 
-            switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
-        }
+        list_head *deque_node = Deque_FromHead(&ready_queue);
+        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
+        global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
     }
+    global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
+    switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
 }
 
 void do_sleep(uint32_t sleep_time)
