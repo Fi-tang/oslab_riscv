@@ -168,7 +168,19 @@ static inline void PrintPcb_FromList(list_head *head){
             list_head *node = head -> next;
             while(node != head){
                 pcb_t *print_pcb_list = GetPcb_FromList(node);
-                printl("[%d]: %s -> ", print_pcb_list -> pid, print_pcb_list -> name);
+                printl("[%d]: %s  ", print_pcb_list -> pid, print_pcb_list -> name);
+                if(print_pcb_list -> status == TASK_BLOCKED){
+                    printl(" TASK_BLOCKED -> ");
+                }
+                else if(print_pcb_list -> status == TASK_READY){
+                    printl(" TASK_READY -> ");
+                }
+                else if(print_pcb_list -> status == TASK_RUNNING){
+                    printl(" TASK_RUNNING -> ");
+                }
+                else if(print_pcb_list -> status == TASK_EXITED){
+                    printl(" TASK_EXITED -> ");
+                }
                 node = node -> next;
             }
             printl("NULL\n");

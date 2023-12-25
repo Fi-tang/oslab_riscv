@@ -25,56 +25,67 @@ pcb_t * volatile current_running;
 pid_t process_id = 1;
 
 void do_scheduler(void){
+    // debug line [before part]
     int current_cpu = get_current_cpu_id();
-    printl("[Scheduler]: [cpu:%d] %d: %s\n", current_cpu, 
-    global_cpu[current_cpu].cpu_current_running -> pid,global_cpu[current_cpu].cpu_current_running -> name);
+    printl("\n**[before part]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
+    global_cpu[current_cpu].cpu_current_running -> name);
+    printl("The prev ready_queue: \n");
     PrintPcb_FromList(&ready_queue);
 
-    check_sleeping();  // error_occurs when check sleeping
-    // First check the ready_queue
-    int ready_queue_num = CountNum_AccordList(&ready_queue);
-    if(ready_queue_num == 0){
-        // means ready_queue empty
-        // check if "shell" has started!
-        int shell_has_started = -1;
-        for(int i = 0; i < NUM_MAX_TASK; i++){
-            if(strcmp(pcb[i].name, "shell") == 0 && pcb[i].status != TASK_EXITED){
-                shell_has_started = i;
+    //************************start scheduler****************
+    // First judge the ready_queue
+    int count_ready_queue = CountNum_AccordList(&ready_queue);
+    if(count_ready_queue == 0){
+        do_exec("shell", 0, NULL);      // need to start shell
+        // debug line [after part]
+        printl("\n**[Start shell]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
+        global_cpu[current_cpu].cpu_current_running -> name);
+        return;
+    }
+    else{
+        // check if there has useful_pcb_info
+        int has_useful_pcb_info = -1;
+        for(int i = 0; i < count_ready_queue; i++){
+            list_head *deque_node = Deque_FromHead(&ready_queue);
+            pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
+            Enque_FromTail(&ready_queue, deque_node);
+            if(strcmp(deque_pcb_node -> name, "pid0") != 0 && strcmp(deque_pcb_node -> name, "pid1") != 0){
+                has_useful_pcb_info = deque_pcb_node -> pid;
                 break;
             }
         }
-        if(shell_has_started == -1){
-            do_exec("shell", 0, NULL);
+        if(has_useful_pcb_info == -1){
+            // has not find any useful pcb_info, do not scheduler
+            //**********************end scheduler **********************
+            // debug line [after part]
+            printl("\n**[Not scheduler]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
+            global_cpu[current_cpu].cpu_current_running -> name);
+            //****************** leave space for switch_to *****************
+            return;
         }
-        // the ready_queue is empty, do nothing!
-    }
-    else{
-        // ready_queue not empty
-        list_head *deque_node = NULL;
-        for(int i = 0; i < ready_queue_num; i++){
-            list_head *temp_node = Deque_FromHead(&ready_queue);
-            pcb_t *temp_pcb_node = GetPcb_FromList(temp_node);
-            if(strcmp(temp_pcb_node -> name, "pid0") != 0 && strcmp(temp_pcb_node -> name, "pid1") != 0){
-                deque_node = temp_node;
-            } 
-            Enque_FromTail(&ready_queue, temp_node);
-            break;
-        }
-
-        if(deque_node != NULL){
-            DequeNode_AccordList(&ready_queue, deque_node);
-            pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
-
+        else{
+            // has find useful pcb_info
+            list_head *target_node = &(pcb[has_useful_pcb_info].list);
+            DequeNode_AccordList(&ready_queue, target_node);
+            pcb_t *target_pcb_node = GetPcb_FromList(target_node);
             pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
-            global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
-            global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
             if(prev_running -> status == TASK_RUNNING){
                 prev_running -> status = TASK_READY;
                 Enque_FromTail(&ready_queue, &(prev_running -> list));
             }
+            target_pcb_node -> status = TASK_RUNNING;
+            global_cpu[current_cpu].cpu_current_running = target_pcb_node;
+
+            //**********************end scheduler **********************
+            // debug line [after part]
+            printl("\n**[after part]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
+            global_cpu[current_cpu].cpu_current_running -> name);
+            printl("The after ready_queue: \n");
+            PrintPcb_FromList(&ready_queue);
+            //****************** leave space for switch_to *****************
+            // TODO: switch_to 
             switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
         }
-        // else do nothing
     }
 }
 
