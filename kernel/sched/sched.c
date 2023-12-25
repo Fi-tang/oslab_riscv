@@ -30,6 +30,18 @@ void do_scheduler(void){
     int current_cpu = get_current_cpu_id();
     printl("\n**[before part]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
     global_cpu[current_cpu].cpu_current_running -> name);
+    if(global_cpu[current_cpu].cpu_current_running -> status == TASK_RUNNING){
+        printl("Status: TASK_RUNNING\n");
+    }
+    else if(global_cpu[current_cpu].cpu_current_running -> status == TASK_BLOCKED){
+        printl("Status: TASK_BLOCKED\n");
+    }
+    else if(global_cpu[current_cpu].cpu_current_running -> status == TASK_EXITED){
+        printl("Status: TASK_EXITED\n");
+    }
+    else{
+        printl("Status: TASK_READY\n");
+    }
     printl("The prev ready_queue: \n");
     PrintPcb_FromList(&ready_queue);
 
@@ -38,9 +50,6 @@ void do_scheduler(void){
     int count_ready_queue = CountNum_AccordList(&ready_queue);
     if(count_ready_queue == 0){
         do_exec("shell", 0, NULL);      // need to start shell
-        // debug line [after part]
-        printl("\n**[Start shell]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
-        global_cpu[current_cpu].cpu_current_running -> name);
         return;
     }
     else{
@@ -58,11 +67,22 @@ void do_scheduler(void){
         if(has_useful_pcb_info == -1){
             // has not find any useful pcb_info, do not scheduler
             //**********************end scheduler **********************
-            // debug line [after part]
-            printl("\n**[Not scheduler]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
-            global_cpu[current_cpu].cpu_current_running -> name);
-            //****************** leave space for switch_to *****************
-            return;
+            // judge whether the prev_running can still run
+            bool prev_running_valid = false;
+            if(global_cpu[current_cpu].cpu_current_running -> status == TASK_RUNNING){
+                prev_running_valid = true;
+                return;
+            }
+            else{   // the current_running should not be rescheduler, also scheduler pid0 or pid1
+                list_head *useless_node = Deque_FromHead(&ready_queue);
+                pcb_t *useless_pcb_node = GetPcb_FromList(useless_node);
+                // the prev_running does not have to enqueue
+                pcb_t *prev_running = global_cpu[current_cpu].cpu_current_running;
+                global_cpu[current_cpu].cpu_current_running = useless_pcb_node;
+                useless_pcb_node -> status = TASK_RUNNING;
+                
+                switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
+            }           
         }
         else{
             // has find useful pcb_info
