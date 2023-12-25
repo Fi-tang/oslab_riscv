@@ -26,6 +26,7 @@ pid_t process_id = 1;
 
 void do_scheduler(void){
     // debug line [before part]
+    check_sleeping();  // First check sleep queue!
     int current_cpu = get_current_cpu_id();
     printl("\n**[before part]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
     global_cpu[current_cpu].cpu_current_running -> name);
