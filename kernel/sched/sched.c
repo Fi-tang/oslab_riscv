@@ -25,26 +25,8 @@ pcb_t * volatile current_running;
 pid_t process_id = 1;
 
 void do_scheduler(void){
-    // debug line [before part]
     check_sleeping();  // First check sleep queue!
     int current_cpu = get_current_cpu_id();
-    printl("\n**[before part]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
-    global_cpu[current_cpu].cpu_current_running -> name);
-    if(global_cpu[current_cpu].cpu_current_running -> status == TASK_RUNNING){
-        printl("Status: TASK_RUNNING\n");
-    }
-    else if(global_cpu[current_cpu].cpu_current_running -> status == TASK_BLOCKED){
-        printl("Status: TASK_BLOCKED\n");
-    }
-    else if(global_cpu[current_cpu].cpu_current_running -> status == TASK_EXITED){
-        printl("Status: TASK_EXITED\n");
-    }
-    else{
-        printl("Status: TASK_READY\n");
-    }
-    printl("The prev ready_queue: \n");
-    PrintPcb_FromList(&ready_queue);
-
     //************************start scheduler****************
     // First judge the ready_queue
     int count_ready_queue = CountNum_AccordList(&ready_queue);
@@ -60,14 +42,14 @@ void do_scheduler(void){
             do_exec("shell", 0, NULL);      // need to start shell
             return;
         }
-        else{   // has started shell, and queue empty!
-            if(global_cpu[current_cpu].cpu_current_running -> status == TASK_RUNNING){
-                printl("It's okay\n");
-            }
-            else{ // In practice, it never occurs
-                printl("What????????????????????????????????????????\n");
-            }
-        }
+        /**
+        the case is: there does not exist the situation that:
+        1. ready_queue is empty
+        2. shell has already started, and somehow been blocked!
+        3. the global_cpu[current_cpu].cpu_current_running -> status != TASK_RUNNING
+        (the prev_running task also somehow been blocked!
+        because when it meets 1 && 2, the prev_running can only be pid0 and pid1, they will never be blocked!)
+        */
     }
     else{
         // check if there has useful_pcb_info
@@ -116,10 +98,6 @@ void do_scheduler(void){
 
             //**********************end scheduler **********************
             // debug line [after part]
-            printl("\n**[after part]** cpu[%d] is running [%d]: %s\n", current_cpu, global_cpu[current_cpu].cpu_current_running -> pid,
-            global_cpu[current_cpu].cpu_current_running -> name);
-            printl("The after ready_queue: \n");
-            PrintPcb_FromList(&ready_queue);
             //****************** leave space for switch_to *****************
             // TODO: switch_to 
             switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
