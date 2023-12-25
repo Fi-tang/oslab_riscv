@@ -99,7 +99,7 @@ static void assign_initial_pcb(char *name, int alloc_index){
     strcpy(pcb[alloc_index].name, name);
     long current_task_entry_address = load_task_img_by_name(task_num, pcb[alloc_index].name);
     pcb[alloc_index].status = TASK_RUNNING;
-    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[0], current_task_entry_address);
+    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], current_task_entry_address);
 }
 
 
