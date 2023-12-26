@@ -47,6 +47,7 @@ void do_scheduler(void){
         pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
         global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
     }
+
     global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
     switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
 }
@@ -96,18 +97,19 @@ void do_process_show(){
     int count = 0;
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_RUNNING){
-            printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\n",
-            count, pcb[i].pid, pcb[i].name, "RUNNING");
+            int current_cpu = (global_cpu[0].cpu_current_running == &pcb[i])? 0 : 1;
+            printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\t\tmask:\t0x%x\t\tRunning on core %d\n",
+            count, pcb[i].pid, pcb[i].name, "RUNNING", pcb[i].pcb_mask, current_cpu);
             count++;
         }
         else if(pcb[i].status == TASK_BLOCKED){
-            printk("[%d]\tPID\t:\t%d\t%s\tSTATUS\t:\t%s\n",
-            count, pcb[i].pid, pcb[i].name, "BLOCKED");
+            printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\t\tmask:\t0x%x\n",
+            count, pcb[i].pid, pcb[i].name, "BLOCKED", pcb[i].pcb_mask);
             count++;
         }
         else if(pcb[i].status == TASK_READY){
-            printk("[%d]\tPID\t:\t%d\t%s\tSTATUS\t:\t%s\n",
-            count, pcb[i].pid, pcb[i].name, "READY");
+            printk("[%d]\tPID\t:\t%d\t%s\t\tSTATUS\t:\t%s\t\tmask:\t0x%x\n",
+            count, pcb[i].pid, pcb[i].name, "READY  ", pcb[i].pcb_mask);
             count++;
         }
     }
@@ -285,5 +287,19 @@ void do_exit(void){
 
     if(FindNode_InQueue(&ready_queue, &(global_cpu[get_current_cpu_id()].cpu_current_running -> list)) == 1){
         DequeNode_AccordList(&ready_queue, &(global_cpu[get_current_cpu_id()].cpu_current_running -> list));
+    }
+}
+
+
+//************************[P3-task4] taskset *********************************************************
+void do_taskset(int mask, char *taskname, int task_pid){
+    if(strcmp(taskname, "") == 0){
+        // means it is already started
+        pcb[task_pid].pcb_mask = mask;
+    }
+    else{
+        // need to start this task
+        int started_pid = do_exec(taskname, 1, NULL);   // The first argv[0] is taskname, we can put it here or leave it somewhere else
+        pcb[started_pid].pcb_mask = mask;
     }
 }

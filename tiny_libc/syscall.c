@@ -235,3 +235,7 @@ int sys_mbox_recv(int mbox_idx, void *msg, int msg_length)
     return invoke_syscall(SYSCALL_MBOX_RECV, (long)mbox_idx, (long)msg, (long)msg_length, 0, 0);
 }
 /************************************************************/
+// P3-task4 taskset related
+void sys_taskset(int mask, char *taskname, int task_pid){
+    invoke_syscall(SYSCALL_TASKSET, (long)mask, (long)taskname, (long)task_pid, 0, 0);
+}

@@ -94,6 +94,7 @@ typedef struct pcb
     switchto_context_t pcb_switchto_context;    // 88
     regs_context_t pcb_user_regs_context;       // 200
     char name[EI_NIDENT];                       // 496
+    int pcb_mask;                               // 0x1-core0, 0x2-core1, 0x3-both
 } pcb_t;
 
 /* ready queue to run */
@@ -130,6 +131,7 @@ extern int do_kill(pid_t pid);
 extern int do_waitpid(pid_t pid);
 extern void do_process_show();
 extern pid_t do_getpid();
+extern void do_taskset(int mask, char *taskname, int task_pid);
 /************************************************************/
 
 // use list to find the whole pcb

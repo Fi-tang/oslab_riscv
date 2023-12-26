@@ -36,6 +36,6 @@
 #define SYSCALL_SEMA_UP 57     // newly added!
 #define SYSCALL_SEMA_DOWN 58   // newly added!
 #define SYSCALL_SEMA_DESTROY 59 // newly added!    
-
+#define SYSCALL_TASKSET 60      // newly added!
 
 #endif

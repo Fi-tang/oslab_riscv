@@ -132,6 +132,27 @@ void handle_multiple_command(char command_buffer[1000], int spaceNum){
         printf("kill_pid = %d\n", kill_pid);
         sys_kill(kill_pid);
     }
+    else if(strcmp(command_split[0], "taskset") == 0){
+        if(strcmp(command_split[1], "-p") == 0){
+            int masknumber = command_split[2][2] - '0';
+            // deal with task_pid
+            int task_pid = 0;
+            if(strlen(command_split[3]) == 1){
+                task_pid = command_split[3][0] - '0';
+            }
+            else{
+                task_pid = (command_split[3][0] - '0') * 10 + (command_split[3][1] - '0');
+            }
+            printf("change running pid: [%d]'s mask to %d\n", task_pid, masknumber);
+            char *null_taskname = "";
+            sys_taskset(masknumber, null_taskname, task_pid);
+        }
+        else{
+            int masknumber = command_split[1][2] - '0';
+            printf("start task %s with mask %d\n", command_split[2], masknumber);
+            sys_taskset(masknumber, command_split[2], 0);
+        }
+    }
     else{
         printf("task-1: unhandled command!\n");
     }

@@ -99,6 +99,7 @@ static void assign_initial_pcb(char *name, int alloc_index){
     strcpy(pcb[alloc_index].name, name);
     long current_task_entry_address = load_task_img_by_name(task_num, pcb[alloc_index].name);
     pcb[alloc_index].status = TASK_RUNNING;
+    pcb[alloc_index].pcb_mask = 0x3;
     init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], current_task_entry_address);
 }
 
@@ -123,8 +124,8 @@ static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] alway
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
-    if(argc == 0){
-        pcb -> pcb_user_regs_context.regs[10] = 0;
+    if(argc == 0 || (argc == 1 && argv == NULL)){
+        pcb -> pcb_user_regs_context.regs[10] = argc;   // need to pass the assert(argc >= 1) test, where argv[0] == taskname
         pcb -> pcb_user_regs_context.regs[11] = 0x0;
         return;
     }   
@@ -190,6 +191,12 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             strcpy(pcb[i].name, name);
             long current_task_entry_address = load_task_img_by_name(task_num, name);
             pcb[i].status = TASK_READY;
+             
+            // If otherwise declared, inhereit father's mask
+            int current_cpu = get_current_cpu_id();
+            pcb_t *father_pcb_node = global_cpu[current_cpu].cpu_current_running;
+            // default mask from father
+            pcb[i].pcb_mask = father_pcb_node -> pcb_mask;
 
             do_writeArgvToMemory(&pcb[i], argc, argv);
 
@@ -251,6 +258,9 @@ static void init_syscall(void)
     syscall[SYSCALL_MBOX_CLOSE]    = (long (*)())do_mbox_close;
     syscall[SYSCALL_MBOX_SEND]     = (long (*)())do_mbox_send;
     syscall[SYSCALL_MBOX_RECV]     = (long (*)())do_mbox_recv;
+
+    // P3-part4-taskset
+    syscall[SYSCALL_TASKSET]       = (long (*)())do_taskset;
 }
 
 /************************************************************/
