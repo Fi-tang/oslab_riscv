@@ -43,11 +43,33 @@ void do_scheduler(void){
         global_cpu[current_cpu].cpu_current_running = &pcb[current_cpu];
     }
     else{
-        list_head *deque_node = Deque_FromHead(&ready_queue);
-        pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
-        global_cpu[current_cpu].cpu_current_running = deque_pcb_node;
+        /**
+        need to check the next running pcb's mask
+        */
+        list_head *has_find_suitable_node = NULL;
+        for(int i = 0; i < ready_queue_num; i++){
+            list_head *deque_node = Deque_FromHead(&ready_queue);
+            pcb_t *deque_pcb_node = GetPcb_FromList(deque_node);
+            int current_pcb_mask = deque_pcb_node -> pcb_mask;
+            Enque_FromTail(&ready_queue, deque_node);
+            if(current_pcb_mask == 3){
+                has_find_suitable_node = deque_node;
+                break;
+            }
+            else if((current_pcb_mask == 2 && current_cpu == 1) || (current_pcb_mask == 1 && current_cpu == 0)){
+                has_find_suitable_node = deque_node;
+                break;
+            }
+        }
+        if(has_find_suitable_node == NULL){
+            global_cpu[current_cpu].cpu_current_running = &pcb[current_cpu];
+        }
+        else{
+            DequeNode_AccordList(&ready_queue, has_find_suitable_node);
+            pcb_t *target_pcb_node = GetPcb_FromList(has_find_suitable_node);
+            global_cpu[current_cpu].cpu_current_running = target_pcb_node;
+        }
     }
-
     global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
     switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
 }
