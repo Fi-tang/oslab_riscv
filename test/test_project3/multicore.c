@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_RANGE 5000000
+#define MAX_RANGE  5000000
 #define MOD 1000007
 #define NUM_CPUS 2
 #define BUF_LEN 30

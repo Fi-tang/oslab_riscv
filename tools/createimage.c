@@ -9,9 +9,11 @@
 #define IMAGE_FILE "./image"
 #define ARGS "[--extended] [--vm] <bootblock> <executable-file> ..."
 
+#define EI_NIDENT (16)
 #define SECTOR_SIZE 512
 #define BOOT_LOADER_SIG_OFFSET 0x1fe
 #define OS_SIZE_LOC (BOOT_LOADER_SIG_OFFSET - 2)
+#define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
 #define BOOT_LOADER_SIG_1 0x55
 #define BOOT_LOADER_SIG_2 0xaa
 
@@ -19,10 +21,15 @@
 
 /* TODO: [p1-task4] design your own task_info_t */
 typedef struct {
-
+    char taskname[EI_NIDENT];
+    int start_block_id;
+    int total_block_num;
+    long task_filesz;
+    long task_memorysz;
+    long task_blockstart_offset;
 } task_info_t;
 
-#define TASK_MAXNUM 16
+#define TASK_MAXNUM 48
 static task_info_t taskinfo[TASK_MAXNUM];
 
 /* structure to store command line options */
@@ -87,14 +94,14 @@ static void create_image(int nfiles, char *files[])
     Elf64_Phdr phdr;
 
     /* open the image file */
-    img = fopen(IMAGE_FILE, "w");
+    img = fopen(IMAGE_FILE, "w+");
     assert(img != NULL);
 
     /* for each input file */
+    int taskidx = 0;
+    int total_filesz = 0;
+    int total_blocknumber = 0;
     for (int fidx = 0; fidx < nfiles; ++fidx) {
-
-        int taskidx = fidx - 2;
-
         /* open input file */
         fp = fopen(*files, "r");
         assert(fp != NULL);
@@ -113,11 +120,48 @@ static void create_image(int nfiles, char *files[])
 
             /* write segment to the image */
             write_segment(phdr, fp, img, &phyaddr);
-
-            /* update nbytes_kernel */
-            if (strcmp(*files, "main") == 0) {
-                nbytes_kernel += get_filesz(phdr);
+            
+            if (strcmp(*files, "bootblock") == 0) {
+                write_padding(img, &phyaddr, 3 * SECTOR_SIZE);
+                total_filesz += 3 * SECTOR_SIZE;
+                total_blocknumber = 3;
             }
+            /* update nbytes_kernel */
+            else{
+                if(strcmp(*files, "main") == 0){
+                    nbytes_kernel += get_filesz(phdr);
+                }
+                /**
+                 * 1. judge start_block_id
+                 * if total_filesz < total_blocknumber * SECTOR_SIZE --> total_blocknumber - 1
+                 * else total_blocknumber
+                */
+                if(total_filesz < total_blocknumber * SECTOR_SIZE){
+                    taskinfo[taskidx].start_block_id = total_blocknumber - 1;
+                    taskinfo[taskidx].task_blockstart_offset =  total_filesz - (total_blocknumber - 1) * SECTOR_SIZE;
+                    int gap = total_blocknumber * SECTOR_SIZE - total_filesz;
+                    if(get_filesz(phdr) <= gap){
+                        taskinfo[taskidx].total_block_num = 1;
+                    }
+                    else{
+                        taskinfo[taskidx].total_block_num = 1 + NBYTES2SEC(get_filesz(phdr) - gap);
+                    }
+                }
+                else{
+                    taskinfo[taskidx].start_block_id = total_blocknumber;
+                    taskinfo[taskidx].task_blockstart_offset = 0;
+                    taskinfo[taskidx].total_block_num = NBYTES2SEC(get_filesz(phdr));
+                }
+                strcpy(taskinfo[taskidx].taskname, *files);
+                taskinfo[taskidx].task_filesz = get_filesz(phdr);
+                taskinfo[taskidx].task_memorysz = get_memsz(phdr);
+
+                total_filesz += get_filesz(phdr);
+                total_blocknumber = NBYTES2SEC(total_filesz);
+                taskidx++;
+            }
+            printf("filename = %s total_filesz = %d total_blocknumber = %d\n", *files, total_filesz, total_blocknumber);
+            
         }
 
         /* write padding bytes */
@@ -127,9 +171,6 @@ static void create_image(int nfiles, char *files[])
          *  occupies the same number of sectors
          * 2. [p1-task4] only padding bootblock is allowed!
          */
-        if (strcmp(*files, "bootblock") == 0) {
-            write_padding(img, &phyaddr, SECTOR_SIZE);
-        }
 
         fclose(fp);
         files++;
@@ -215,6 +256,69 @@ static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
 {
     // TODO: [p1-task3] & [p1-task4] write image info to some certain places
     // NOTE: os size, infomation about app-info sector(s) ...
+    printf("\n****debugging sector:[write_img_info]***\n");
+    int os_size_in_sectors = NBYTES2SEC(nbytes_kernel);
+    rewind(img);
+    fseek(img, OS_SIZE_LOC, SEEK_SET);
+    int write_os_size;
+    write_os_size = fwrite(&os_size_in_sectors, 4, 1, img);
+    assert(write_os_size == 1);
+
+    rewind(img);
+    int write_app_number;
+    fseek(img, APP_NUMBER_LOC, SEEK_SET);
+    write_app_number = fwrite(&tasknum, 2, 1, img);
+    assert(write_app_number == 1);
+    // here, os_size has 4 bytes, while app_number has 2 bytes
+    // [][][][] [][][][] [][]   [0][4]               [0][6] low |   [0][0] high
+    //                          [App-number]       [os_size_in_sectors]   
+
+    rewind(img);
+    int write_task_info;
+    fseek(img, SECTOR_SIZE, SEEK_SET);
+    for(int i = 0; i < (tasknum + 1); i++){
+        write_task_info = fwrite(&taskinfo[i], sizeof(task_info_t), 1, img);
+        assert(write_task_info == 1);
+    }
+
+    //*********************************debugging
+    rewind(img);
+    int img_read_os_size;
+    fseek(img, OS_SIZE_LOC, SEEK_SET);
+    fread(&img_read_os_size, sizeof(int), 1, img);
+    printf("img_read_os_size = %d\n", img_read_os_size);
+
+    rewind(img);
+    short img_read_app_number;
+    fseek(img, APP_NUMBER_LOC, SEEK_SET);
+    fread(&img_read_app_number, sizeof(short), 1, img);
+    printf("img_read_app_number = %d\n", img_read_app_number);
+
+    rewind(img);
+    fseek(img, SECTOR_SIZE, SEEK_SET);
+    for(int i = 0; i < tasknum + 1; i++){
+        char read_taskname[EI_NIDENT];
+        for(int j = 0; j < EI_NIDENT; j++){
+            read_taskname[j] = fgetc(img);
+        }
+        int read_start_block_id;
+        fread(&read_start_block_id, sizeof(int), 1, img);
+        int read_total_block_num;
+        fread(&read_total_block_num, sizeof(int), 1, img);
+
+        long read_task_filesz;
+        fread(&read_task_filesz, sizeof(long), 1, img);
+        long read_memory_filesz;
+        fread(&read_memory_filesz, sizeof(long), 1, img);
+        long read_task_blockstart_offset;
+        fread(&read_task_blockstart_offset, sizeof(long), 1, img);
+        printf("tasks[%d].taskname=%s\ttasks[%d].start_block_id=%d\n",
+        i, read_taskname, i, read_start_block_id);
+        printf("tasks[%d].total_block_num=%d\ttasks[%d].taskfilesz=%ld\n",
+        i, read_total_block_num,i, read_task_filesz);
+        printf("tasks[%d].task_memorysz=%ld\ttasks[%d].task_blockstart_offset=%ld\n\n",
+        i, read_memory_filesz,i, read_task_blockstart_offset);
+    }
 }
 
 /* print an error message and exit */

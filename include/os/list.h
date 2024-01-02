@@ -51,5 +51,86 @@ typedef list_node_t list_head;
 #define LIST_HEAD(name) struct list_node name = {&(name), &(name)}
 
 /* TODO: [p2-task1] implement your own list API */
+static inline void Initialize_QueueNode(list_head *node){
+    node -> next = node;
+    node -> prev = node;
+}
+
+static inline void Enque_FromTail(list_head *head, list_head *node){
+    if(head -> next == head){
+        head -> next = node;
+        node -> next = head;
+        head -> prev = node;
+        node -> prev = head;
+    }
+    else{
+        list_head *last_node = head -> next;
+        while(last_node -> next != head){
+            last_node = last_node -> next;
+        }
+        last_node -> next = node;
+        node -> prev = last_node;
+        node -> next = head;
+        head -> prev = node;
+    }
+}
+
+static inline list_head *Deque_FromHead(list_head *head){
+    if(head -> next == head){
+        return NULL;
+    }
+    else{
+        list_head *deque_node = head -> next;
+        if(deque_node -> next == head){
+            head -> next = head;
+            head -> prev = head;
+        }
+        else{
+            head -> next = deque_node -> next;
+            deque_node -> next -> prev = head;
+        }
+        return deque_node;
+    }
+}
+
+// if node is in queue, return 1
+// else return 0
+static inline int FindNode_InQueue(list_head *head, list_head *node){
+    list_head *find_node = head -> next;
+    while(find_node != head){
+        if(find_node == node){
+            return 1;
+        }
+        else{
+            find_node = find_node -> next;
+        }
+    }
+    return 0;
+}
+
+// deque_Node from queue
+// assume that node must in head!
+static inline void DequeNode_AccordList(list_head *head, list_head *node){
+    if(FindNode_InQueue(head, node) == 0){
+        return;
+    }
+    list_head *find_prev = head;
+    while(find_prev -> next != node){
+        find_prev = find_prev -> next;
+    }
+    find_prev -> next = node -> next;
+    node -> next -> prev = find_prev;
+}
+
+// count Number from queue
+static inline int CountNum_AccordList(list_head *head){
+    list_head *target_head = head -> next;
+    int count = 0;
+    while(target_head != head){
+        count++;
+        target_head = target_head -> next;
+    }
+    return count;
+}
 
 #endif

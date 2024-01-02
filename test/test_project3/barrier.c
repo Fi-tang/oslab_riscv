@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
 
         char *argv[3] = {"test_barrier", buf_location, buf_handle};
         pids[i] = sys_exec(argv[0], 3, argv);
-
     }
 
     // Wait child processes to exit

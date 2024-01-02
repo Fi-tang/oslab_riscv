@@ -31,8 +31,11 @@
 
 #include <type.h>
 #include <os/list.h>
+#include <printk.h>     // newly added for print queue
 
 #define NUM_MAX_TASK 16
+#define EI_NIDENT  16
+#define LIST_IN_PCB_OFFSET 32  //  (unsigned long) (&((pcb_t *)0)-> list);
 
 /* used to save register infomation */
 typedef struct regs_context
@@ -45,6 +48,7 @@ typedef struct regs_context
     reg_t sepc;
     reg_t sbadaddr;
     reg_t scause;
+    reg_t regs_pointer;
 } regs_context_t;
 
 /* used to save register infomation in switch_to */
@@ -66,28 +70,31 @@ typedef struct pcb
 {
     /* register context */
     // NOTE: this order must be preserved, which is defined in regs.h!!
-    reg_t kernel_sp;
-    reg_t user_sp;
-    ptr_t kernel_stack_base;
-    ptr_t user_stack_base;
+    reg_t kernel_sp;                // 0
+    reg_t user_sp;                  // 8
+    ptr_t kernel_stack_base;        // 16
+    ptr_t user_stack_base;          // 24
 
     /* previous, next pointer */
-    list_node_t list;
-    list_head wait_list;
+    list_node_t list;               // 32
+    list_head wait_list;            // 48
 
     /* process id */
-    pid_t pid;
+    pid_t pid;                      // 64
 
     /* BLOCK | READY | RUNNING */
-    task_status_t status;
+    task_status_t status;           // 68
 
     /* cursor position */
-    int cursor_x;
-    int cursor_y;
+    int cursor_x;                   // 72
+    int cursor_y;                   // 76
 
     /* time(seconds) to wake up sleeping PCB */
-    uint64_t wakeup_time;
-
+    uint64_t wakeup_time;           // 80
+    switchto_context_t pcb_switchto_context;    // 88
+    regs_context_t pcb_user_regs_context;       // 200
+    char name[EI_NIDENT];                       // 496
+    int pcb_mask;                               // 0x1-core0, 0x2-core1, 0x3-both
 } pcb_t;
 
 /* ready queue to run */
@@ -96,8 +103,9 @@ extern list_head ready_queue;
 /* sleep queue to be blocked in */
 extern list_head sleep_queue;
 
+/* lock_queue can be implemented on lock.h*/
+
 /* current running task PCB */
-extern pcb_t * volatile current_running;
 extern pid_t process_id;
 
 extern pcb_t pcb[NUM_MAX_TASK];
@@ -123,6 +131,62 @@ extern int do_kill(pid_t pid);
 extern int do_waitpid(pid_t pid);
 extern void do_process_show();
 extern pid_t do_getpid();
+extern void do_taskset(int mask, char *taskname, int task_pid);
 /************************************************************/
 
+// use list to find the whole pcb
+static inline pcb_t *GetPcb_FromList(list_head *node){
+   unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> list);
+   pcb_t *return_pcb = NULL;
+   return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+   return return_pcb;
+}
+
+// use wait_queue to find the whole pcb
+static inline pcb_t *GetPcb_FromWaitList(list_head *node){
+    unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> wait_list);
+    pcb_t *return_pcb = NULL;
+    return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+    return return_pcb;
+}
+
+static inline void PrintPcb_FromList(list_head *head){
+    if(head -> next == head){
+        printl("NULL\n");
+        return;
+    }
+    else{
+        if(head == &sleep_queue){
+            list_head *node = head -> next;
+            while(node != head){
+                pcb_t *print_pcb_list = GetPcb_FromList(node);
+                printl("[%d]: %s [left %d seconds]-> ", print_pcb_list -> pid, print_pcb_list -> name
+                , print_pcb_list -> wakeup_time);
+                node = node -> next;
+            }
+            printl("NULL\n");
+        }
+        else{
+            list_head *node = head -> next;
+            while(node != head){
+                pcb_t *print_pcb_list = GetPcb_FromList(node);
+                printl("[%d]: %s  ", print_pcb_list -> pid, print_pcb_list -> name);
+                if(print_pcb_list -> status == TASK_BLOCKED){
+                    printl(" TASK_BLOCKED -> ");
+                }
+                else if(print_pcb_list -> status == TASK_READY){
+                    printl(" TASK_READY -> ");
+                }
+                else if(print_pcb_list -> status == TASK_RUNNING){
+                    printl(" TASK_RUNNING -> ");
+                }
+                else if(print_pcb_list -> status == TASK_EXITED){
+                    printl(" TASK_EXITED -> ");
+                }
+                node = node -> next;
+            }
+            printl("NULL\n");
+        }
+    }
+}
 #endif

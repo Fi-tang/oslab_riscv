@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     int consumption = 1;
     int sum_consumption = 0;
 
-    while (1)
+    while(1)
     {
         sys_mutex_acquire(handle_lock);
 

@@ -1,4 +1,5 @@
 #include <asm/biosdef.h>
+#include <csr.h> // newly added
 
 // os size location (os_size could be sectors [p1-task3] or bytes [p1-task4])
 .equ os_size_loc, 0x502001fc
@@ -20,15 +21,28 @@ main:
 
 	// TODO: [p1-task1] call BIOS to print string "It's bootblock!"
 
+	li a7, 9 					// a7 = #define BIOS_PUTSTR 9
+	lui a0, %hi(msg)			// load msg(hi)
+	addi a0, a0, %lo(msg)		// load msg(lo)
+	
+	jal bios_func_entry			// start calling port_write
 
 	// TODO: [p1-task2] call BIOS to read kernel in SD card
 
+	li a7, 11                         // #define BIOS_SDREAD 11
+    lui a0, %hi(kernel)               // put in memory address 0x50201000 kernel
+    addi a0, a0, %lo(kernel)
+    lui t0, %hi(os_size_loc)         // assign the address of os_size_loc in s0
+    addi t0,t0, %lo(os_size_loc)
+    lh a1, 0(t0)                     // num_of_blocks in 0x502001fc  t0 [0x502001fc] 
+                                     // 0x502001fc: 15(assign 15 blocks)
+    li a2, 3                         // block_id: 3
+									 // In task1-3, we place main at sector 1, while in task4, we place main at sector 3
+    jal bios_func_entry				 // start calling sd_read
 
 	// TODO: [p1-task4] load task-related arguments and pass them to kernel
-
-
 	// TODO: [p1-task2] jump to kernel to start UCAS-OS
-
+	j kernel 				        // jump to kernel, assign it never returns, so just use "j" instead of "jal"
 	/************************************************************/
 secondary:
 	/* TODO [P3-task3]: 
@@ -36,6 +50,23 @@ secondary:
 	 * 2. let stvec pointer to kernel_main
 	 * 3. enable software interrupt for ipi
 	 */
+	// 1. Mask all interrupts
+	csrw CSR_SIE, zero
+	csrw CSR_SIP, zero
+
+	// 2. let stvec pointer to kernel_main 
+	lui s0, %hi(kernel)
+	addi s0, s0, %lo(kernel)
+	csrw CSR_STVEC, s0
+
+	// 3. enable software interrupt for ipi 
+	csrr s0, CSR_SIE
+	ori s0, s0, SIE_SSIE
+	csrw CSR_SIE, s0 
+
+	csrr s0, CSR_SSTATUS
+	ori s0, s0, SR_SIE
+	csrw CSR_SSTATUS, s0
 
 wait_for_wakeup:
 	wfi
@@ -50,4 +81,3 @@ stop:
 .data
 
 msg: .string "It's a bootloader...\n\r"
-

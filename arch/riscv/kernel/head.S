@@ -7,6 +7,7 @@
 #include <csr.h>
 
 #define KERNEL_STACK		0x50500000
+#define SUBCORE_STACK   0x50700000
 
 .section ".entry_function","ax"
 ENTRY(_start)
@@ -14,11 +15,32 @@ ENTRY(_start)
   csrw CSR_SIE, zero
   csrw CSR_SIP, zero
 
-  /* TODO: [p1-task2] clear BSS for flat non-ELF images */
+  csrr a0, CSR_MHARTID
+  bnez a0, second_core    // sub-core should not clean-bss again!!!
 
+  /* TODO: [p1-task2] clear BSS for flat non-ELF images */
+  la t0, edata       	 // i = __bss_start
+  la t1, end       	//  __BSS_END__ 
+  addi t1,t1, 1             // __BSS_END__ + 1
+  bge t0,t1, clean_done     // i >= __BSS_END__ + 1
+clean_loop:
+  sw zero, 0(t0)            // clean 
+  addi t0,t0, 4             // the next 4 Byte 
+  blt t0, t1, clean_loop
+
+clean_done: 
 
   /* TODO: [p1-task2] setup C environment */
+  lui sp, %hi(KERNEL_STACK)
+  addi sp,sp, %lo(KERNEL_STACK)  // assign stack pointer
 
+  j main     // jump to main function 
+
+second_core:
+  lui sp, %hi(SUBCORE_STACK)
+  addi sp, sp, %lo(SUBCORE_STACK)
+
+  j main
 
 loop:
   wfi

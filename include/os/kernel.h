@@ -21,7 +21,9 @@ typedef enum {
     MUTEX_INIT,
     MUTEX_ACQ,
     MUTEX_RELEASE,
-    NUM_ENTRIES
+    NUM_ENTRIES,
+    WRITE,      // newly added!
+    REFLUSH     // newly added!
 } jmptab_idx_t;
 
 static inline long call_jmptab(long which, long arg0, long arg1, long arg2, long arg3, long arg4)
