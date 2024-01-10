@@ -36,15 +36,12 @@
 #define SYSCALL_MBOX_CLOSE 53
 #define SYSCALL_MBOX_SEND 54
 #define SYSCALL_MBOX_RECV 55
-<<<<<<< HEAD
 #define SYSCALL_SHM_GET 56
 #define SYSCALL_SHM_DT 57
-=======
 #define SYSCALL_SEMA_INIT 58   // newly added!
 #define SYSCALL_SEMA_UP 59     // newly added!
 #define SYSCALL_SEMA_DOWN 60   // newly added!
 #define SYSCALL_SEMA_DESTROY 61 // newly added!  
 #define SYSCALL_TASKSET 62      // newly added!
->>>>>>> origin/Project3-Interactive_OS_and_Process_Management
 
 #endif

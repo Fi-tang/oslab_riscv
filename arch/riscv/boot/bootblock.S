@@ -5,7 +5,7 @@
 .equ os_size_loc, 0x502001fc
 
 // kernel address (move kernel to here, and jmp here to start kernel)
-.equ kernel, 0x50201000
+.equ kernel, 0x50202000
 
 // BIOS function entry (jump here to use BIOS APIs)
 .equ bios_func_entry, 0x50150000
@@ -30,7 +30,7 @@ main:
 	// TODO: [p1-task2] call BIOS to read kernel in SD card
 
 	li a7, 11                         // #define BIOS_SDREAD 11
-    lui a0, %hi(kernel)               // put in memory address 0x50201000 kernel
+    lui a0, %hi(kernel)               // put in memory address 0x50202000 kernel
     addi a0, a0, %lo(kernel)
     lui t0, %hi(os_size_loc)         // assign the address of os_size_loc in s0
     addi t0,t0, %lo(os_size_loc)

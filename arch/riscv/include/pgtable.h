@@ -10,9 +10,9 @@
 #define SATP_MODE_SHIFT 60lu
 
 #define NORMAL_PAGE_SHIFT 12lu
-#define NORMAL_PAGE_SIZE (1lu << NORMAL_PAGE_SHIFT)
+#define NORMAL_PAGE_SIZE (1lu << NORMAL_PAGE_SHIFT)  // 4KB
 #define LARGE_PAGE_SHIFT 21lu
-#define LARGE_PAGE_SIZE (1lu << LARGE_PAGE_SHIFT)
+#define LARGE_PAGE_SIZE (1lu << LARGE_PAGE_SHIFT)   // 2MB
 
 /*
  * Flush entire local TLB.  'sfence.vma' implicitly fences with the instruction
@@ -93,10 +93,25 @@ static inline uint64_t get_pa(PTE entry)
 static inline long get_pfn(PTE entry)
 {
     /* TODO: [P4-task1] */
+    // Step 1: shift 10 byte, to clean flag information
+    uint64_t entry_pfn_releated = entry >> _PAGE_PFN_SHIFT;
+    // Step 2: clean the highest [53 44]Byte
+    uint64_t extended_Mask = (1lu << 44) - 1;
+    return (entry_pfn_releated & extended_Mask);
 }
+
+/**
+Sv39's PTE:
+[63 Reserved 54][53 PPN(2) 28][27 PPN(1) 19][18 PPN(0) 10][9  RSW  8][7 D][A][G][U][X][W][R][V 0]
+*/
 static inline void set_pfn(PTE *entry, uint64_t pfn)
 {
     /* TODO: [P4-task1] */
+    // Step1: clean entry's context, clear all but remain the lowest 10 bit's flag unchanged
+    uint64_t clear_entry = (*entry) & ((1lu << _PAGE_PFN_SHIFT) - 1);
+    // Step2: shift pfn << 10, fill physical frame number
+    clear_entry |= (pfn << _PAGE_PFN_SHIFT);
+    *entry = clear_entry;
 }
 
 /* Get/Set attribute(s) of the `entry` */

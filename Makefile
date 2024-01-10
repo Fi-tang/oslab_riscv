@@ -2,12 +2,7 @@
 # Project Information
 # -----------------------------------------------------------------------
 
-<<<<<<< HEAD
 PROJECT_IDX	= 4
-=======
-
-PROJECT_IDX	= 3
->>>>>>> origin/Project3-Interactive_OS_and_Process_Management
 
 # -----------------------------------------------------------------------
 # Host Linux Variables

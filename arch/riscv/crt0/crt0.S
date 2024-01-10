@@ -1,7 +1,7 @@
 #include <asm.h>
 
 # define STACK_SIZE 0x10000
-# define KERNEL_ENTER_POINT 0x50201000
+# define KERNEL_ENTER_POINT 0x50202000
 # define USER_STACK_P1 0x52500000
 
 .section ".entry_function","ax"
