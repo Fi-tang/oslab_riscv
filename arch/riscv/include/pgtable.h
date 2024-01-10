@@ -76,26 +76,32 @@ typedef uint64_t PTE;
 static inline uintptr_t kva2pa(uintptr_t kva)
 {
     /* TODO: [P4-task1] */
+    return kva - 0xffffffc000000000lu;
 }
 
 static inline uintptr_t pa2kva(uintptr_t pa)
 {
     /* TODO: [P4-task1] */
+    return pa + 0xffffffc000000000lu;
 }
 
 /* get physical page addr from PTE 'entry' */
 static inline uint64_t get_pa(PTE entry)
 {
     /* TODO: [P4-task1] */
+    uint64_t entry_pfn_releated = entry >> _PAGE_PFN_SHIFT;
+    uint64_t extended_Mask = (1lu << 44) - 1;
+    uint64_t physical_frame_number = entry_pfn_releated & extended_Mask;
+    return physical_frame_number << NORMAL_PAGE_SHIFT;
 }
 
 /* Get/Set page frame number of the `entry` */
 static inline long get_pfn(PTE entry)
 {
     /* TODO: [P4-task1] */
-    // Step 1: shift 10 byte, to clean flag information
+    // Step 1: shift 10 byte, to clean flag information: entry >> 10
     uint64_t entry_pfn_releated = entry >> _PAGE_PFN_SHIFT;
-    // Step 2: clean the highest [53 44]Byte
+    // Step 2: clean the highest [53 44]Byte, extended_Mask = [53 (all 0) 44][43 (remain the same) 0]
     uint64_t extended_Mask = (1lu << 44) - 1;
     return (entry_pfn_releated & extended_Mask);
 }
@@ -108,6 +114,11 @@ static inline void set_pfn(PTE *entry, uint64_t pfn)
 {
     /* TODO: [P4-task1] */
     // Step1: clean entry's context, clear all but remain the lowest 10 bit's flag unchanged
+    /**
+    before:             [XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX]
+    & (1 << 10) - 1 =   [0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0011 1111 1111]
+    after:              [0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 00XX XXXX XXXX]
+    */
     uint64_t clear_entry = (*entry) & ((1lu << _PAGE_PFN_SHIFT) - 1);
     // Step2: shift pfn << 10, fill physical frame number
     clear_entry |= (pfn << _PAGE_PFN_SHIFT);
@@ -115,18 +126,33 @@ static inline void set_pfn(PTE *entry, uint64_t pfn)
 }
 
 /* Get/Set attribute(s) of the `entry` */
+// [Question]: what does the mask actually mean?
+/**
+assume here that, mask means which position do we want to get?
+mask means 0 to 9 
+for example: mask[0]: V, mask[1]: R, mask[2]: W, mask[3]: X
+             mask[4]: U, mask[5]: G, mask[6]: A, mask[7]: D
+             mask[8]: Reserved mask[9]: Reserved
+*/
 static inline long get_attribute(PTE entry, uint64_t mask)
 {
     /* TODO: [P4-task1] */
+    uint64_t mask_shift = 1lu << mask;
+    return (entry & mask_shift);
 }
 static inline void set_attribute(PTE *entry, uint64_t bits)
 {
     /* TODO: [P4-task1] */
+    // Step: only need or operation, |bits
+    *entry = (*entry) | bits;
 }
 
 static inline void clear_pgdir(uintptr_t pgdir_addr)
 {
     /* TODO: [P4-task1] */
+    // function: clean the whole page_directory's page
+   void *clear_address = (void *)pgdir_addr;
+   memset(clear_address, 0, NORMAL_PAGE_SIZE);
 }
 
 #endif  // PGTABLE_H
