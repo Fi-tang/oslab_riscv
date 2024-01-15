@@ -57,19 +57,18 @@ extern ptr_t allocLargePage(int numPage);
 #endif
 
 // define a struct to allocate free_page
-struct available_node{
-    uint64_t virtual_address;    // record page's corresponding virtual_address
-    struct available_node *next; // List structure
-}available_node;
+struct ListNode{
+    int virtual_address;
+    struct ListNode *next;
+}ListNode;
 
-struct global_header{             // fake head
-    struct available_node *available_list; // useful first available_list
-} global_header;
+struct SentienlNode{
+    struct ListNode *head;
+}SentienlNode;
 
-struct global_header *global_available_header; // global available page header pointer
+struct SentienlNode *global_free_sentienl;
 
 // TODO [P4-task1] */
-extern void kinit();        // newly added!
 extern void* kmalloc(size_t size);
 extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
