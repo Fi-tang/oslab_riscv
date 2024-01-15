@@ -65,21 +65,30 @@ void *kmalloc(size_t size)
         init_or_not = true;
     }
 
-    uintptr_t actual_size = ROUND(size, PAGE_SIZE);
-    int page_num = actual_size / PAGE_SIZE;
+    // Step1:cacluate num of page
+    uint64_t round_up_alloc = ROUND(size, PAGE_SIZE);
+    int page_num = round_up_alloc / PAGE_SIZE;
 
-    // 1. get the traverse node from 0 to page_num
-    struct SentienlNode *malloc_Node = global_free_sentienl;
-    struct ListNode *traverse_node = global_free_sentienl -> head;
-    for(int i = 0; i < page_num; i++){
-        traverse_node = traverse_node -> next;
+    // Step2: allocate new SentienlNode
+    // place it at half of the page
+    uint64_t malloc_addr = FREEMEM_KERNEL + (PAGE_SIZE / 2);
+    struct SentienlNode *malloc_free = (struct SentienlNode *)malloc_addr;
+    malloc_free -> head = NULL;
+
+    // Step3: traverse
+    struct ListNode *global_temp = global_free_sentienl -> head;
+    struct ListNode *prev_node = NULL;
+    while(global_temp != NULL && size > 0){
+        if(malloc_free -> head == NULL){
+            malloc_free -> head = global_temp;
+        }
+        prev_node = global_temp;                // find the last prev to cut off 
+        global_temp = global_temp -> next;      // global_free_sentienl ->[] -> [] -> [] -> [] -> [] | -> [] -> [] -> []
+        size--;
     }
-    // 2. Assign NULL
-    struct ListNode *new_head = traverse_node -> next;
-    traverse_node -> next = NULL;
-    global_free_sentienl -> head = new_head;
-    // 3. return former head
-    return malloc_Node;
+    prev_node -> next = NULL;
+    global_free_sentienl -> head = global_temp;
+    return malloc_free;
 }
 
 
