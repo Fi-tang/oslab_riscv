@@ -84,8 +84,8 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
 
 static void assign_initial_pcb(char *name, int alloc_index){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    pcb[alloc_index].kernel_sp = allocKernelPage(1);
-    pcb[alloc_index].user_sp = allocUserPage(1);
+    pcb[alloc_index].kernel_sp = allocPage(1);
+    pcb[alloc_index].user_sp = allocPage(1);
 
     pcb[alloc_index].kernel_stack_base = pcb[alloc_index].kernel_sp;
     pcb[alloc_index].user_stack_base = pcb[alloc_index].user_sp;
@@ -120,7 +120,7 @@ static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] alway
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
-    do_exec("shell", 0, NULL);
+    //do_exec("shell", 0, NULL);
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
@@ -177,8 +177,8 @@ pid_t do_exec(char *name, int argc, char *argv[]){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_EXITED){
-            pcb[i].kernel_sp = allocKernelPage(1);
-            pcb[i].user_sp = allocUserPage(1);
+            pcb[i].kernel_sp = allocPage(1);
+            pcb[i].user_sp = allocPage(1);
 
             pcb[i].kernel_stack_base = pcb[i].kernel_sp;
             pcb[i].user_stack_base = pcb[i].user_sp;

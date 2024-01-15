@@ -151,8 +151,10 @@ static inline void clear_pgdir(uintptr_t pgdir_addr)
 {
     /* TODO: [P4-task1] */
     // function: clean the whole page_directory's page
-   void *clear_address = (void *)pgdir_addr;
-   memset(clear_address, 0, NORMAL_PAGE_SIZE);
+   uintptr_t *clear_address = (uintptr_t *)pgdir_addr;
+   for(int i = 0; i < NORMAL_PAGE_SIZE; i++){
+        *clear_address++ = 0;
+   }
 }
 
 #endif  // PGTABLE_H

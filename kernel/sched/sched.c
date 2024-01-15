@@ -6,6 +6,7 @@
 #include <screen.h>
 #include <printk.h>
 #include <assert.h>
+#include <os/string.h> // newly added!
 
 pcb_t pcb[NUM_MAX_TASK];
 const ptr_t pid0_stack = INIT_KERNEL_STACK + PAGE_SIZE;

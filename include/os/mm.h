@@ -35,6 +35,7 @@
 #define PAGE_SIZE 4096 // 4K
 #define INIT_KERNEL_STACK 0xffffffc052000000
 #define FREEMEM_KERNEL (INIT_KERNEL_STACK+PAGE_SIZE)
+#define FREEMEM_KERNEL_END 0xffffffc060000000   // newly added!
 
 /* Rounding; only works for n = power of two */
 #define ROUND(a, n)     (((((uint64_t)(a))+(n)-1)) & ~((n)-1))
@@ -55,7 +56,20 @@ extern ptr_t allocLargePage(int numPage);
 #define USER_STACK_ADDR 0xf00010000
 #endif
 
+// define a struct to allocate free_page
+struct available_node{
+    uint64_t virtual_address;    // record page's corresponding virtual_address
+    struct available_node *next; // List structure
+}available_node;
+
+struct global_header{             // fake head
+    struct available_node *available_list; // useful first available_list
+} global_header;
+
+struct global_header *global_available_header; // global available page header pointer
+
 // TODO [P4-task1] */
+extern void kinit();        // newly added!
 extern void* kmalloc(size_t size);
 extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
