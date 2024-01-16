@@ -152,7 +152,7 @@ typedef struct cpu{
     pcb_t *cpu_current_running;  // Every cpu should have it's own current_running
 } cpu;
 
-cpu global_cpu[2];
+extern cpu global_cpu[2];
 
 void init_global_cpu();             // fill global_cpu
 struct cpu *get_current_cpu();      // return pointer

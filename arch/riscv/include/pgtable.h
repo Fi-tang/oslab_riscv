@@ -147,7 +147,7 @@ static inline void set_attribute(PTE *entry, uint64_t bits)
     *entry = (*entry) | bits;
 }
 
-static inline void clear_pgdir(uintptr_t pgdir_addr)
+static inline void clear_pgdir(uintptr_t pgdir_addr) // virtual address
 {
     /* TODO: [P4-task1] */
     // function: clean the whole page_directory's page
@@ -156,5 +156,4 @@ static inline void clear_pgdir(uintptr_t pgdir_addr)
         *clear_address++ = 0;
    }
 }
-
 #endif  // PGTABLE_H

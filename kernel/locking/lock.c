@@ -416,6 +416,7 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
     }
 }
 
+cpu global_cpu[2];
 // implement cpu related cpu
 void init_global_cpu(){
     int cpuid = get_current_cpu_id();

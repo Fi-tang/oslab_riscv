@@ -6,8 +6,8 @@
 #include <asm.h>
 #include <csr.h>
 
-#define KERNEL_STACK		0x50500000
-#define SUBCORE_STACK   0x50700000
+#define KERNEL_STACK		0xffffffc050500000
+#define SUBCORE_STACK   0xffffffc050700000
 
 .section ".entry_function","ax"
 ENTRY(_start)
@@ -31,14 +31,12 @@ clean_loop:
 clean_done: 
 
   /* TODO: [p1-task2] setup C environment */
-  lui sp, %hi(KERNEL_STACK)
-  addi sp,sp, %lo(KERNEL_STACK)  // assign stack pointer
+  li sp, KERNEL_STACK // assign stack pointer
 
   j main     // jump to main function 
 
 second_core:
-  lui sp, %hi(SUBCORE_STACK)
-  addi sp, sp, %lo(SUBCORE_STACK)
+  li sp, SUBCORE_STACK
 
   j main
 

@@ -274,12 +274,25 @@ static void init_large_kernel(void){
     kernel_spin_lock_init(&Large_Kernel_Lock);
 }
 
+static void clean_boot_address_map(){
+    PTE *early_pgdir = (PTE *)pa2kva(PGDIR_PA);
+    uint64_t va = 0x50000000lu;
+    uint64_t vpn2 = (va >> (NORMAL_PAGE_SHIFT + PPN_BITS + PPN_BITS));
+
+    uint64_t physical_address = get_pa(early_pgdir[vpn2]);
+    clear_pgdir(pa2kva(physical_address)); // clean 2th page_table
+
+    early_pgdir[vpn2] = 0;
+
+}
 
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
     int cpuid = get_current_cpu_id();
     if(cpuid == 0){
+        clean_boot_address_map(); 
+
         init_global_cpu();
 
         init_jmptab();
