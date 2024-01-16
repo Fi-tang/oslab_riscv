@@ -274,6 +274,7 @@ static void init_large_kernel(void){
     kernel_spin_lock_init(&Large_Kernel_Lock);
 }
 
+
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
