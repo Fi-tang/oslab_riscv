@@ -286,6 +286,14 @@ static void clean_boot_address_map(){
 
 }
 
+static void alloc_unit_test(){
+    print_page_alloc_info((struct SentienlNode *)kmalloc(1));
+    freePage(0xffffffc052003000);
+    print_page_alloc_info((struct SentienlNode *)kmalloc(4));
+    freePage(0xffffffc052005000);
+    print_page_alloc_info((struct SentienlNode *)kmalloc(3));
+}
+
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
@@ -345,9 +353,10 @@ int main(void)
         init_mbox();
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
+        alloc_unit_test();
         send_ipi(NULL);
         kernel_spin_lock_acquire();
-       
+
         // init_time();
         kernel_spin_lock_release();
         while(1){

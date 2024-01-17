@@ -69,6 +69,9 @@ struct SentienlNode{
 
 struct SentienlNode *global_free_sentienl;
 
+// Add function: print all available page_info
+extern void print_page_alloc_info(struct SentienlNode *sentienl_head);
+
 // TODO [P4-task1] */
 extern void* kmalloc(size_t size);
 extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
