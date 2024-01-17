@@ -84,7 +84,7 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
 
 static void assign_initial_pcb(char *name, int alloc_index){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    pcb[alloc_index].kernel_sp = allocPage(1);
+    pcb[alloc_index].kernel_sp = allocPage(1);      // need to notice that kernel_sp allocate from 0xffffffc052001000
     pcb[alloc_index].user_sp = allocPage(1);
 
     pcb[alloc_index].kernel_stack_base = pcb[alloc_index].kernel_sp;
@@ -300,7 +300,7 @@ int main(void)
         init_task_info();
         // Init Process Control Blocks |•'-'•) ✧
         // only used for printk
-        init_pcb_loop();
+        // init_pcb_loop();
         printk("> [INIT] Pid0 initialization succeeded.\n");
         
         // Read CPU frequency (｡•ᴗ-)_
@@ -348,11 +348,11 @@ int main(void)
         send_ipi(NULL);
         kernel_spin_lock_acquire();
        
-        init_time();
+        // init_time();
         kernel_spin_lock_release();
         while(1){
-            enable_preempt();
-            asm volatile("wfi");
+            // enable_preempt();
+            // asm volatile("wfi");
         }
     }
     else{
@@ -364,12 +364,12 @@ int main(void)
         setup_exception();
         printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
         
-        init_time();
+        // init_time();
         kernel_spin_lock_release();
 
         while(1){
-            enable_preempt();
-            asm volatile("wfi");
+            // enable_preempt();
+            // asm volatile("wfi");
         }
     }
     return 0;
