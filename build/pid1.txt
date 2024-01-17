@@ -1,0 +1,782 @@
+
+build/pid1:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000200000 <_start>:
+  200000:	00e000ef          	jal	ra,20000e <main>
+  200004:	214000ef          	jal	ra,200218 <sys_exit>
+
+0000000000200008 <loop>:
+  200008:	10500073          	wfi
+  20000c:	bff5                	j	200008 <loop>
+
+000000000020000e <main>:
+  20000e:	1141                	addi	sp,sp,-16
+  200010:	e422                	sd	s0,8(sp)
+  200012:	0800                	addi	s0,sp,16
+  200014:	a001                	j	200014 <main+0x6>
+
+0000000000200016 <invoke_syscall>:
+  200016:	7139                	addi	sp,sp,-64
+  200018:	fc22                	sd	s0,56(sp)
+  20001a:	0080                	addi	s0,sp,64
+  20001c:	fea43423          	sd	a0,-24(s0)
+  200020:	feb43023          	sd	a1,-32(s0)
+  200024:	fcc43c23          	sd	a2,-40(s0)
+  200028:	fcd43823          	sd	a3,-48(s0)
+  20002c:	fce43423          	sd	a4,-56(s0)
+  200030:	fcf43023          	sd	a5,-64(s0)
+  200034:	0001                	nop
+  200036:	00000073          	ecall
+  20003a:	87aa                	mv	a5,a0
+  20003c:	853e                	mv	a0,a5
+  20003e:	7462                	ld	s0,56(sp)
+  200040:	6121                	addi	sp,sp,64
+  200042:	8082                	ret
+
+0000000000200044 <sys_yield>:
+  200044:	1141                	addi	sp,sp,-16
+  200046:	e406                	sd	ra,8(sp)
+  200048:	e022                	sd	s0,0(sp)
+  20004a:	0800                	addi	s0,sp,16
+  20004c:	4781                	li	a5,0
+  20004e:	4701                	li	a4,0
+  200050:	4681                	li	a3,0
+  200052:	4601                	li	a2,0
+  200054:	4581                	li	a1,0
+  200056:	451d                	li	a0,7
+  200058:	fbfff0ef          	jal	ra,200016 <invoke_syscall>
+  20005c:	0001                	nop
+  20005e:	60a2                	ld	ra,8(sp)
+  200060:	6402                	ld	s0,0(sp)
+  200062:	0141                	addi	sp,sp,16
+  200064:	8082                	ret
+
+0000000000200066 <sys_move_cursor>:
+  200066:	1101                	addi	sp,sp,-32
+  200068:	ec06                	sd	ra,24(sp)
+  20006a:	e822                	sd	s0,16(sp)
+  20006c:	1000                	addi	s0,sp,32
+  20006e:	87aa                	mv	a5,a0
+  200070:	872e                	mv	a4,a1
+  200072:	fef42623          	sw	a5,-20(s0)
+  200076:	87ba                	mv	a5,a4
+  200078:	fef42423          	sw	a5,-24(s0)
+  20007c:	fec42583          	lw	a1,-20(s0)
+  200080:	fe842603          	lw	a2,-24(s0)
+  200084:	4781                	li	a5,0
+  200086:	4701                	li	a4,0
+  200088:	4681                	li	a3,0
+  20008a:	4559                	li	a0,22
+  20008c:	f8bff0ef          	jal	ra,200016 <invoke_syscall>
+  200090:	0001                	nop
+  200092:	60e2                	ld	ra,24(sp)
+  200094:	6442                	ld	s0,16(sp)
+  200096:	6105                	addi	sp,sp,32
+  200098:	8082                	ret
+
+000000000020009a <sys_write>:
+  20009a:	1101                	addi	sp,sp,-32
+  20009c:	ec06                	sd	ra,24(sp)
+  20009e:	e822                	sd	s0,16(sp)
+  2000a0:	1000                	addi	s0,sp,32
+  2000a2:	fea43423          	sd	a0,-24(s0)
+  2000a6:	fe843583          	ld	a1,-24(s0)
+  2000aa:	4781                	li	a5,0
+  2000ac:	4701                	li	a4,0
+  2000ae:	4681                	li	a3,0
+  2000b0:	4601                	li	a2,0
+  2000b2:	4551                	li	a0,20
+  2000b4:	f63ff0ef          	jal	ra,200016 <invoke_syscall>
+  2000b8:	0001                	nop
+  2000ba:	60e2                	ld	ra,24(sp)
+  2000bc:	6442                	ld	s0,16(sp)
+  2000be:	6105                	addi	sp,sp,32
+  2000c0:	8082                	ret
+
+00000000002000c2 <sys_reflush>:
+  2000c2:	1141                	addi	sp,sp,-16
+  2000c4:	e406                	sd	ra,8(sp)
+  2000c6:	e022                	sd	s0,0(sp)
+  2000c8:	0800                	addi	s0,sp,16
+  2000ca:	4781                	li	a5,0
+  2000cc:	4701                	li	a4,0
+  2000ce:	4681                	li	a3,0
+  2000d0:	4601                	li	a2,0
+  2000d2:	4581                	li	a1,0
+  2000d4:	455d                	li	a0,23
+  2000d6:	f41ff0ef          	jal	ra,200016 <invoke_syscall>
+  2000da:	0001                	nop
+  2000dc:	60a2                	ld	ra,8(sp)
+  2000de:	6402                	ld	s0,0(sp)
+  2000e0:	0141                	addi	sp,sp,16
+  2000e2:	8082                	ret
+
+00000000002000e4 <sys_mutex_init>:
+  2000e4:	1101                	addi	sp,sp,-32
+  2000e6:	ec06                	sd	ra,24(sp)
+  2000e8:	e822                	sd	s0,16(sp)
+  2000ea:	1000                	addi	s0,sp,32
+  2000ec:	87aa                	mv	a5,a0
+  2000ee:	fef42623          	sw	a5,-20(s0)
+  2000f2:	fec42583          	lw	a1,-20(s0)
+  2000f6:	4781                	li	a5,0
+  2000f8:	4701                	li	a4,0
+  2000fa:	4681                	li	a3,0
+  2000fc:	4601                	li	a2,0
+  2000fe:	02800513          	li	a0,40
+  200102:	f15ff0ef          	jal	ra,200016 <invoke_syscall>
+  200106:	87aa                	mv	a5,a0
+  200108:	2781                	sext.w	a5,a5
+  20010a:	853e                	mv	a0,a5
+  20010c:	60e2                	ld	ra,24(sp)
+  20010e:	6442                	ld	s0,16(sp)
+  200110:	6105                	addi	sp,sp,32
+  200112:	8082                	ret
+
+0000000000200114 <sys_mutex_acquire>:
+  200114:	1101                	addi	sp,sp,-32
+  200116:	ec06                	sd	ra,24(sp)
+  200118:	e822                	sd	s0,16(sp)
+  20011a:	1000                	addi	s0,sp,32
+  20011c:	87aa                	mv	a5,a0
+  20011e:	fef42623          	sw	a5,-20(s0)
+  200122:	fec42583          	lw	a1,-20(s0)
+  200126:	4781                	li	a5,0
+  200128:	4701                	li	a4,0
+  20012a:	4681                	li	a3,0
+  20012c:	4601                	li	a2,0
+  20012e:	02900513          	li	a0,41
+  200132:	ee5ff0ef          	jal	ra,200016 <invoke_syscall>
+  200136:	0001                	nop
+  200138:	60e2                	ld	ra,24(sp)
+  20013a:	6442                	ld	s0,16(sp)
+  20013c:	6105                	addi	sp,sp,32
+  20013e:	8082                	ret
+
+0000000000200140 <sys_mutex_release>:
+  200140:	1101                	addi	sp,sp,-32
+  200142:	ec06                	sd	ra,24(sp)
+  200144:	e822                	sd	s0,16(sp)
+  200146:	1000                	addi	s0,sp,32
+  200148:	87aa                	mv	a5,a0
+  20014a:	fef42623          	sw	a5,-20(s0)
+  20014e:	fec42583          	lw	a1,-20(s0)
+  200152:	4781                	li	a5,0
+  200154:	4701                	li	a4,0
+  200156:	4681                	li	a3,0
+  200158:	4601                	li	a2,0
+  20015a:	02a00513          	li	a0,42
+  20015e:	eb9ff0ef          	jal	ra,200016 <invoke_syscall>
+  200162:	0001                	nop
+  200164:	60e2                	ld	ra,24(sp)
+  200166:	6442                	ld	s0,16(sp)
+  200168:	6105                	addi	sp,sp,32
+  20016a:	8082                	ret
+
+000000000020016c <sys_get_timebase>:
+  20016c:	1141                	addi	sp,sp,-16
+  20016e:	e406                	sd	ra,8(sp)
+  200170:	e022                	sd	s0,0(sp)
+  200172:	0800                	addi	s0,sp,16
+  200174:	4781                	li	a5,0
+  200176:	4701                	li	a4,0
+  200178:	4681                	li	a3,0
+  20017a:	4601                	li	a2,0
+  20017c:	4581                	li	a1,0
+  20017e:	4579                	li	a0,30
+  200180:	e97ff0ef          	jal	ra,200016 <invoke_syscall>
+  200184:	87aa                	mv	a5,a0
+  200186:	853e                	mv	a0,a5
+  200188:	60a2                	ld	ra,8(sp)
+  20018a:	6402                	ld	s0,0(sp)
+  20018c:	0141                	addi	sp,sp,16
+  20018e:	8082                	ret
+
+0000000000200190 <sys_get_tick>:
+  200190:	1141                	addi	sp,sp,-16
+  200192:	e406                	sd	ra,8(sp)
+  200194:	e022                	sd	s0,0(sp)
+  200196:	0800                	addi	s0,sp,16
+  200198:	4781                	li	a5,0
+  20019a:	4701                	li	a4,0
+  20019c:	4681                	li	a3,0
+  20019e:	4601                	li	a2,0
+  2001a0:	4581                	li	a1,0
+  2001a2:	457d                	li	a0,31
+  2001a4:	e73ff0ef          	jal	ra,200016 <invoke_syscall>
+  2001a8:	87aa                	mv	a5,a0
+  2001aa:	853e                	mv	a0,a5
+  2001ac:	60a2                	ld	ra,8(sp)
+  2001ae:	6402                	ld	s0,0(sp)
+  2001b0:	0141                	addi	sp,sp,16
+  2001b2:	8082                	ret
+
+00000000002001b4 <sys_sleep>:
+  2001b4:	1101                	addi	sp,sp,-32
+  2001b6:	ec06                	sd	ra,24(sp)
+  2001b8:	e822                	sd	s0,16(sp)
+  2001ba:	1000                	addi	s0,sp,32
+  2001bc:	87aa                	mv	a5,a0
+  2001be:	fef42623          	sw	a5,-20(s0)
+  2001c2:	fec46583          	lwu	a1,-20(s0)
+  2001c6:	4781                	li	a5,0
+  2001c8:	4701                	li	a4,0
+  2001ca:	4681                	li	a3,0
+  2001cc:	4601                	li	a2,0
+  2001ce:	4509                	li	a0,2
+  2001d0:	e47ff0ef          	jal	ra,200016 <invoke_syscall>
+  2001d4:	0001                	nop
+  2001d6:	60e2                	ld	ra,24(sp)
+  2001d8:	6442                	ld	s0,16(sp)
+  2001da:	6105                	addi	sp,sp,32
+  2001dc:	8082                	ret
+
+00000000002001de <sys_exec>:
+  2001de:	7179                	addi	sp,sp,-48
+  2001e0:	f406                	sd	ra,40(sp)
+  2001e2:	f022                	sd	s0,32(sp)
+  2001e4:	1800                	addi	s0,sp,48
+  2001e6:	fea43423          	sd	a0,-24(s0)
+  2001ea:	87ae                	mv	a5,a1
+  2001ec:	fcc43c23          	sd	a2,-40(s0)
+  2001f0:	fef42223          	sw	a5,-28(s0)
+  2001f4:	fe843583          	ld	a1,-24(s0)
+  2001f8:	fe442603          	lw	a2,-28(s0)
+  2001fc:	fd843683          	ld	a3,-40(s0)
+  200200:	4781                	li	a5,0
+  200202:	4701                	li	a4,0
+  200204:	4501                	li	a0,0
+  200206:	e11ff0ef          	jal	ra,200016 <invoke_syscall>
+  20020a:	87aa                	mv	a5,a0
+  20020c:	2781                	sext.w	a5,a5
+  20020e:	853e                	mv	a0,a5
+  200210:	70a2                	ld	ra,40(sp)
+  200212:	7402                	ld	s0,32(sp)
+  200214:	6145                	addi	sp,sp,48
+  200216:	8082                	ret
+
+0000000000200218 <sys_exit>:
+  200218:	1141                	addi	sp,sp,-16
+  20021a:	e406                	sd	ra,8(sp)
+  20021c:	e022                	sd	s0,0(sp)
+  20021e:	0800                	addi	s0,sp,16
+  200220:	4781                	li	a5,0
+  200222:	4701                	li	a4,0
+  200224:	4681                	li	a3,0
+  200226:	4601                	li	a2,0
+  200228:	4581                	li	a1,0
+  20022a:	4505                	li	a0,1
+  20022c:	debff0ef          	jal	ra,200016 <invoke_syscall>
+  200230:	0001                	nop
+  200232:	60a2                	ld	ra,8(sp)
+  200234:	6402                	ld	s0,0(sp)
+  200236:	0141                	addi	sp,sp,16
+  200238:	8082                	ret
+
+000000000020023a <sys_kill>:
+  20023a:	1101                	addi	sp,sp,-32
+  20023c:	ec06                	sd	ra,24(sp)
+  20023e:	e822                	sd	s0,16(sp)
+  200240:	1000                	addi	s0,sp,32
+  200242:	87aa                	mv	a5,a0
+  200244:	fef42623          	sw	a5,-20(s0)
+  200248:	fec42583          	lw	a1,-20(s0)
+  20024c:	4781                	li	a5,0
+  20024e:	4701                	li	a4,0
+  200250:	4681                	li	a3,0
+  200252:	4601                	li	a2,0
+  200254:	450d                	li	a0,3
+  200256:	dc1ff0ef          	jal	ra,200016 <invoke_syscall>
+  20025a:	87aa                	mv	a5,a0
+  20025c:	2781                	sext.w	a5,a5
+  20025e:	853e                	mv	a0,a5
+  200260:	60e2                	ld	ra,24(sp)
+  200262:	6442                	ld	s0,16(sp)
+  200264:	6105                	addi	sp,sp,32
+  200266:	8082                	ret
+
+0000000000200268 <sys_waitpid>:
+  200268:	1101                	addi	sp,sp,-32
+  20026a:	ec06                	sd	ra,24(sp)
+  20026c:	e822                	sd	s0,16(sp)
+  20026e:	1000                	addi	s0,sp,32
+  200270:	87aa                	mv	a5,a0
+  200272:	fef42623          	sw	a5,-20(s0)
+  200276:	fec42583          	lw	a1,-20(s0)
+  20027a:	4781                	li	a5,0
+  20027c:	4701                	li	a4,0
+  20027e:	4681                	li	a3,0
+  200280:	4601                	li	a2,0
+  200282:	4511                	li	a0,4
+  200284:	d93ff0ef          	jal	ra,200016 <invoke_syscall>
+  200288:	87aa                	mv	a5,a0
+  20028a:	2781                	sext.w	a5,a5
+  20028c:	853e                	mv	a0,a5
+  20028e:	60e2                	ld	ra,24(sp)
+  200290:	6442                	ld	s0,16(sp)
+  200292:	6105                	addi	sp,sp,32
+  200294:	8082                	ret
+
+0000000000200296 <sys_ps>:
+  200296:	1141                	addi	sp,sp,-16
+  200298:	e406                	sd	ra,8(sp)
+  20029a:	e022                	sd	s0,0(sp)
+  20029c:	0800                	addi	s0,sp,16
+  20029e:	4781                	li	a5,0
+  2002a0:	4701                	li	a4,0
+  2002a2:	4681                	li	a3,0
+  2002a4:	4601                	li	a2,0
+  2002a6:	4581                	li	a1,0
+  2002a8:	4515                	li	a0,5
+  2002aa:	d6dff0ef          	jal	ra,200016 <invoke_syscall>
+  2002ae:	0001                	nop
+  2002b0:	60a2                	ld	ra,8(sp)
+  2002b2:	6402                	ld	s0,0(sp)
+  2002b4:	0141                	addi	sp,sp,16
+  2002b6:	8082                	ret
+
+00000000002002b8 <sys_clear>:
+  2002b8:	1141                	addi	sp,sp,-16
+  2002ba:	e406                	sd	ra,8(sp)
+  2002bc:	e022                	sd	s0,0(sp)
+  2002be:	0800                	addi	s0,sp,16
+  2002c0:	4781                	li	a5,0
+  2002c2:	4701                	li	a4,0
+  2002c4:	4681                	li	a3,0
+  2002c6:	4601                	li	a2,0
+  2002c8:	4581                	li	a1,0
+  2002ca:	4561                	li	a0,24
+  2002cc:	d4bff0ef          	jal	ra,200016 <invoke_syscall>
+  2002d0:	0001                	nop
+  2002d2:	60a2                	ld	ra,8(sp)
+  2002d4:	6402                	ld	s0,0(sp)
+  2002d6:	0141                	addi	sp,sp,16
+  2002d8:	8082                	ret
+
+00000000002002da <sys_getpid>:
+  2002da:	1141                	addi	sp,sp,-16
+  2002dc:	e406                	sd	ra,8(sp)
+  2002de:	e022                	sd	s0,0(sp)
+  2002e0:	0800                	addi	s0,sp,16
+  2002e2:	4781                	li	a5,0
+  2002e4:	4701                	li	a4,0
+  2002e6:	4681                	li	a3,0
+  2002e8:	4601                	li	a2,0
+  2002ea:	4581                	li	a1,0
+  2002ec:	4519                	li	a0,6
+  2002ee:	d29ff0ef          	jal	ra,200016 <invoke_syscall>
+  2002f2:	87aa                	mv	a5,a0
+  2002f4:	2781                	sext.w	a5,a5
+  2002f6:	853e                	mv	a0,a5
+  2002f8:	60a2                	ld	ra,8(sp)
+  2002fa:	6402                	ld	s0,0(sp)
+  2002fc:	0141                	addi	sp,sp,16
+  2002fe:	8082                	ret
+
+0000000000200300 <sys_getchar>:
+  200300:	1141                	addi	sp,sp,-16
+  200302:	e406                	sd	ra,8(sp)
+  200304:	e022                	sd	s0,0(sp)
+  200306:	0800                	addi	s0,sp,16
+  200308:	4781                	li	a5,0
+  20030a:	4701                	li	a4,0
+  20030c:	4681                	li	a3,0
+  20030e:	4601                	li	a2,0
+  200310:	4581                	li	a1,0
+  200312:	4555                	li	a0,21
+  200314:	d03ff0ef          	jal	ra,200016 <invoke_syscall>
+  200318:	87aa                	mv	a5,a0
+  20031a:	2781                	sext.w	a5,a5
+  20031c:	853e                	mv	a0,a5
+  20031e:	60a2                	ld	ra,8(sp)
+  200320:	6402                	ld	s0,0(sp)
+  200322:	0141                	addi	sp,sp,16
+  200324:	8082                	ret
+
+0000000000200326 <sys_barrier_init>:
+  200326:	1101                	addi	sp,sp,-32
+  200328:	ec06                	sd	ra,24(sp)
+  20032a:	e822                	sd	s0,16(sp)
+  20032c:	1000                	addi	s0,sp,32
+  20032e:	87aa                	mv	a5,a0
+  200330:	872e                	mv	a4,a1
+  200332:	fef42623          	sw	a5,-20(s0)
+  200336:	87ba                	mv	a5,a4
+  200338:	fef42423          	sw	a5,-24(s0)
+  20033c:	fec42583          	lw	a1,-20(s0)
+  200340:	fe842603          	lw	a2,-24(s0)
+  200344:	4781                	li	a5,0
+  200346:	4701                	li	a4,0
+  200348:	4681                	li	a3,0
+  20034a:	02c00513          	li	a0,44
+  20034e:	cc9ff0ef          	jal	ra,200016 <invoke_syscall>
+  200352:	87aa                	mv	a5,a0
+  200354:	2781                	sext.w	a5,a5
+  200356:	853e                	mv	a0,a5
+  200358:	60e2                	ld	ra,24(sp)
+  20035a:	6442                	ld	s0,16(sp)
+  20035c:	6105                	addi	sp,sp,32
+  20035e:	8082                	ret
+
+0000000000200360 <sys_barrier_wait>:
+  200360:	1101                	addi	sp,sp,-32
+  200362:	ec06                	sd	ra,24(sp)
+  200364:	e822                	sd	s0,16(sp)
+  200366:	1000                	addi	s0,sp,32
+  200368:	87aa                	mv	a5,a0
+  20036a:	fef42623          	sw	a5,-20(s0)
+  20036e:	fec42583          	lw	a1,-20(s0)
+  200372:	4781                	li	a5,0
+  200374:	4701                	li	a4,0
+  200376:	4681                	li	a3,0
+  200378:	4601                	li	a2,0
+  20037a:	02d00513          	li	a0,45
+  20037e:	c99ff0ef          	jal	ra,200016 <invoke_syscall>
+  200382:	0001                	nop
+  200384:	60e2                	ld	ra,24(sp)
+  200386:	6442                	ld	s0,16(sp)
+  200388:	6105                	addi	sp,sp,32
+  20038a:	8082                	ret
+
+000000000020038c <sys_barrier_destroy>:
+  20038c:	1101                	addi	sp,sp,-32
+  20038e:	ec06                	sd	ra,24(sp)
+  200390:	e822                	sd	s0,16(sp)
+  200392:	1000                	addi	s0,sp,32
+  200394:	87aa                	mv	a5,a0
+  200396:	fef42623          	sw	a5,-20(s0)
+  20039a:	fec42583          	lw	a1,-20(s0)
+  20039e:	4781                	li	a5,0
+  2003a0:	4701                	li	a4,0
+  2003a2:	4681                	li	a3,0
+  2003a4:	4601                	li	a2,0
+  2003a6:	02e00513          	li	a0,46
+  2003aa:	c6dff0ef          	jal	ra,200016 <invoke_syscall>
+  2003ae:	0001                	nop
+  2003b0:	60e2                	ld	ra,24(sp)
+  2003b2:	6442                	ld	s0,16(sp)
+  2003b4:	6105                	addi	sp,sp,32
+  2003b6:	8082                	ret
+
+00000000002003b8 <sys_condition_init>:
+  2003b8:	1101                	addi	sp,sp,-32
+  2003ba:	ec06                	sd	ra,24(sp)
+  2003bc:	e822                	sd	s0,16(sp)
+  2003be:	1000                	addi	s0,sp,32
+  2003c0:	87aa                	mv	a5,a0
+  2003c2:	fef42623          	sw	a5,-20(s0)
+  2003c6:	fec42583          	lw	a1,-20(s0)
+  2003ca:	4781                	li	a5,0
+  2003cc:	4701                	li	a4,0
+  2003ce:	4681                	li	a3,0
+  2003d0:	4601                	li	a2,0
+  2003d2:	02f00513          	li	a0,47
+  2003d6:	c41ff0ef          	jal	ra,200016 <invoke_syscall>
+  2003da:	87aa                	mv	a5,a0
+  2003dc:	2781                	sext.w	a5,a5
+  2003de:	853e                	mv	a0,a5
+  2003e0:	60e2                	ld	ra,24(sp)
+  2003e2:	6442                	ld	s0,16(sp)
+  2003e4:	6105                	addi	sp,sp,32
+  2003e6:	8082                	ret
+
+00000000002003e8 <sys_condition_wait>:
+  2003e8:	1101                	addi	sp,sp,-32
+  2003ea:	ec06                	sd	ra,24(sp)
+  2003ec:	e822                	sd	s0,16(sp)
+  2003ee:	1000                	addi	s0,sp,32
+  2003f0:	87aa                	mv	a5,a0
+  2003f2:	872e                	mv	a4,a1
+  2003f4:	fef42623          	sw	a5,-20(s0)
+  2003f8:	87ba                	mv	a5,a4
+  2003fa:	fef42423          	sw	a5,-24(s0)
+  2003fe:	fec42583          	lw	a1,-20(s0)
+  200402:	fe842603          	lw	a2,-24(s0)
+  200406:	4781                	li	a5,0
+  200408:	4701                	li	a4,0
+  20040a:	4681                	li	a3,0
+  20040c:	03000513          	li	a0,48
+  200410:	c07ff0ef          	jal	ra,200016 <invoke_syscall>
+  200414:	0001                	nop
+  200416:	60e2                	ld	ra,24(sp)
+  200418:	6442                	ld	s0,16(sp)
+  20041a:	6105                	addi	sp,sp,32
+  20041c:	8082                	ret
+
+000000000020041e <sys_condition_signal>:
+  20041e:	1101                	addi	sp,sp,-32
+  200420:	ec06                	sd	ra,24(sp)
+  200422:	e822                	sd	s0,16(sp)
+  200424:	1000                	addi	s0,sp,32
+  200426:	87aa                	mv	a5,a0
+  200428:	fef42623          	sw	a5,-20(s0)
+  20042c:	fec42583          	lw	a1,-20(s0)
+  200430:	4781                	li	a5,0
+  200432:	4701                	li	a4,0
+  200434:	4681                	li	a3,0
+  200436:	4601                	li	a2,0
+  200438:	03100513          	li	a0,49
+  20043c:	bdbff0ef          	jal	ra,200016 <invoke_syscall>
+  200440:	0001                	nop
+  200442:	60e2                	ld	ra,24(sp)
+  200444:	6442                	ld	s0,16(sp)
+  200446:	6105                	addi	sp,sp,32
+  200448:	8082                	ret
+
+000000000020044a <sys_condition_broadcast>:
+  20044a:	1101                	addi	sp,sp,-32
+  20044c:	ec06                	sd	ra,24(sp)
+  20044e:	e822                	sd	s0,16(sp)
+  200450:	1000                	addi	s0,sp,32
+  200452:	87aa                	mv	a5,a0
+  200454:	fef42623          	sw	a5,-20(s0)
+  200458:	fec42583          	lw	a1,-20(s0)
+  20045c:	4781                	li	a5,0
+  20045e:	4701                	li	a4,0
+  200460:	4681                	li	a3,0
+  200462:	4601                	li	a2,0
+  200464:	03200513          	li	a0,50
+  200468:	bafff0ef          	jal	ra,200016 <invoke_syscall>
+  20046c:	0001                	nop
+  20046e:	60e2                	ld	ra,24(sp)
+  200470:	6442                	ld	s0,16(sp)
+  200472:	6105                	addi	sp,sp,32
+  200474:	8082                	ret
+
+0000000000200476 <sys_condition_destroy>:
+  200476:	1101                	addi	sp,sp,-32
+  200478:	ec06                	sd	ra,24(sp)
+  20047a:	e822                	sd	s0,16(sp)
+  20047c:	1000                	addi	s0,sp,32
+  20047e:	87aa                	mv	a5,a0
+  200480:	fef42623          	sw	a5,-20(s0)
+  200484:	fec42583          	lw	a1,-20(s0)
+  200488:	4781                	li	a5,0
+  20048a:	4701                	li	a4,0
+  20048c:	4681                	li	a3,0
+  20048e:	4601                	li	a2,0
+  200490:	03300513          	li	a0,51
+  200494:	b83ff0ef          	jal	ra,200016 <invoke_syscall>
+  200498:	0001                	nop
+  20049a:	60e2                	ld	ra,24(sp)
+  20049c:	6442                	ld	s0,16(sp)
+  20049e:	6105                	addi	sp,sp,32
+  2004a0:	8082                	ret
+
+00000000002004a2 <sys_semaphore_init>:
+  2004a2:	1101                	addi	sp,sp,-32
+  2004a4:	ec06                	sd	ra,24(sp)
+  2004a6:	e822                	sd	s0,16(sp)
+  2004a8:	1000                	addi	s0,sp,32
+  2004aa:	87aa                	mv	a5,a0
+  2004ac:	872e                	mv	a4,a1
+  2004ae:	fef42623          	sw	a5,-20(s0)
+  2004b2:	87ba                	mv	a5,a4
+  2004b4:	fef42423          	sw	a5,-24(s0)
+  2004b8:	fec42583          	lw	a1,-20(s0)
+  2004bc:	fe842603          	lw	a2,-24(s0)
+  2004c0:	4781                	li	a5,0
+  2004c2:	4701                	li	a4,0
+  2004c4:	4681                	li	a3,0
+  2004c6:	03a00513          	li	a0,58
+  2004ca:	b4dff0ef          	jal	ra,200016 <invoke_syscall>
+  2004ce:	87aa                	mv	a5,a0
+  2004d0:	2781                	sext.w	a5,a5
+  2004d2:	853e                	mv	a0,a5
+  2004d4:	60e2                	ld	ra,24(sp)
+  2004d6:	6442                	ld	s0,16(sp)
+  2004d8:	6105                	addi	sp,sp,32
+  2004da:	8082                	ret
+
+00000000002004dc <sys_semaphore_up>:
+  2004dc:	1101                	addi	sp,sp,-32
+  2004de:	ec06                	sd	ra,24(sp)
+  2004e0:	e822                	sd	s0,16(sp)
+  2004e2:	1000                	addi	s0,sp,32
+  2004e4:	87aa                	mv	a5,a0
+  2004e6:	fef42623          	sw	a5,-20(s0)
+  2004ea:	fec42583          	lw	a1,-20(s0)
+  2004ee:	4781                	li	a5,0
+  2004f0:	4701                	li	a4,0
+  2004f2:	4681                	li	a3,0
+  2004f4:	4601                	li	a2,0
+  2004f6:	03b00513          	li	a0,59
+  2004fa:	b1dff0ef          	jal	ra,200016 <invoke_syscall>
+  2004fe:	0001                	nop
+  200500:	60e2                	ld	ra,24(sp)
+  200502:	6442                	ld	s0,16(sp)
+  200504:	6105                	addi	sp,sp,32
+  200506:	8082                	ret
+
+0000000000200508 <sys_semaphore_down>:
+  200508:	1101                	addi	sp,sp,-32
+  20050a:	ec06                	sd	ra,24(sp)
+  20050c:	e822                	sd	s0,16(sp)
+  20050e:	1000                	addi	s0,sp,32
+  200510:	87aa                	mv	a5,a0
+  200512:	fef42623          	sw	a5,-20(s0)
+  200516:	fec42583          	lw	a1,-20(s0)
+  20051a:	4781                	li	a5,0
+  20051c:	4701                	li	a4,0
+  20051e:	4681                	li	a3,0
+  200520:	4601                	li	a2,0
+  200522:	03c00513          	li	a0,60
+  200526:	af1ff0ef          	jal	ra,200016 <invoke_syscall>
+  20052a:	0001                	nop
+  20052c:	60e2                	ld	ra,24(sp)
+  20052e:	6442                	ld	s0,16(sp)
+  200530:	6105                	addi	sp,sp,32
+  200532:	8082                	ret
+
+0000000000200534 <sys_semaphore_destroy>:
+  200534:	1101                	addi	sp,sp,-32
+  200536:	ec06                	sd	ra,24(sp)
+  200538:	e822                	sd	s0,16(sp)
+  20053a:	1000                	addi	s0,sp,32
+  20053c:	87aa                	mv	a5,a0
+  20053e:	fef42623          	sw	a5,-20(s0)
+  200542:	fec42583          	lw	a1,-20(s0)
+  200546:	4781                	li	a5,0
+  200548:	4701                	li	a4,0
+  20054a:	4681                	li	a3,0
+  20054c:	4601                	li	a2,0
+  20054e:	03d00513          	li	a0,61
+  200552:	ac5ff0ef          	jal	ra,200016 <invoke_syscall>
+  200556:	0001                	nop
+  200558:	60e2                	ld	ra,24(sp)
+  20055a:	6442                	ld	s0,16(sp)
+  20055c:	6105                	addi	sp,sp,32
+  20055e:	8082                	ret
+
+0000000000200560 <sys_mbox_open>:
+  200560:	1101                	addi	sp,sp,-32
+  200562:	ec06                	sd	ra,24(sp)
+  200564:	e822                	sd	s0,16(sp)
+  200566:	1000                	addi	s0,sp,32
+  200568:	fea43423          	sd	a0,-24(s0)
+  20056c:	fe843583          	ld	a1,-24(s0)
+  200570:	4781                	li	a5,0
+  200572:	4701                	li	a4,0
+  200574:	4681                	li	a3,0
+  200576:	4601                	li	a2,0
+  200578:	03400513          	li	a0,52
+  20057c:	a9bff0ef          	jal	ra,200016 <invoke_syscall>
+  200580:	87aa                	mv	a5,a0
+  200582:	2781                	sext.w	a5,a5
+  200584:	853e                	mv	a0,a5
+  200586:	60e2                	ld	ra,24(sp)
+  200588:	6442                	ld	s0,16(sp)
+  20058a:	6105                	addi	sp,sp,32
+  20058c:	8082                	ret
+
+000000000020058e <sys_mbox_close>:
+  20058e:	1101                	addi	sp,sp,-32
+  200590:	ec22                	sd	s0,24(sp)
+  200592:	1000                	addi	s0,sp,32
+  200594:	87aa                	mv	a5,a0
+  200596:	fef42623          	sw	a5,-20(s0)
+  20059a:	0001                	nop
+  20059c:	6462                	ld	s0,24(sp)
+  20059e:	6105                	addi	sp,sp,32
+  2005a0:	8082                	ret
+
+00000000002005a2 <sys_mbox_send>:
+  2005a2:	1101                	addi	sp,sp,-32
+  2005a4:	ec06                	sd	ra,24(sp)
+  2005a6:	e822                	sd	s0,16(sp)
+  2005a8:	1000                	addi	s0,sp,32
+  2005aa:	87aa                	mv	a5,a0
+  2005ac:	feb43023          	sd	a1,-32(s0)
+  2005b0:	8732                	mv	a4,a2
+  2005b2:	fef42623          	sw	a5,-20(s0)
+  2005b6:	87ba                	mv	a5,a4
+  2005b8:	fef42423          	sw	a5,-24(s0)
+  2005bc:	fec42583          	lw	a1,-20(s0)
+  2005c0:	fe043603          	ld	a2,-32(s0)
+  2005c4:	fe842683          	lw	a3,-24(s0)
+  2005c8:	4781                	li	a5,0
+  2005ca:	4701                	li	a4,0
+  2005cc:	03600513          	li	a0,54
+  2005d0:	a47ff0ef          	jal	ra,200016 <invoke_syscall>
+  2005d4:	87aa                	mv	a5,a0
+  2005d6:	2781                	sext.w	a5,a5
+  2005d8:	853e                	mv	a0,a5
+  2005da:	60e2                	ld	ra,24(sp)
+  2005dc:	6442                	ld	s0,16(sp)
+  2005de:	6105                	addi	sp,sp,32
+  2005e0:	8082                	ret
+
+00000000002005e2 <sys_mbox_recv>:
+  2005e2:	1101                	addi	sp,sp,-32
+  2005e4:	ec06                	sd	ra,24(sp)
+  2005e6:	e822                	sd	s0,16(sp)
+  2005e8:	1000                	addi	s0,sp,32
+  2005ea:	87aa                	mv	a5,a0
+  2005ec:	feb43023          	sd	a1,-32(s0)
+  2005f0:	8732                	mv	a4,a2
+  2005f2:	fef42623          	sw	a5,-20(s0)
+  2005f6:	87ba                	mv	a5,a4
+  2005f8:	fef42423          	sw	a5,-24(s0)
+  2005fc:	fec42583          	lw	a1,-20(s0)
+  200600:	fe043603          	ld	a2,-32(s0)
+  200604:	fe842683          	lw	a3,-24(s0)
+  200608:	4781                	li	a5,0
+  20060a:	4701                	li	a4,0
+  20060c:	03700513          	li	a0,55
+  200610:	a07ff0ef          	jal	ra,200016 <invoke_syscall>
+  200614:	87aa                	mv	a5,a0
+  200616:	2781                	sext.w	a5,a5
+  200618:	853e                	mv	a0,a5
+  20061a:	60e2                	ld	ra,24(sp)
+  20061c:	6442                	ld	s0,16(sp)
+  20061e:	6105                	addi	sp,sp,32
+  200620:	8082                	ret
+
+0000000000200622 <sys_shmpageget>:
+  200622:	1101                	addi	sp,sp,-32
+  200624:	ec22                	sd	s0,24(sp)
+  200626:	1000                	addi	s0,sp,32
+  200628:	87aa                	mv	a5,a0
+  20062a:	fef42623          	sw	a5,-20(s0)
+  20062e:	0001                	nop
+  200630:	853e                	mv	a0,a5
+  200632:	6462                	ld	s0,24(sp)
+  200634:	6105                	addi	sp,sp,32
+  200636:	8082                	ret
+
+0000000000200638 <sys_shmpagedt>:
+  200638:	1101                	addi	sp,sp,-32
+  20063a:	ec22                	sd	s0,24(sp)
+  20063c:	1000                	addi	s0,sp,32
+  20063e:	fea43423          	sd	a0,-24(s0)
+  200642:	0001                	nop
+  200644:	6462                	ld	s0,24(sp)
+  200646:	6105                	addi	sp,sp,32
+  200648:	8082                	ret
+
+000000000020064a <sys_taskset>:
+  20064a:	1101                	addi	sp,sp,-32
+  20064c:	ec06                	sd	ra,24(sp)
+  20064e:	e822                	sd	s0,16(sp)
+  200650:	1000                	addi	s0,sp,32
+  200652:	87aa                	mv	a5,a0
+  200654:	feb43023          	sd	a1,-32(s0)
+  200658:	8732                	mv	a4,a2
+  20065a:	fef42623          	sw	a5,-20(s0)
+  20065e:	87ba                	mv	a5,a4
+  200660:	fef42423          	sw	a5,-24(s0)
+  200664:	fec42583          	lw	a1,-20(s0)
+  200668:	fe043603          	ld	a2,-32(s0)
+  20066c:	fe842683          	lw	a3,-24(s0)
+  200670:	4781                	li	a5,0
+  200672:	4701                	li	a4,0
+  200674:	03e00513          	li	a0,62
+  200678:	99fff0ef          	jal	ra,200016 <invoke_syscall>
+  20067c:	0001                	nop
+  20067e:	60e2                	ld	ra,24(sp)
+  200680:	6442                	ld	s0,16(sp)
+  200682:	6105                	addi	sp,sp,32
+  200684:	8082                	ret
