@@ -35,6 +35,7 @@
 #define PAGE_SIZE 4096 // 4K
 #define INIT_KERNEL_STACK 0xffffffc052000000
 #define FREEMEM_KERNEL (INIT_KERNEL_STACK+PAGE_SIZE)
+#define AVAILABLE_KERNEL 0xffffffc052002000     // newly added!
 #define FREEMEM_KERNEL_END 0xffffffc060000000   // newly added!
 
 /* Rounding; only works for n = power of two */

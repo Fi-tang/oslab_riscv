@@ -24,16 +24,16 @@ ptr_t allocLargePage(int numPage)
 #endif
 
 void kinit(){   // allocate from 0xffffffc052001000 to 0xfffffc060000000
-    uint64_t sentienl_address = FREEMEM_KERNEL;
-    global_free_sentienl = (struct SentienlNode *)FREEMEM_KERNEL;
+    uint64_t sentienl_address = AVAILABLE_KERNEL;
+    global_free_sentienl = (struct SentienlNode *)AVAILABLE_KERNEL;
     struct ListNode *prev_node = (struct ListNode *)(global_free_sentienl -> head);
 
-    for(uint64_t index = FREEMEM_KERNEL + PAGE_SIZE; index < FREEMEM_KERNEL_END; index += PAGE_SIZE){
+    for(uint64_t index = AVAILABLE_KERNEL + PAGE_SIZE; index < FREEMEM_KERNEL_END; index += PAGE_SIZE){
         uint64_t listnode_address = index;
         struct ListNode *current_node = (struct ListNode *)listnode_address;
         current_node -> virtual_address = index;
         current_node -> next = NULL;
-        if(index == FREEMEM_KERNEL + PAGE_SIZE){
+        if(index == AVAILABLE_KERNEL + PAGE_SIZE){
             global_free_sentienl -> head = current_node;
             prev_node = global_free_sentienl -> head;
         }
@@ -71,7 +71,7 @@ void *kmalloc(size_t size)
 
     // Step2: allocate new SentienlNode
     // place it at half of the page
-    uint64_t malloc_addr = FREEMEM_KERNEL + (PAGE_SIZE / 2);
+    uint64_t malloc_addr = AVAILABLE_KERNEL + (PAGE_SIZE / 2);
     struct SentienlNode *malloc_free = (struct SentienlNode *)malloc_addr;
     malloc_free -> head = NULL;
 
