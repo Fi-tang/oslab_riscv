@@ -59,7 +59,7 @@ extern ptr_t allocLargePage(int numPage);
 
 // define a struct to allocate free_page
 struct ListNode{
-    int virtual_address;
+    int physical_address;
     struct ListNode *next;
 }ListNode;
 

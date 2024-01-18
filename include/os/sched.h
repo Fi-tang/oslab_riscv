@@ -95,6 +95,7 @@ typedef struct pcb
     regs_context_t pcb_user_regs_context;       // 200
     char name[EI_NIDENT];                       // 496
     int pcb_mask;                               // 0x1-core0, 0x2-core1, 0x3-both
+    uint64_t user_pgdir_kva;                    // store user pgdir's kernel virtual address
 } pcb_t;
 
 /* ready queue to run */
