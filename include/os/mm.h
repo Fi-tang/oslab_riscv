@@ -66,8 +66,6 @@ struct SentienlNode{
     struct ListNode *head;
 }SentienlNode;
 
-struct SentienlNode *global_free_sentienl;
-
 // Add function: print all available page_info
 extern void print_page_alloc_info(struct SentienlNode *sentienl_head);
 

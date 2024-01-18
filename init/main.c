@@ -293,7 +293,7 @@ void allocate_user_pgdir(pcb_t *pcb){
     printl("allocate_user_pgdir:\n");
     print_page_alloc_info(malloc_user_pgdir_sentienl);
 
-    pcb -> user_pgdir_kva = (uintptr_t)malloc_user_pgdir_sentienl -> head;
+    pcb -> user_pgdir_kva = (uintptr_t)(malloc_user_pgdir_sentienl -> head);
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
 }
@@ -353,6 +353,11 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     set_pfn(&level_three_pgdir[vpn0], pa >> NORMAL_PAGE_SHIFT);
     set_attribute(
         &level_three_pgdir[vpn0], _PAGE_PRESENT | _PAGE_READ | _PAGE_WRITE | _PAGE_EXEC | _PAGE_ACCESSED | _PAGE_DIRTY);
+
+    printl("[Verify]level_one_pgdir: 0x%x\n", kva2pa(level_one_pgdir));
+    printl("[Verify]level_two_pgdir: 0x%x,\tfunction result = 0x%x\n", kva2pa(level_two_pgdir), get_pa(level_one_pgdir[vpn2]));
+    printl("[Verify]level_three_pgdir: 0x%x,\tfunction result = 0x%x\n", kva2pa(level_three_pgdir), get_pa(level_two_pgdir[vpn1]));
+    printl("[Verify]physical_frame: 0x%x,\tfunction result = 0x%x\n\n\n", pa, get_pa(level_three_pgdir[vpn0]));
 }
 
 // Step3: load task-info and map_pages
@@ -364,8 +369,12 @@ void map_user_page(pcb_t *pcb, int task_id){
 void do_unit_test(){
     allocate_user_pgdir(&pcb[0]);
     copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb[0].user_pgdir_kva);
-    // we grantuee that kmalloc is correct
+    // need to make sure that the kmalloc producure is correct
     map_single_user_page(0x100000, 0x54000000, (PTE *)(pcb[0].user_pgdir_kva));
+    map_single_user_page(0x16d800, 0x56001000, (PTE *)(pcb[0].user_pgdir_kva));
+    map_single_user_page(0x25a700, 0x56008000, (PTE *)(pcb[0].user_pgdir_kva));
+    map_single_user_page(0x0fc200, 0x5600f000, (PTE *)(pcb[0].user_pgdir_kva));
+    map_single_user_page(0x114c00, 0x5700a000, (PTE *)(pcb[0].user_pgdir_kva));
 }
 
 int main(void)

@@ -3,6 +3,9 @@
 // NOTE: A/C-core
 static ptr_t kernMemCurr = FREEMEM_KERNEL;
 
+struct SentienlNode *global_free_sentienl;
+struct SentienlNode *malloc_free_sentienl;
+
 ptr_t allocPage(int numPage)
 {
     // align PAGE_SIZE
@@ -24,8 +27,9 @@ ptr_t allocLargePage(int numPage)
 #endif
 
 void kinit(){   // allocate from 0xffffffc052002000 to 0xfffffc060000000
-    uint64_t sentienl_address = AVAILABLE_KERNEL;
     global_free_sentienl = (struct SentienlNode *)AVAILABLE_KERNEL;
+    malloc_free_sentienl = (struct SentienlNode *)(AVAILABLE_KERNEL + (PAGE_SIZE / 2));
+    
     struct ListNode *prev_node = (struct ListNode *)(global_free_sentienl -> head);
 
     for(uint64_t index = AVAILABLE_KERNEL + PAGE_SIZE; index < FREEMEM_KERNEL_END; index += PAGE_SIZE){
@@ -70,16 +74,14 @@ void *kmalloc(size_t size)
 
     // Step2: allocate new SentienlNode
     // place it at half of the page
-    uint64_t malloc_addr = AVAILABLE_KERNEL + (PAGE_SIZE / 2);
-    struct SentienlNode *malloc_free = (struct SentienlNode *)malloc_addr;
-    malloc_free -> head = NULL;
+    malloc_free_sentienl -> head = NULL;
 
     // Step3: traverse
     struct ListNode *global_temp = global_free_sentienl -> head;
     struct ListNode *prev_node = NULL;
     while(global_temp != NULL && page_num > 0){
-        if(malloc_free -> head == NULL){
-            malloc_free -> head = global_temp;
+        if(malloc_free_sentienl -> head == NULL){
+            malloc_free_sentienl -> head = global_temp;
         }
         prev_node = global_temp;                // find the last prev to cut off 
         global_temp = global_temp -> next;      // global_free_sentienl ->[] -> [] -> [] -> [] -> [] | -> [] -> [] -> []
@@ -87,7 +89,7 @@ void *kmalloc(size_t size)
     }
     prev_node -> next = NULL;
     global_free_sentienl -> head = global_temp;
-    return malloc_free;
+    return malloc_free_sentienl;
 }
 
 void print_page_alloc_info(struct SentienlNode *sentienl_head){
