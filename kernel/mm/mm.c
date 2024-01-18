@@ -3,9 +3,6 @@
 // NOTE: A/C-core
 static ptr_t kernMemCurr = FREEMEM_KERNEL;
 
-struct SentienlNode *global_free_sentienl;
-struct SentienlNode *malloc_free_sentienl;
-
 ptr_t allocPage(int numPage)
 {
     // align PAGE_SIZE
@@ -58,7 +55,7 @@ void freePage(ptr_t baseAddr)   // assume 4 KB
     global_free_sentienl -> head = current_node;  // insert from head
 }
 
-void *kmalloc(size_t size)
+void *kmalloc(size_t size) // remember pass number * PAGE_SIZE
 {
     // TODO [P4-task1] (design you 'kmalloc' here if you need):
     static bool init_or_not = false;

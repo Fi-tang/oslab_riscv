@@ -320,6 +320,8 @@ debug error:
 because we assign every page as struct ListNode *, 
 so level_one_pgdir 0xffffffc052003000 looks like: 0x52003000 00000000 00000000 00000000
 it did not pass the test that level_one_pgdir[vpn2] == 0
+
+// usage: map_single_user_page(0x100000, 0x54000000, (PTE *)(pcb[0].user_pgdir_kva));
 */
 void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     printl("mapping 0x%x to 0x%x\n", va, pa);
@@ -361,8 +363,19 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
 }
 
 // Step3: load task-info and map_pages
-// get information from tasks[task_id], map its user_page
-void map_user_page(pcb_t *pcb, int task_id){
+// get information from tasks[task_id]
+// map task info from 0x10000 to (0x10000 + p_memsz)
+/**
+need to implement sd_read in every 4 KB, which means every 8 sector
+*/
+void map_user_context(pcb_t *pcb, int task_id){
+    long task_memorysz = tasks[task_id].task_memorysz;
+    /*
+    first, allocate task_memorysz's page
+    */
+    struct SentienlNode *malloc_user_context_sentienl = (struct SentienlNode *)kmalloc(task_memorysz);
+    printl("[User_context]: task_memorysz = %ld\n", task_memorysz);
+    print_page_alloc_info(malloc_user_context_sentienl);
 
 }
 
@@ -370,11 +383,7 @@ void do_unit_test(){
     allocate_user_pgdir(&pcb[0]);
     copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb[0].user_pgdir_kva);
     // need to make sure that the kmalloc producure is correct
-    map_single_user_page(0x100000, 0x54000000, (PTE *)(pcb[0].user_pgdir_kva));
-    map_single_user_page(0x16d800, 0x56001000, (PTE *)(pcb[0].user_pgdir_kva));
-    map_single_user_page(0x25a700, 0x56008000, (PTE *)(pcb[0].user_pgdir_kva));
-    map_single_user_page(0x0fc200, 0x5600f000, (PTE *)(pcb[0].user_pgdir_kva));
-    map_single_user_page(0x114c00, 0x5700a000, (PTE *)(pcb[0].user_pgdir_kva));
+    map_user_context(&pcb[0], 6);
 }
 
 int main(void)
