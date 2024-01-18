@@ -293,10 +293,9 @@ void allocate_user_pgdir(pcb_t *pcb){
     printl("allocate_user_pgdir:\n");
     print_page_alloc_info(malloc_user_pgdir_sentienl);
 
-    pcb -> user_pgdir_kva = malloc_user_pgdir_sentienl -> head -> page_address;
+    pcb -> user_pgdir_kva = (uintptr_t)malloc_user_pgdir_sentienl -> head;
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
-    clear_pgdir(pcb -> user_pgdir_kva);
 }
 
 // Step2: Copy kernel pgdir to user_pgdir
@@ -318,7 +317,7 @@ this function is to map three level user_page
 
 debug error: 
 *********** first record *****************************************************
-because we assign every page as struct ListNode *, with page_address,
+because we assign every page as struct ListNode *, 
 so level_one_pgdir 0xffffffc052003000 looks like: 0x52003000 00000000 00000000 00000000
 it did not pass the test that level_one_pgdir[vpn2] == 0
 */
@@ -334,9 +333,9 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     if(level_one_pgdir[vpn2] == 0){ // have not allocated level_two_pgdir
         struct SentienlNode *malloc_level_two = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
         print_page_alloc_info(malloc_level_two);         // debug
-        uint64_t return_level_two_address = malloc_level_two -> head -> page_address;
-        printl("[map_single_user_page]: level_two_pgdir 0x%x\n", pa2kva(return_level_two_address)); // debug
-        set_pfn(&level_one_pgdir[vpn2], return_level_two_address >> NORMAL_PAGE_SHIFT);
+        uint64_t return_level_two_address = (uint64_t)(malloc_level_two -> head);
+        printl("[map_single_user_page]: level_two_pgdir 0x%x\n", kva2pa(return_level_two_address)); // debug
+        set_pfn(&level_one_pgdir[vpn2], kva2pa(return_level_two_address) >> NORMAL_PAGE_SHIFT);
         set_attribute(&level_one_pgdir[vpn2], _PAGE_PRESENT);
         clear_pgdir(pa2kva(get_pa(level_one_pgdir[vpn2])));     // clean level_two_pgdir, for furture fullfill
     }
@@ -344,9 +343,9 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     if(level_two_pgdir[vpn1] == 0){  // have not allocated level_three_pgdir
         struct SentienlNode *malloc_level_three = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
         print_page_alloc_info(malloc_level_three);     // debug
-        uint64_t return_level_three_address = malloc_level_three -> head -> page_address;
-        printl("[map_single_user_page]: level_three_pgdir 0x%x\n", pa2kva(return_level_three_address)); // debug
-        set_pfn(&level_two_pgdir[vpn1], return_level_three_address >> NORMAL_PAGE_SHIFT);
+        uint64_t return_level_three_address = (uint64_t)(malloc_level_three -> head);
+        printl("[map_single_user_page]: level_three_pgdir 0x%x\n", kva2pa(return_level_three_address)); // debug
+        set_pfn(&level_two_pgdir[vpn1], kva2pa(return_level_three_address) >> NORMAL_PAGE_SHIFT);
         set_attribute(&level_two_pgdir[vpn1], _PAGE_PRESENT);
         clear_pgdir(pa2kva(get_pa(level_two_pgdir[vpn1])));     // clean level_three_pgdir, for furture fullfill
     }
