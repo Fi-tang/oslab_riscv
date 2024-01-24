@@ -267,4 +267,9 @@ void load_task_image(char *taskname){
         start_block_id = start_block_id + 8;
     }
     /**Step 5: the last page, we need to clean task_filesz to task_memsz, fill it with 0*/
+    int task_filesz_spare = task_filesz - (total_page_num - 1) * PAGE_SIZE;
+    int task_memorysz_spare = task_memorysz - (total_page_num - 1) * PAGE_SIZE;
+    printl("\ntask_filesz_spare: %d\ttask_memorysz_spare: %d\n", task_filesz_spare, task_memorysz_spare);
+    
+    memset(task_page_array[total_page_num - 1] + task_filesz_spare, 0, PAGE_SIZE - task_filesz_spare);
 }
