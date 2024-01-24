@@ -309,50 +309,15 @@ void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
     user_pgdir[vpn2] = kernel_pgdir[vpn2];
 }
 
-// Step3: load task-info and map_pages
-// get information from tasks[task_id]
-// map task info from 0x10000 to (0x10000 + p_memsz)
-/**
-need to implement sd_read in every 4 KB, which means every 8 sector
-*/
-void map_user_context(pcb_t *pcb, int task_id){
-    long task_memorysz = tasks[task_id].task_memorysz;
-    /*
-    first, allocate task_memorysz's page
-    */
-    struct SentienlNode *malloc_user_context_sentienl = (struct SentienlNode *)kmalloc(task_memorysz);
-    printl("[User_context]: user_context_allocate info: ");
-    print_page_alloc_info(malloc_user_context_sentienl);
-
-    int page_context_num = ROUND(task_memorysz, PAGE_SIZE) / PAGE_SIZE;
-    printl("\n\n[User_context]: task_memorysz = %ld, total_page = %d\n", task_memorysz, page_context_num);
-    uintptr_t malloc_address_info[page_context_num];
-
-    struct ListNode *malloc_temp = malloc_user_context_sentienl -> head;
-    for(int i = 0; i < page_context_num; i++){
-        malloc_address_info[i] = (uintptr_t)(malloc_temp);
-        printl("malloc_address_info[%d] = 0x%x\n", i, malloc_address_info[i]);
-        malloc_temp = malloc_temp -> next;
-    }
-
-    // Step3-1:  Map page
-    PTE *level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
-    for(int i = 0; i < page_context_num; i++){
-        uint64_t va = 0x100000lu + (i * PAGE_SIZE);
-        uint64_t pa = malloc_address_info[i];
-        map_single_user_page(va, pa, level_one_pgdir);
-    }
-
-    // Step3-2: 
-
-}
-
 void do_unit_test(){
     strcpy(pcb[0].name, "fly");
+    // Step1: alloc one page
     allocate_user_pgdir(&pcb[0]);
+    printl("pcb[0]'s user_pgdir: 0x%x\n",pcb[0].user_pgdir_kva);
+    // Step2: fill kernel information
     copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb[0].user_pgdir_kva);
-    // need to make sure that the kmalloc producure is correct
-    map_user_context(&pcb[0], 4);
+    PTE *user_level_one_pgdir = (PTE *)(pcb[0].user_pgdir_kva);
+    load_task_image("fly");
 }
 
 int main(void)

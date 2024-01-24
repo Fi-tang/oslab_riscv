@@ -78,6 +78,7 @@ extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 
 extern void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir); // newly added!
+extern void load_task_image(char *taskname); // newly added!
 
 // TODO [P4-task4]: shm_page_get/dt */
 uintptr_t shm_page_get(int key);

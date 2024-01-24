@@ -38,21 +38,3 @@ uint64_t load_task_img_by_name(int tasknum, char *taskname){
     }
     return 0;
 }
-
-long load_task_img_filesz(int tasknum, char *taskname){
-    for(int i = 0; i < (tasknum + 1); i++){
-        if(strcmp(taskname, tasks[i].taskname) == 0){
-            return tasks[i].task_filesz;
-        }
-    }
-    return 0;
-}
-
-long load_task_img_memorysz(int tasknum, char *taskname){
-    for(int i = 0; i < (tasknum + 1); i++){
-        if(strcmp(taskname, tasks[i].taskname) == 0){
-            return tasks[i].task_memorysz;
-        }
-    }
-    return 0;
-}
