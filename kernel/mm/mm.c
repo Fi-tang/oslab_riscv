@@ -197,12 +197,14 @@ void load_task_image(char *taskname){
     }
     int start_block_id = tasks[task_id].start_block_id;
     int total_block_num = tasks[task_id].total_block_num;
+    int max_block_id = start_block_id + total_block_num - 1;    // judge it is a legal sector to visit
     long task_filesz = tasks[task_id].task_filesz;
     long task_memorysz = tasks[task_id].task_memorysz;
     long task_blockstart_offset = tasks[task_id].task_blockstart_offset;
 
     printl("start_block_id=%d\ttotal_block_num=%d\ttask_filesz=%ld\n", start_block_id, total_block_num, task_filesz);
     printl("task_memorysz=%ld\ttask_blockstart_offset=%ld\n",task_memorysz, task_blockstart_offset);
+    printl("max_block_id = %d\n", max_block_id);
     /**
     according to the load function,
     we need a free buffer to temoprarily place the first 512B, then copy it to the corresponding position.
@@ -261,10 +263,24 @@ void load_task_image(char *taskname){
         */
         bios_sd_read(free_buffer_address, 1, start_block_id);
         memcpy(task_page_array[i], free_buffer_address + task_blockstart_offset, 512 - task_blockstart_offset);
-        bios_sd_read(task_page_array[i] + (512 - task_blockstart_offset), 7, start_block_id + 1);
-        bios_sd_read(free_buffer_address, 1, start_block_id + 8);
-        memcpy(task_page_array[i] + PAGE_SIZE - task_blockstart_offset, free_buffer_address, task_blockstart_offset);
-        start_block_id = start_block_id + 8;
+        /*
+        if left block is less than 7, it will not be necessary
+        */
+        if(start_block_id + 7 > max_block_id){
+            printl("\n[Final round]: This is final round!\n");
+            printl("visit [%d] , only need to visit %d blocks\n", start_block_id + 1, (max_block_id - start_block_id));
+            bios_sd_read(task_page_array[i] + (512 - task_blockstart_offset), (max_block_id - start_block_id), start_block_id + 1);
+        }
+        else{
+            printl("\n[Normal round]: This is a normal round\n");
+            printl("This round visit [%d][%d][%d][%d][%d][%d][%d]\n", start_block_id + 1, start_block_id + 2, start_block_id + 3, 
+            start_block_id + 4, start_block_id + 5, start_block_id + 6, start_block_id + 7);
+            bios_sd_read(task_page_array[i] + (512 - task_blockstart_offset), 7, start_block_id + 1);
+
+            bios_sd_read(free_buffer_address, 1, start_block_id + 8);
+            memcpy(task_page_array[i] + PAGE_SIZE - task_blockstart_offset, free_buffer_address, task_blockstart_offset);
+            start_block_id = start_block_id + 8;
+        }
     }
     /**Step 5: the last page, we need to clean task_filesz to task_memsz, fill it with 0*/
     int task_filesz_spare = task_filesz - (total_page_num - 1) * PAGE_SIZE;
