@@ -117,7 +117,7 @@ it did not pass the test that level_one_pgdir[vpn2] == 0
 // usage: map_single_user_page(0x100000, 0x54000000, (PTE *)(pcb[0].user_pgdir_kva));
 */
 void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
-    printl("mapping 0x%x to 0x%x\n", va, pa);
+    printl("\n\nmapping 0x%x to 0x%x\n", va, pa);
     printl("[map_single_user_page]: level_one_pgdir 0x%x\n", (uintptr_t)level_one_pgdir); // debug
 
     va &= VA_MASK;
@@ -183,7 +183,7 @@ void shm_page_dt(uintptr_t addr)
 /**
 function: first load task image, after fullfill it into user_pgtable
 */
-void load_task_image(char *taskname){
+void load_task_image(char *taskname, PTE *user_level_one_pgdir){
     printl("\n\n[load_task_image]: \n");
     /**
     Step 1. record corresponding task-related parameter.
@@ -288,4 +288,27 @@ void load_task_image(char *taskname){
     printl("\ntask_filesz_spare: %d\ttask_memorysz_spare: %d\n", task_filesz_spare, task_memorysz_spare);
     
     memset(task_page_array[total_page_num - 1] + task_filesz_spare, 0, PAGE_SIZE - task_filesz_spare);
+    /**Step 6: fullfill page_table*/
+    Build_user_page_table(task_id, user_level_one_pgdir, task_page_array);
+}
+
+//************************Building user page table********************************************************
+/* after load task image, we need to fullfill user page_table
+(1) virtual address ranges
+(2) page allocate situation
+*/
+void Build_user_page_table(int task_id, PTE *user_level_one_pgdir, uintptr_t *task_page_array){
+    // Step 1: get related virtual address ranges: from 0x10000 to (0x10000 + tasks[i].task_memorysz)
+    int task_memorysz = tasks[task_id].task_memorysz;
+    printl("\n\n[Build_user_page_table]: \n");
+    printl("virtual_address start from 0x10000 to 0x%x\n",(0x100000lu + task_memorysz));  // memorysz = 5456 = 0x1550, 0x10000 ~ 0x11550
+
+    int total_page_num = ROUND(task_memorysz, PAGE_SIZE) / PAGE_SIZE;
+    for(int i = 0; i < total_page_num; i++){
+        uintptr_t kva_load_address = task_page_array[i];
+        printl("%d's kva_load_address = 0x%x\n", i, kva_load_address);
+        uint64_t va = 0x100000lu + i * PAGE_SIZE;
+        uint64_t pa = kva2pa(kva_load_address);
+        map_single_user_page(va, pa, user_level_one_pgdir);
+    }
 }

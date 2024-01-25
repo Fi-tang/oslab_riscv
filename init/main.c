@@ -317,7 +317,8 @@ void do_unit_test(){
     // Step2: fill kernel information
     copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb[0].user_pgdir_kva);
     PTE *user_level_one_pgdir = (PTE *)(pcb[0].user_pgdir_kva);
-    load_task_image("fly");
+    uintptr_t *task_page_array;
+    load_task_image("fly", user_level_one_pgdir);
 }
 
 int main(void)
