@@ -6,6 +6,7 @@
 // NOTE: A/C-core
 static ptr_t kernMemCurr = FREEMEM_KERNEL;
 
+
 ptr_t allocPage(int numPage)
 {
     // align PAGE_SIZE
@@ -211,13 +212,9 @@ void load_task_image(char *taskname, PTE *user_level_one_pgdir){
     @free_buffer_page: place first and the 8th block data here, than move it to somewhereelse(according to offset)
     */
     /*
-    Step 2: allocate temp_buffer to store first 512 B
+    Step 2: allocate temp_buffer to store first 512 B  --> fix it
     */
-    struct SentienlNode *free_buffer_page = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);  
-    printl("\nfree_temp_block:");
-    print_page_alloc_info(free_buffer_page);
-    uintptr_t free_buffer_address = (uintptr_t)(free_buffer_page -> head); 
-    printl("free_buffer_address: 0x%x\n", free_buffer_page -> head);  // actually, it is kva: 0xffffffc052004000
+    printl("free_buffer_address: 0x%x\n", free_buffer_address);  // actually, it is kva: 0xffffffc052001000
 
     /**
     Step 3: allocate > memorysz's Byte and record it into array
@@ -289,6 +286,7 @@ void load_task_image(char *taskname, PTE *user_level_one_pgdir){
     
     memset(task_page_array[total_page_num - 1] + task_filesz_spare, 0, PAGE_SIZE - task_filesz_spare);
     /**Step 6: fullfill page_table*/
+    clear_pgdir(free_buffer_address);
     Build_user_page_table(task_id, user_level_one_pgdir, task_page_array);
 }
 

@@ -34,6 +34,7 @@
 #define MEM_SIZE 32
 #define PAGE_SIZE 4096 // 4K
 #define INIT_KERNEL_STACK 0xffffffc052000000
+#define free_buffer_address 0xffffffc052001000lu    // it is used as load_image
 #define FREEMEM_KERNEL (INIT_KERNEL_STACK+PAGE_SIZE)
 #define AVAILABLE_KERNEL 0xffffffc052002000     // newly added!
 #define FREEMEM_KERNEL_END 0xffffffc060000000   // newly added!

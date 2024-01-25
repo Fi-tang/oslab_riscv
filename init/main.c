@@ -309,16 +309,17 @@ void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
     user_pgdir[vpn2] = kernel_pgdir[vpn2];
 }
 
-void do_unit_test(){
-    strcpy(pcb[0].name, "fly");
-    // Step1: alloc one page
-    allocate_user_pgdir(&pcb[0]);
-    printl("pcb[0]'s user_pgdir: 0x%x\n",pcb[0].user_pgdir_kva);
-    // Step2: fill kernel information
-    copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb[0].user_pgdir_kva);
-    PTE *user_level_one_pgdir = (PTE *)(pcb[0].user_pgdir_kva);
-    uintptr_t *task_page_array;
-    load_task_image("fly", user_level_one_pgdir);
+// virtual load_task_image
+void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
+    // Step 1: allocate pcb[i]'s user_page
+    printl("\n\n[do_load_virtual_task_img_by_name]: \n");
+    allocate_user_pgdir(pcb);
+    printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb -> pid, pcb -> user_pgdir_kva);
+
+    // Step 2: fill kernel information
+    copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
+    PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
+    load_task_image(taskname, user_level_one_pgdir);
 }
 
 int main(void)
@@ -381,7 +382,13 @@ int main(void)
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
         // send_ipi(NULL);
-        do_unit_test();
+        // unit_test
+        do_load_virtual_task_img_by_name("pid0", &pcb[0]);
+        do_load_virtual_task_img_by_name("pid1", &pcb[1]);
+        do_load_virtual_task_img_by_name("fly", &pcb[2]);
+        do_load_virtual_task_img_by_name("lock", &pcb[3]);
+        do_load_virtual_task_img_by_name("rw", &pcb[4]);
+
         kernel_spin_lock_acquire();
 
         init_time();
