@@ -180,6 +180,18 @@ void shm_page_dt(uintptr_t addr)
     // TODO [P4-task4] shm_page_dt:
 }
 
+//**********************The following used for allocate user program *****************
+// Step2: Copy kernel pgdir to user_pgdir
+// only need to copy level_one_pgdir item, the level_two_pgdir can be relocated
+void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
+    // Step1:
+    uint64_t va = (0xffffffc050000000lu) & VA_MASK;
+    uint64_t vpn2 = va >> (NORMAL_PAGE_SHIFT + PPN_BITS + PPN_BITS);
+    PTE *kernel_pgdir = (PTE *)dest_pgdir;
+    PTE *user_pgdir = (PTE *)src_pgdir;
+    user_pgdir[vpn2] = kernel_pgdir[vpn2];
+}
+
 //*********************************************load task image*********************************************
 /**
 function: first load task image, after fullfill it into user_pgtable
@@ -320,4 +332,13 @@ void allocUserStack(PTE *user_level_one_pgdir){
     uint64_t va = 0xf00010000lu;
     uint64_t pa = kva2pa((uint64_t)(malloc_user_stack -> head));
     map_single_user_page(va, pa, user_level_one_pgdir);
+}
+
+// allocate kernel stack ,return kernel stack's kernel virtual address
+uint64_t allocKernelStack(){
+    struct SentienlNode *malloc_kernel_stack = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
+    printl("\n[allocKernelStack]: \n");
+    print_page_alloc_info(malloc_kernel_stack);
+
+    return (malloc_kernel_stack -> head);
 }

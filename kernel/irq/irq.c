@@ -67,7 +67,7 @@ void handle_irq_timer(regs_context_t *regs, uint64_t stval, uint64_t scause)
     // Note: use bios_set_timer to reset the timer and remember to reschedule
     // printl("[HANDLE_IRQ_timer]: get_ticks() = %ld\n",get_ticks());
     clock_trigger_next_interrupt();
-    // do_scheduler();
+    do_scheduler();
 }
 
 void handle_irq_soft(){

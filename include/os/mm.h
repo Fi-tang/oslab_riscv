@@ -87,7 +87,9 @@ uintptr_t shm_page_get(int key);
 void shm_page_dt(uintptr_t addr);
 
 // newly added!
+extern void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern void allocUserStack(PTE *user_level_one_pgdir);
+extern uint64_t allocKernelStack();
 
 
 

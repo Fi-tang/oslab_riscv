@@ -84,8 +84,8 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
 
 static void assign_initial_pcb(char *name, int alloc_index){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    pcb[alloc_index].kernel_sp = allocPage(1);      // need to notice that kernel_sp allocate from 0xffffffc052001000
-    pcb[alloc_index].user_sp = allocPage(1);
+    pcb[alloc_index].kernel_sp = allocKernelStack();      // need to notice that kernel_sp allocate from 0xffffffc052001000
+    pcb[alloc_index].user_sp = 0xf00010000lu;
 
     pcb[alloc_index].kernel_stack_base = pcb[alloc_index].kernel_sp;
     pcb[alloc_index].user_stack_base = pcb[alloc_index].user_sp;
@@ -97,10 +97,12 @@ static void assign_initial_pcb(char *name, int alloc_index){
 
     pcb[alloc_index].pid = alloc_index;
     strcpy(pcb[alloc_index].name, name);
-    long current_task_entry_address = load_task_img_by_name(task_num, pcb[alloc_index].name);
+
+    do_load_virtual_task_img_by_name(pcb[alloc_index].name, &pcb[alloc_index]);
+
     pcb[alloc_index].status = TASK_RUNNING;
     pcb[alloc_index].pcb_mask = 0x3;
-    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], current_task_entry_address);
+    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], 0x100000lu);
 }
 
 
@@ -120,7 +122,7 @@ static void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] alway
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
-    //do_exec("shell", 0, NULL);
+    do_exec("shell", 0, NULL);
 }
 
 void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
@@ -177,8 +179,8 @@ pid_t do_exec(char *name, int argc, char *argv[]){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_EXITED){
-            pcb[i].kernel_sp = allocPage(1);
-            pcb[i].user_sp = allocPage(1);
+            pcb[i].kernel_sp = allocKernelStack();
+            pcb[i].user_sp = 0xf00010000lu;
 
             pcb[i].kernel_stack_base = pcb[i].kernel_sp;
             pcb[i].user_stack_base = pcb[i].user_sp;
@@ -189,7 +191,8 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             Initialize_QueueNode(&pcb[i].wait_list);
 
             strcpy(pcb[i].name, name);
-            long current_task_entry_address = load_task_img_by_name(task_num, name);
+            
+            do_load_virtual_task_img_by_name(pcb[i].name, &pcb[i]);
             pcb[i].status = TASK_READY;
              
             // If otherwise declared, inhereit father's mask
@@ -200,7 +203,7 @@ pid_t do_exec(char *name, int argc, char *argv[]){
 
             do_writeArgvToMemory(&pcb[i], argc, argv);
 
-            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], 0x100000lu);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
             return i;
@@ -283,10 +286,8 @@ static void clean_boot_address_map(){
     clear_pgdir(pa2kva(physical_address)); // clean 2th page_table
 
     early_pgdir[vpn2] = 0;
-
 }
 
-//**********************The following used for allocate user program *****************
 // Step1: allocate user_pgdir(corresponding to level_one_pgdir)
 void allocate_user_pgdir(pcb_t *pcb){
     struct SentienlNode *malloc_user_pgdir_sentienl = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
@@ -296,17 +297,6 @@ void allocate_user_pgdir(pcb_t *pcb){
     pcb -> user_pgdir_kva = (uintptr_t)(malloc_user_pgdir_sentienl -> head);
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
-}
-
-// Step2: Copy kernel pgdir to user_pgdir
-// only need to copy level_one_pgdir item, the level_two_pgdir can be relocated
-void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
-    // Step1:
-    uint64_t va = (0xffffffc050000000lu) & VA_MASK;
-    uint64_t vpn2 = va >> (NORMAL_PAGE_SHIFT + PPN_BITS + PPN_BITS);
-    PTE *kernel_pgdir = (PTE *)dest_pgdir;
-    PTE *user_pgdir = (PTE *)src_pgdir;
-    user_pgdir[vpn2] = kernel_pgdir[vpn2];
 }
 
 // virtual load_task_image
@@ -320,7 +310,8 @@ void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
     copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
     PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
     load_task_image(taskname, user_level_one_pgdir);
-    allocUserStack(user_level_one_pgdir);
+    allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
+    allocKernelStack();
 }
 
 int main(void)
@@ -383,12 +374,6 @@ int main(void)
         printk("> [INIT] Mailbox initialization succeeded.\n");
 
         // send_ipi(NULL);
-        // unit_test
-        do_load_virtual_task_img_by_name("pid0", &pcb[0]);
-        do_load_virtual_task_img_by_name("pid1", &pcb[1]);
-        do_load_virtual_task_img_by_name("fly", &pcb[2]);
-        do_load_virtual_task_img_by_name("lock", &pcb[3]);
-        do_load_virtual_task_img_by_name("rw", &pcb[4]);
 
         kernel_spin_lock_acquire();
 
@@ -408,12 +393,12 @@ int main(void)
         setup_exception();
         printk("> [INIT-%d] Interrupt processing initialization succeeded.\n", cpuid);
         
-        // init_time();
+        init_time();
         kernel_spin_lock_release();
 
         while(1){
-            // enable_preempt();
-            // asm volatile("wfi");
+            enable_preempt();
+            asm volatile("wfi");
         }
     }
     return 0;
