@@ -86,6 +86,9 @@ extern void Build_user_page_table(int task_id, PTE *user_level_one_pgdir, uintpt
 uintptr_t shm_page_get(int key);
 void shm_page_dt(uintptr_t addr);
 
+// newly added!
+extern void allocUserStack(PTE *user_level_one_pgdir);
+
 
 
 #endif /* MM_H */

@@ -320,6 +320,7 @@ void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
     copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
     PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
     load_task_image(taskname, user_level_one_pgdir);
+    allocUserStack(user_level_one_pgdir);
 }
 
 int main(void)

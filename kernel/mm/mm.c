@@ -124,7 +124,7 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     va &= VA_MASK;
     uint64_t vpn2 = va >> (NORMAL_PAGE_SHIFT + PPN_BITS + PPN_BITS);
     uint64_t vpn1 = (vpn2 << PPN_BITS) ^ (va >> (NORMAL_PAGE_SHIFT + PPN_BITS));
-    uint64_t vpn0 = (vpn1 << PPN_BITS) ^ (va >> NORMAL_PAGE_SHIFT);
+    uint64_t vpn0 = (va >> NORMAL_PAGE_SHIFT) & VPN0_MASK;
 
     if(level_one_pgdir[vpn2] == 0){ // have not allocated level_two_pgdir
         struct SentienlNode *malloc_level_two = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
@@ -309,4 +309,15 @@ void Build_user_page_table(int task_id, PTE *user_level_one_pgdir, uintptr_t *ta
         uint64_t pa = kva2pa(kva_load_address);
         map_single_user_page(va, pa, user_level_one_pgdir);
     }
+}
+
+// map user stack to user address space
+void allocUserStack(PTE *user_level_one_pgdir){
+    struct SentienlNode *malloc_user_stack = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
+    printl("\n[allocUserStack]: \n");
+    print_page_alloc_info(malloc_user_stack);
+
+    uint64_t va = 0xf00010000lu;
+    uint64_t pa = kva2pa((uint64_t)(malloc_user_stack -> head));
+    map_single_user_page(va, pa, user_level_one_pgdir);
 }

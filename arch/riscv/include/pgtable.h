@@ -66,6 +66,7 @@ static inline void set_satp(
 #define _PAGE_PFN_SHIFT 10lu
 
 #define VA_MASK ((1lu << 39) - 1)
+#define VPN0_MASK ((1lu << 12) - 1) // newly added!
 
 #define PPN_BITS 9lu
 #define NUM_PTE_ENTRY (1 << PPN_BITS)
