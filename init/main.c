@@ -82,6 +82,32 @@ static void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_cont
     user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
 }
 
+// Step1: allocate user_pgdir(corresponding to level_one_pgdir)
+void allocate_user_pgdir(pcb_t *pcb){
+    struct SentienlNode *malloc_user_pgdir_sentienl = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
+    printl("allocate_user_pgdir: ");
+    print_page_alloc_info(malloc_user_pgdir_sentienl);
+
+    pcb -> user_pgdir_kva = (uintptr_t)(malloc_user_pgdir_sentienl -> head);
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
+}
+
+// virtual load_task_image
+uintptr_t do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
+    // Step 1: allocate pcb[i]'s user_page
+    printl("\n\n[do_load_virtual_task_img_by_name]: \n");
+    allocate_user_pgdir(pcb);
+    printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb -> pid, pcb -> user_pgdir_kva);
+
+    // Step 2: fill kernel information
+    copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
+    PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
+    uintptr_t current_task_entry_address =  load_task_image(taskname, user_level_one_pgdir);
+    allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
+    return current_task_entry_address;
+}
+
 static void assign_initial_pcb(char *name, int alloc_index){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     pcb[alloc_index].kernel_sp = allocKernelStack();      // need to notice that kernel_sp allocate from 0xffffffc052001000
@@ -98,11 +124,11 @@ static void assign_initial_pcb(char *name, int alloc_index){
     pcb[alloc_index].pid = alloc_index;
     strcpy(pcb[alloc_index].name, name);
 
-    do_load_virtual_task_img_by_name(pcb[alloc_index].name, &pcb[alloc_index]);
+    uintptr_t current_task_entry_address = do_load_virtual_task_img_by_name(pcb[alloc_index].name, &pcb[alloc_index]);
 
     pcb[alloc_index].status = TASK_RUNNING;
     pcb[alloc_index].pcb_mask = 0x3;
-    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], 0x100000lu);
+    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], current_task_entry_address);
 }
 
 
@@ -192,7 +218,7 @@ pid_t do_exec(char *name, int argc, char *argv[]){
 
             strcpy(pcb[i].name, name);
             
-            do_load_virtual_task_img_by_name(pcb[i].name, &pcb[i]);
+            uintptr_t current_task_entry_address = do_load_virtual_task_img_by_name(pcb[i].name, &pcb[i]);
             pcb[i].status = TASK_READY;
              
             // If otherwise declared, inhereit father's mask
@@ -203,7 +229,7 @@ pid_t do_exec(char *name, int argc, char *argv[]){
 
             do_writeArgvToMemory(&pcb[i], argc, argv);
 
-            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], 0x100000lu);
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
             Enque_FromTail(&ready_queue, &pcb[i].list);
             return i;
@@ -288,32 +314,6 @@ static void clean_boot_address_map(){
     early_pgdir[vpn2] = 0;
 }
 
-// Step1: allocate user_pgdir(corresponding to level_one_pgdir)
-void allocate_user_pgdir(pcb_t *pcb){
-    struct SentienlNode *malloc_user_pgdir_sentienl = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
-    printl("allocate_user_pgdir: ");
-    print_page_alloc_info(malloc_user_pgdir_sentienl);
-
-    pcb -> user_pgdir_kva = (uintptr_t)(malloc_user_pgdir_sentienl -> head);
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
-}
-
-// virtual load_task_image
-void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
-    // Step 1: allocate pcb[i]'s user_page
-    printl("\n\n[do_load_virtual_task_img_by_name]: \n");
-    allocate_user_pgdir(pcb);
-    printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb -> pid, pcb -> user_pgdir_kva);
-
-    // Step 2: fill kernel information
-    copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
-    PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
-    load_task_image(taskname, user_level_one_pgdir);
-    allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
-    allocKernelStack();
-}
-
 int main(void)
 {
     // Init jump table provided by kernel and bios(ΦωΦ)
@@ -328,7 +328,7 @@ int main(void)
         init_task_info();
         // Init Process Control Blocks |•'-'•) ✧
         // only used for printk
-        // init_pcb_loop();
+        init_pcb_loop();
         printk("> [INIT] Pid0 initialization succeeded.\n");
         
         // Read CPU frequency (｡•ᴗ-)_

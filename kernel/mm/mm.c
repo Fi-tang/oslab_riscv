@@ -196,7 +196,7 @@ void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
 /**
 function: first load task image, after fullfill it into user_pgtable
 */
-void load_task_image(char *taskname, PTE *user_level_one_pgdir){
+uintptr_t load_task_image(char *taskname, PTE *user_level_one_pgdir){
     printl("\n\n[load_task_image]: \n");
     /**
     Step 1. record corresponding task-related parameter.
@@ -300,6 +300,8 @@ void load_task_image(char *taskname, PTE *user_level_one_pgdir){
     /**Step 6: fullfill page_table*/
     clear_pgdir(free_buffer_address);
     Build_user_page_table(task_id, user_level_one_pgdir, task_page_array);
+
+    return task_page_array[0];
 }
 
 //************************Building user page table********************************************************
