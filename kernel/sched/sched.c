@@ -72,6 +72,9 @@ void do_scheduler(void){
         }
     }
     global_cpu[current_cpu].cpu_current_running -> status = TASK_RUNNING;
+    // newly added, used for changing user_pgdir
+    set_satp(SATP_MODE_SV39, (global_cpu[current_cpu].cpu_current_running -> pid) + 1, kva2pa(global_cpu[current_cpu].cpu_current_running -> user_pgdir_kva) >> NORMAL_PAGE_SHIFT);
+    local_flush_tlb_all();
     switch_to(prev_running, global_cpu[current_cpu].cpu_current_running);
 }
 

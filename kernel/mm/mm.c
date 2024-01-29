@@ -197,7 +197,7 @@ void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
 function: first load task image, after fullfill it into user_pgtable
 */
 uintptr_t load_task_image(char *taskname, PTE *user_level_one_pgdir){
-    printl("\n\n[load_task_image]: \n");
+    printl("\n\n[load_task_image]: %s\n", taskname);
     /**
     Step 1. record corresponding task-related parameter.
     */
@@ -331,7 +331,7 @@ void allocUserStack(PTE *user_level_one_pgdir){
     printl("\n[allocUserStack]: \n");
     print_page_alloc_info(malloc_user_stack);
 
-    uint64_t va = 0xf00010000lu;
+    uint64_t va = 0xf00010000lu - PAGE_SIZE;
     uint64_t pa = kva2pa((uint64_t)(malloc_user_stack -> head));
     map_single_user_page(va, pa, user_level_one_pgdir);
 }
