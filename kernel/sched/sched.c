@@ -194,7 +194,7 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             // Step 2: fill kernel information
             share_pgtable(pcb[i].user_pgdir_kva, pa2kva(PGDIR_PA));
             PTE *user_level_one_pgdir = (PTE *)(pcb[i].user_pgdir_kva);
-            load_task_image(pcb[i].name, user_level_one_pgdir);
+            load_task_image(pcb[i].name, user_level_one_pgdir); 
 
             uintptr_t malloc_user_stack_address = allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
             pcb[i].user_stack_base = malloc_user_stack_address;                               // this records kernel_virtual_address of user stack
