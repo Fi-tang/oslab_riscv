@@ -141,13 +141,13 @@ void Build_user_page_table(int task_id, PTE *user_level_one_pgdir, uintptr_t *ta
     // Step 1: get related virtual address ranges: from 0x10000 to (0x10000 + tasks[i].task_memorysz)
     int task_memorysz = tasks[task_id].task_memorysz;
     printl("\n\n[Build_user_page_table]: \n");
-    printl("virtual_address start from 0x10000 to 0x%x\n",(0x100000lu + task_memorysz));  // memorysz = 5456 = 0x1550, 0x10000 ~ 0x11550
+    printl("virtual_address start from 0x10000 to 0x%x\n",(0x10000lu + task_memorysz));  // memorysz = 5456 = 0x1550, 0x10000 ~ 0x11550
 
     int total_page_num = ROUND(task_memorysz, PAGE_SIZE) / PAGE_SIZE;
     for(int i = 0; i < total_page_num; i++){
         uintptr_t kva_load_address = task_page_array[i];
         printl("%d's kva_load_address = 0x%x\n", i, kva_load_address);
-        uint64_t va = 0x100000lu + i * PAGE_SIZE;
+        uint64_t va = 0x10000lu + i * PAGE_SIZE;
         uint64_t pa = kva2pa(kva_load_address);
         map_single_user_page(va, pa, user_level_one_pgdir);
     }

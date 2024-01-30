@@ -32,8 +32,9 @@
 #include <ctype.h>
 
 #define SHELL_BEGIN 20
+#define BUFFER_LEN 50
 
-int command_spaceNum(char command_buffer[1000]){
+int command_spaceNum(char command_buffer[BUFFER_LEN]){
     int spaceNum = 0;
     int i = 0;
     int command_buffer_start_index = 0;
@@ -50,7 +51,7 @@ int command_spaceNum(char command_buffer[1000]){
     return spaceNum;
 }
 
-void split_command_to_multiple_line(char command_buffer[1000], int spaceNum, char command_split[spaceNum + 1][1000]){
+void split_command_to_multiple_line(char command_buffer[BUFFER_LEN], int spaceNum, char command_split[spaceNum + 1][BUFFER_LEN]){
     int command_buffer_start_index = 0;
     while(command_buffer[command_buffer_start_index] == ' '){
         command_buffer_start_index++;
@@ -76,7 +77,7 @@ void split_command_to_multiple_line(char command_buffer[1000], int spaceNum, cha
 }
 
 
-void handle_single_command(char command_buffer[1000]){
+void handle_single_command(char command_buffer[BUFFER_LEN]){
     if(strcmp(command_buffer, "ps") == 0){
         sys_ps();
     }
@@ -102,8 +103,8 @@ pid_t change_string_to_integer(char *Array){   // "125" -> "521"
     return (pid_t)sum;
 }
 
-void handle_multiple_command(char command_buffer[1000], int spaceNum){
-    char command_split[spaceNum + 1][1000];
+void handle_multiple_command(char command_buffer[BUFFER_LEN], int spaceNum){
+    char command_split[spaceNum + 1][BUFFER_LEN];
     split_command_to_multiple_line(command_buffer, spaceNum, command_split);
     //=============================== split ================================================
     if(strcmp(command_split[0], "exec") == 0){
@@ -168,7 +169,7 @@ int main(void)
         printf("> root@UCAS_OS: ");
         // TODO [P3-task1]: call syscall to read UART port
         int input_character;
-        char command_buffer[1000];
+        char command_buffer[BUFFER_LEN];
 
         int command_real_index = 0;
         while(1){

@@ -123,7 +123,7 @@ because we assign every page as struct ListNode *,
 so level_one_pgdir 0xffffffc052003000 looks like: 0x52003000 00000000 00000000 00000000
 it did not pass the test that level_one_pgdir[vpn2] == 0
 
-// usage: map_single_user_page(0x100000, 0x54000000, (PTE *)(pcb[0].user_pgdir_kva));
+// usage: map_single_user_page(0x10000, 0x54000000, (PTE *)(pcb[0].user_pgdir_kva));
 */
 void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     printl("\n\nmapping 0x%x to 0x%x\n", va, pa);

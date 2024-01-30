@@ -13,7 +13,7 @@
 #define BOOT_LOADER_ADDRESS 0xffffffc050200000
 #define BOOT_LOADER_SIG_OFFSET 0x1fe
 #define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
-#define current_task_entry_address 0x100000lu 
+#define current_task_entry_address 0x10000lu 
 pcb_t pcb[NUM_MAX_TASK];
 const ptr_t pid0_stack = INIT_KERNEL_STACK + PAGE_SIZE;
 pcb_t pid0_pcb = {
@@ -148,9 +148,9 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     pcb -> pcb_user_regs_context.regs[10] = argc;
     pcb -> pcb_user_regs_context.regs[11] = (pcb -> user_stack_base - (argc * 8));
 
-    pcb -> user_stack_base = pcb -> user_stack_base - count_mem_usage;
-    while(pcb -> user_stack_base % 128 != 0){
-        pcb -> user_stack_base -= 1;
+    pcb -> user_sp = pcb -> user_sp - count_mem_usage;
+    while(pcb -> user_sp % 128 != 0){
+        pcb -> user_sp -= 1;
     }
 }
 
