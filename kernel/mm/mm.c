@@ -59,7 +59,7 @@ void freePage(ptr_t baseAddr)   // assume 4 KB
     global_free_sentienl -> head = current_node;  // insert from head
 }
 
-void *kmalloc(size_t size) // remember pass number * PAGE_SIZE
+uintptr_t kmalloc() // remember pass number * PAGE_SIZE
 {
     // TODO [P4-task1] (design you 'kmalloc' here if you need):
     static bool init_or_not = false;
@@ -67,11 +67,8 @@ void *kmalloc(size_t size) // remember pass number * PAGE_SIZE
         kinit();
         init_or_not = true;
     }
-
-    if(size == 0) return NULL;
     // Step1:cacluate num of page
-    uint64_t round_up_alloc = ROUND(size, PAGE_SIZE);
-    int page_num = round_up_alloc / PAGE_SIZE;
+    int page_num = 1;
 
     // Step2: allocate new SentienlNode
     // place it at half of the page
@@ -90,7 +87,7 @@ void *kmalloc(size_t size) // remember pass number * PAGE_SIZE
     }
     prev_node -> next = NULL;
     global_free_sentienl -> head = global_temp;
-    return malloc_free_sentienl;
+    return malloc_free_sentienl -> head;
 }
 
 void print_page_alloc_info(struct SentienlNode *sentienl_head){
@@ -138,9 +135,7 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     uint64_t vpn0 = (va >> NORMAL_PAGE_SHIFT) & VPN0_MASK;
 
     if(level_one_pgdir[vpn2] == 0){ // have not allocated level_two_pgdir
-        struct SentienlNode *malloc_level_two = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
-        print_page_alloc_info(malloc_level_two);         // debug
-        uint64_t return_level_two_address = (uint64_t)(malloc_level_two -> head);
+        uint64_t return_level_two_address = kmalloc();
         printl("[map_single_user_page]: level_two_pgdir 0x%x\n", kva2pa(return_level_two_address)); // debug
         set_pfn(&level_one_pgdir[vpn2], kva2pa(return_level_two_address) >> NORMAL_PAGE_SHIFT);
         set_attribute(&level_one_pgdir[vpn2], _PAGE_PRESENT| _PAGE_USER);
@@ -148,9 +143,7 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
     }
     PTE *level_two_pgdir = (PTE *)pa2kva(get_pa(level_one_pgdir[vpn2]));
     if(level_two_pgdir[vpn1] == 0){  // have not allocated level_three_pgdir
-        struct SentienlNode *malloc_level_three = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
-        print_page_alloc_info(malloc_level_three);     // debug
-        uint64_t return_level_three_address = (uint64_t)(malloc_level_three -> head);
+        uint64_t return_level_three_address = kmalloc();
         printl("[map_single_user_page]: level_three_pgdir 0x%x\n", kva2pa(return_level_three_address)); // debug
         set_pfn(&level_two_pgdir[vpn1], kva2pa(return_level_three_address) >> NORMAL_PAGE_SHIFT);
         set_attribute(&level_two_pgdir[vpn1], _PAGE_PRESENT | _PAGE_USER);
@@ -171,6 +164,7 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
 void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir)
 {
     // TODO [P4-task1] share_pgtable:
+    memcpy(dest_pgdir, src_pgdir, PAGE_SIZE);
 }
 
 /* allocate physical page for `va`, mapping it into `pgdir`,
@@ -191,34 +185,3 @@ void shm_page_dt(uintptr_t addr)
     // TODO [P4-task4] shm_page_dt:
 }
 
-//**********************The following used for allocate user program *****************
-// Step2: Copy kernel pgdir to user_pgdir
-// only need to copy level_one_pgdir item, the level_two_pgdir can be relocated
-void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
-    // Step1:
-    uint64_t va = (0xffffffc050000000lu) & VA_MASK;
-    uint64_t vpn2 = va >> (NORMAL_PAGE_SHIFT + PPN_BITS + PPN_BITS);
-    PTE *kernel_pgdir = (PTE *)dest_pgdir;
-    PTE *user_pgdir = (PTE *)src_pgdir;
-    user_pgdir[vpn2] = kernel_pgdir[vpn2];
-}
-
-// map user stack to user address space
-void allocUserStack(PTE *user_level_one_pgdir){
-    struct SentienlNode *malloc_user_stack = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
-    printl("\n[allocUserStack]: \n");
-    print_page_alloc_info(malloc_user_stack);
-
-    uint64_t va = 0xf00010000lu - PAGE_SIZE;
-    uint64_t pa = kva2pa((uint64_t)(malloc_user_stack -> head));
-    map_single_user_page(va, pa, user_level_one_pgdir);
-}
-
-// allocate kernel stack ,return kernel stack's kernel virtual address
-uint64_t allocKernelStack(){
-    struct SentienlNode *malloc_kernel_stack = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
-    printl("\n[allocKernelStack]: \n");
-    print_page_alloc_info(malloc_kernel_stack);
-
-    return (malloc_kernel_stack -> head) + PAGE_SIZE;
-}

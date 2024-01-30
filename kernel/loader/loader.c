@@ -67,18 +67,12 @@ void load_task_image(char *taskname, PTE *user_level_one_pgdir){
     /**
     Step 3: allocate > memorysz's Byte and record it into array
     */
-    struct SentienlNode *task_page = (struct SentienlNode *)kmalloc(task_memorysz);
-    printl("\ntask_page:");
-    print_page_alloc_info(task_page);
-
     int total_page_num = ROUND(task_memorysz, PAGE_SIZE) / PAGE_SIZE;
     printl("total_page_num = %d\n", total_page_num);
 
-    struct ListNode *temp_task_page = task_page -> head;
     uintptr_t task_page_array[total_page_num];
     for(int i = 0; i < total_page_num; i++){
-        task_page_array[i] = (uintptr_t)temp_task_page;
-        temp_task_page = temp_task_page -> next;
+        task_page_array[i] = (uintptr_t)kmalloc();
     }
 
     for(int i = 0; i < total_page_num; i++){

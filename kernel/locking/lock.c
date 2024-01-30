@@ -101,6 +101,17 @@ void do_mutex_lock_release(int mlock_idx)
     }
 }
 
+/**
+the following are kill-releated function
+*/
+void kill_release_lock(pid_t pid){
+    for(int k = 0; k < LOCK_NUM; k++){
+        if(mlocks[k].lock_owner == &(pcb[pid])){
+            do_mutex_lock_release(k);
+        }
+    }
+}
+
 //**************************barrier part********************
 void init_barriers(void){
     for(int i = 0; i < BARRIER_NUM; i++){

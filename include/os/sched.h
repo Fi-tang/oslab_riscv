@@ -135,13 +135,7 @@ extern pid_t do_getpid();
 extern void do_taskset(int mask, char *taskname, int task_pid);
 /************************************************************/
 //***********************virtual memory**************************
-extern void allocate_user_pgdir(pcb_t *pcb);
-
 //*****************initialize pcb structure**************************************
-void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_context_t *user_regs_context, pcb_t *pcb, ptr_t entry_point);
-void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]);
-void assign_initial_pcb(char *name, int alloc_index);
-void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb);
 void init_pcb_loop(void);
 pid_t do_exec(char *name, int argc, char *argv[]);
 //**********************************************************/

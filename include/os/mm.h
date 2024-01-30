@@ -74,7 +74,7 @@ struct SentienlNode *malloc_free_sentienl;
 extern void print_page_alloc_info(struct SentienlNode *sentienl_head);
 
 // TODO [P4-task1] */
-extern void* kmalloc(size_t size);
+extern uintptr_t kmalloc(); // only allocate one page
 extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 
@@ -86,8 +86,5 @@ void shm_page_dt(uintptr_t addr);
 
 // newly added!
 extern void init_clean_boot_address_map();
-extern void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir);
-extern void allocUserStack(PTE *user_level_one_pgdir);
-extern uint64_t allocKernelStack();
 
 #endif /* MM_H */

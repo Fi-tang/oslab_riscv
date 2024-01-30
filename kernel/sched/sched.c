@@ -154,61 +154,15 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     }
 }
 
-void assign_initial_pcb(char *name, int alloc_index){
-    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    pcb[alloc_index].kernel_sp = allocKernelStack();      // need to notice that kernel_sp allocate from 0xffffffc052001000
-    pcb[alloc_index].user_sp = 0xf00010000lu;
+// map user stack to user address space
+void allocUserStack(PTE *user_level_one_pgdir){
+    uintptr_t malloc_user_stack_address = kmalloc();
+    printl("\n[allocUserStack]: \n");
+    printl("malloc_user_stack_address: 0x%x\n", malloc_user_stack_address);
 
-    pcb[alloc_index].kernel_stack_base = pcb[alloc_index].kernel_sp;
-    pcb[alloc_index].user_stack_base = pcb[alloc_index].user_sp;
-
-    pcb[alloc_index].cursor_x = alloc_index;
-    pcb[alloc_index].cursor_y = alloc_index;
-    Initialize_QueueNode(&pcb[alloc_index].list);
-    Initialize_QueueNode(&pcb[alloc_index].wait_list);
-
-    pcb[alloc_index].pid = alloc_index;
-    strcpy(pcb[alloc_index].name, name);
-
-    do_load_virtual_task_img_by_name(pcb[alloc_index].name, &pcb[alloc_index]);
-
-    pcb[alloc_index].status = TASK_RUNNING;
-    pcb[alloc_index].pcb_mask = 0x3;
-    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], current_task_entry_address);
-}
-
-// virtual load_task_image
-void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
-    // Step 1: allocate pcb[i]'s user_page
-    printl("\n\n[do_load_virtual_task_img_by_name]: \n");
-    allocate_user_pgdir(pcb);
-    printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb -> pid, pcb -> user_pgdir_kva);
-
-    // Step 2: fill kernel information
-    copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
-    PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
-    load_task_image(taskname, user_level_one_pgdir);
-    allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
-}
-
-
-void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] always point to pid1
-    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
-    Initialize_QueueNode(&ready_queue); 
-    for(int i = 0; i <= task_num; i++){
-        if(strcmp(tasks[i].taskname, "pid0") == 0){
-            assign_initial_pcb(tasks[i].taskname, 0);
-        }
-        if(strcmp(tasks[i].taskname, "pid1") == 0){
-            assign_initial_pcb(tasks[i].taskname, 1);
-        }
-    }
-
-    for(int i = 2; i < NUM_MAX_TASK; i++){
-        pcb[i].pid = i;
-        pcb[i].status = TASK_EXITED;
-    }
-    do_exec("shell", 0, NULL);
+    uint64_t va = 0xf00010000lu - PAGE_SIZE;
+    uint64_t pa = kva2pa(malloc_user_stack_address);
+    map_single_user_page(va, pa, user_level_one_pgdir);
 }
 
 pid_t do_exec(char *name, int argc, char *argv[]){
@@ -218,7 +172,8 @@ pid_t do_exec(char *name, int argc, char *argv[]){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_EXITED){
-            pcb[i].kernel_sp = allocKernelStack();
+            // allocate kernel stack ,return kernel stack's kernel virtual address
+            pcb[i].kernel_sp = kmalloc() + PAGE_SIZE;
             pcb[i].user_sp = 0xf00010000lu;
 
             pcb[i].kernel_stack_base = pcb[i].kernel_sp;
@@ -231,14 +186,24 @@ pid_t do_exec(char *name, int argc, char *argv[]){
 
             strcpy(pcb[i].name, name);
             
-            do_load_virtual_task_img_by_name(pcb[i].name, &pcb[i]);
+            printl("\n\n[do_load_virtual_task_img_by_name]: \n");
+            pcb[i].user_pgdir_kva = kmalloc();
+            printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb[i].pid, pcb[i].user_pgdir_kva);
+            // Step 2: fill kernel information
+            share_pgtable(pcb[i].user_pgdir_kva, pa2kva(PGDIR_PA));
+            load_task_image(pcb[i].name, (PTE *)(pcb[i].user_pgdir_kva));
+            allocUserStack((PTE *)(pcb[i].user_pgdir_kva));       // use a free page as user_stack
+
+
             pcb[i].status = TASK_READY;
              
             // If otherwise declared, inhereit father's mask
             int current_cpu = get_current_cpu_id();
             pcb_t *father_pcb_node = global_cpu[current_cpu].cpu_current_running;
             // default mask from father
-            pcb[i].pcb_mask = father_pcb_node -> pcb_mask;
+            if(father_pcb_node != NULL){
+                pcb[i].pcb_mask = father_pcb_node -> pcb_mask;
+            }
 
             do_writeArgvToMemory(&pcb[i], argc, argv);
 
@@ -251,17 +216,30 @@ pid_t do_exec(char *name, int argc, char *argv[]){
     return 0;
 }
 
+
+void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] always point to pid1
+    Initialize_QueueNode(&ready_queue); 
+    
+    do_exec("pid0", 0, NULL);
+    pcb[0].status = TASK_RUNNING;
+    pcb[0].pcb_mask = 0x3;
+    DequeNode_AccordList(&ready_queue, &(pcb[0].list));
+
+    do_exec("pid1", 0, NULL);
+    pcb[1].status = TASK_RUNNING;
+    pcb[1].pcb_mask = 0x3;
+    DequeNode_AccordList(&ready_queue, &(pcb[1].list));
+
+    for(int i = 2; i < NUM_MAX_TASK; i++){
+        pcb[i].pid = i;
+        pcb[i].status = TASK_EXITED;
+    }
+    do_exec("shell", 0, NULL);
+}
+
+
 //************virtual memory*****************************
 // Step1: allocate user_pgdir(corresponding to level_one_pgdir)
-void allocate_user_pgdir(pcb_t *pcb){
-    struct SentienlNode *malloc_user_pgdir_sentienl = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
-    printl("allocate_user_pgdir: ");
-    print_page_alloc_info(malloc_user_pgdir_sentienl);
-
-    pcb -> user_pgdir_kva = (uintptr_t)(malloc_user_pgdir_sentienl -> head);
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
-}
 //*************************************************debugging line end****************************
 
 void do_scheduler(void){
@@ -396,17 +374,6 @@ int do_waitpid(pid_t pid){
         }
     }
     return 0;
-}
-
-/**
-the following are kill-releated function
-*/
-void kill_release_lock(pid_t pid){
-    for(int k = 0; k < LOCK_NUM; k++){
-        if(mlocks[k].lock_owner == &(pcb[pid])){
-            do_mutex_lock_release(k);
-        }
-    }
 }
 
 
