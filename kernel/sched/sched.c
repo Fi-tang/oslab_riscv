@@ -172,8 +172,7 @@ pid_t do_exec(char *name, int argc, char *argv[]){
     short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
     for(int i = 0; i < NUM_MAX_TASK; i++){
         if(pcb[i].status == TASK_EXITED){
-            // allocate kernel stack ,return kernel stack's kernel virtual address
-            pcb[i].kernel_sp = kmalloc() + PAGE_SIZE;
+            pcb[i].kernel_sp = kmalloc() + PAGE_SIZE;   // return stack_top as allocate() + PAGE_SIZE
             pcb[i].user_sp = 0xf00010000lu;
 
             pcb[i].kernel_stack_base = pcb[i].kernel_sp;
@@ -186,30 +185,35 @@ pid_t do_exec(char *name, int argc, char *argv[]){
 
             strcpy(pcb[i].name, name);
             
+            // Step 1: allocate pcb[i]'s user_page --> load user task, and map user pages
             printl("\n\n[do_load_virtual_task_img_by_name]: \n");
             pcb[i].user_pgdir_kva = kmalloc();
             printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb[i].pid, pcb[i].user_pgdir_kva);
+
             // Step 2: fill kernel information
             share_pgtable(pcb[i].user_pgdir_kva, pa2kva(PGDIR_PA));
-            load_task_image(pcb[i].name, (PTE *)(pcb[i].user_pgdir_kva));
-            allocUserStack((PTE *)(pcb[i].user_pgdir_kva));       // use a free page as user_stack
-
-
-            pcb[i].status = TASK_READY;
-             
-            // If otherwise declared, inhereit father's mask
-            int current_cpu = get_current_cpu_id();
-            pcb_t *father_pcb_node = global_cpu[current_cpu].cpu_current_running;
-            // default mask from father
-            if(father_pcb_node != NULL){
-                pcb[i].pcb_mask = father_pcb_node -> pcb_mask;
-            }
-
-            do_writeArgvToMemory(&pcb[i], argc, argv);
+            PTE *user_level_one_pgdir = (PTE *)(pcb[i].user_pgdir_kva);
+            load_task_image(pcb[i].name, user_level_one_pgdir);
+            allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
 
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
-            Enque_FromTail(&ready_queue, &pcb[i].list);
+            if(strcmp(name, "pid0") == 0 || strcmp(name, "pid1") == 0){
+                pcb[i].status = TASK_RUNNING;
+                pcb[i].pcb_mask = 0x3;
+            } 
+            else{
+                 // If otherwise declared, inhereit father's mask
+                int current_cpu = get_current_cpu_id();
+                pcb_t *father_pcb_node = global_cpu[current_cpu].cpu_current_running;
+                // default mask from father
+                pcb[i].pcb_mask = father_pcb_node -> pcb_mask;
+
+                do_writeArgvToMemory(&pcb[i], argc, argv);
+                pcb[i].status = TASK_READY;
+                
+                Enque_FromTail(&ready_queue, &pcb[i].list);
+            }
             return i;
         }
     }
@@ -220,20 +224,13 @@ pid_t do_exec(char *name, int argc, char *argv[]){
 void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] always point to pid1
     Initialize_QueueNode(&ready_queue); 
     
-    do_exec("pid0", 0, NULL);
-    pcb[0].status = TASK_RUNNING;
-    pcb[0].pcb_mask = 0x3;
-    DequeNode_AccordList(&ready_queue, &(pcb[0].list));
-
-    do_exec("pid1", 0, NULL);
-    pcb[1].status = TASK_RUNNING;
-    pcb[1].pcb_mask = 0x3;
-    DequeNode_AccordList(&ready_queue, &(pcb[1].list));
-
-    for(int i = 2; i < NUM_MAX_TASK; i++){
+    for(int i = 0; i < NUM_MAX_TASK; i++){
         pcb[i].pid = i;
         pcb[i].status = TASK_EXITED;
     }
+
+    do_exec("pid0", 0, NULL);
+    do_exec("pid1", 0, NULL);
     do_exec("shell", 0, NULL);
 }
 
@@ -392,83 +389,6 @@ void kill_release_self_from_all_pcb(pid_t pid){
             if(target_head -> next != target_head){
                 if(FindNode_InQueue( &(pcb[i].wait_list) , &(pcb[pid].list)) == 1){
                     DequeNode_AccordList(&(pcb[i].wait_list), &(pcb[pid].list));
-                }
-            }
-        }
-    }
-}
-
-void kill_release_from_lock_queue(pid_t pid){
-    for(int k = 0; k < LOCK_NUM; k++){
-        if(mlocks[k].lock_owner != NULL && mlocks[k].lock_owner != &(pcb[pid])){
-            list_head *target_head = &(mlocks[k].block_queue);
-            if(target_head -> next != target_head){
-                if(FindNode_InQueue( &(mlocks[k].block_queue), &(pcb[pid].list)) == 1){
-                    DequeNode_AccordList( &(mlocks[k].block_queue), &(pcb[pid].list));
-                }
-            }
-        }
-    }
-}
-
-void kill_release_from_barrier(pid_t pid){
-    for(int i = 0; i < BARRIER_NUM; i++){
-        if(global_barrier[i].barrier_key != 0){
-            list_head *target_head = &(global_barrier[i].barrier_wait_list);
-            if(target_head -> next != target_head){
-                if(FindNode_InQueue(&(global_barrier[i].barrier_wait_list), &pcb[pid].list) == 1){
-                    while(target_head -> next != target_head){
-                        list_head *deque_node = Deque_FromHead(&(global_barrier[i].barrier_wait_list));
-                        do_unblock(deque_node);                             // this turn, free all
-                    }
-                    global_barrier[i].target_barrier_num -= 1;              // next turn, only need to count (target_barrier_num - 1)'s process
-                }
-            }
-        }
-    }
-}
-
-void kill_release_from_semaphore(pid_t pid){
-    for(int i = 0; i < SEMAPHORE_NUM; i++){
-        if(global_semaphore_resource[i].occupied_or_not == 1){
-            list_head *target_head = &(global_semaphore_resource[i].sema_wait_list);
-            if(target_head -> next != target_head){
-                if(FindNode_InQueue(&(global_semaphore_resource[i].sema_wait_list), &(pcb[pid].list)) == 1){
-                    DequeNode_AccordList(&(global_semaphore_resource[i].sema_wait_list), &(pcb[pid].list));
-                    // assume only be blocked at one semaphore
-                }
-            }
-        }
-    }
-}
-
-void kill_release_from_condition(pid_t pid){
-    for(int i = 0; i < CONDITION_NUM; i++){
-        if(global_condition[i].condition_key != -1){
-            list_head *target_head = &(global_condition[i].condition_wait_list);
-            if(target_head -> next != target_head){
-                if(FindNode_InQueue(&(global_condition[i].condition_wait_list), &(pcb[i].list)) == 1){
-                    DequeNode_AccordList(&(global_condition[i].condition_wait_list), &(pcb[pid].list));
-                }
-            }
-        }
-    }
-}
-
-void kill_release_from_mailbox(pid_t pid){
-    for(int i = 0; i < MBOX_NUM; i++){
-        if(strcmp(global_mailbox[i].mailbox_name, "") != 0){
-            list_head *target_send_head = &(global_mailbox[i].mailbox_send_wait_list);
-            if(target_send_head -> next != target_send_head){
-                if(FindNode_InQueue( &(global_mailbox[i].mailbox_send_wait_list) , &(pcb[pid].list)) == 1){
-                    DequeNode_AccordList(&(global_mailbox[i].mailbox_send_wait_list), &(pcb[pid].list));
-                }
-            }
-
-            list_head *target_recv_head = &(global_mailbox[i].mailbox_recv_wait_list);
-            if(target_recv_head -> next != target_recv_head){
-                if(FindNode_InQueue( &(global_mailbox[i].mailbox_recv_wait_list), &(pcb[pid].list) ) == 1){
-                    DequeNode_AccordList( &(global_mailbox[i].mailbox_recv_wait_list), &(pcb[pid].list));
                 }
             }
         }

@@ -112,6 +112,19 @@ void kill_release_lock(pid_t pid){
     }
 }
 
+void kill_release_from_lock_queue(pid_t pid){
+    for(int k = 0; k < LOCK_NUM; k++){
+        if(mlocks[k].lock_owner != NULL && mlocks[k].lock_owner != &(pcb[pid])){
+            list_head *target_head = &(mlocks[k].block_queue);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue( &(mlocks[k].block_queue), &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList( &(mlocks[k].block_queue), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
+
 //**************************barrier part********************
 void init_barriers(void){
     for(int i = 0; i < BARRIER_NUM; i++){
@@ -160,6 +173,23 @@ void do_barrier_destroy(int bar_idx){
     while(target_head -> next != target_head){
         list_head *deque_node = Deque_FromHead(&(global_barrier[bar_idx].barrier_wait_list));
         do_unblock(deque_node);
+    }
+}
+
+void kill_release_from_barrier(pid_t pid){
+    for(int i = 0; i < BARRIER_NUM; i++){
+        if(global_barrier[i].barrier_key != 0){
+            list_head *target_head = &(global_barrier[i].barrier_wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue(&(global_barrier[i].barrier_wait_list), &pcb[pid].list) == 1){
+                    while(target_head -> next != target_head){
+                        list_head *deque_node = Deque_FromHead(&(global_barrier[i].barrier_wait_list));
+                        do_unblock(deque_node);                             // this turn, free all
+                    }
+                    global_barrier[i].target_barrier_num -= 1;              // next turn, only need to count (target_barrier_num - 1)'s process
+                }
+            }
+        }
     }
 }
 
@@ -212,6 +242,20 @@ void do_semaphore_destroy(int sema_idx){
     while(target_head -> next != target_head){
         list_head *deque_node = Deque_FromHead(&(global_semaphore_resource[sema_idx].sema_wait_list));
         do_unblock(deque_node);
+    }
+}
+
+void kill_release_from_semaphore(pid_t pid){
+    for(int i = 0; i < SEMAPHORE_NUM; i++){
+        if(global_semaphore_resource[i].occupied_or_not == 1){
+            list_head *target_head = &(global_semaphore_resource[i].sema_wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue(&(global_semaphore_resource[i].sema_wait_list), &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList(&(global_semaphore_resource[i].sema_wait_list), &(pcb[pid].list));
+                    // assume only be blocked at one semaphore
+                }
+            }
+        }
     }
 }
 
@@ -277,6 +321,18 @@ void do_condition_destroy(int cond_idx){
     global_condition[cond_idx].condition_key = -1;
 }
 
+void kill_release_from_condition(pid_t pid){
+    for(int i = 0; i < CONDITION_NUM; i++){
+        if(global_condition[i].condition_key != -1){
+            list_head *target_head = &(global_condition[i].condition_wait_list);
+            if(target_head -> next != target_head){
+                if(FindNode_InQueue(&(global_condition[i].condition_wait_list), &(pcb[i].list)) == 1){
+                    DequeNode_AccordList(&(global_condition[i].condition_wait_list), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
 //*****************************mailbox part************************************************************
 void init_mbox(){
     for(int i = 0; i < MBOX_NUM; i++){
@@ -426,6 +482,27 @@ int do_mbox_recv(int mbox_idx, void * msg, int msg_length){
         }
     }
 }
+
+void kill_release_from_mailbox(pid_t pid){
+    for(int i = 0; i < MBOX_NUM; i++){
+        if(strcmp(global_mailbox[i].mailbox_name, "") != 0){
+            list_head *target_send_head = &(global_mailbox[i].mailbox_send_wait_list);
+            if(target_send_head -> next != target_send_head){
+                if(FindNode_InQueue( &(global_mailbox[i].mailbox_send_wait_list) , &(pcb[pid].list)) == 1){
+                    DequeNode_AccordList(&(global_mailbox[i].mailbox_send_wait_list), &(pcb[pid].list));
+                }
+            }
+
+            list_head *target_recv_head = &(global_mailbox[i].mailbox_recv_wait_list);
+            if(target_recv_head -> next != target_recv_head){
+                if(FindNode_InQueue( &(global_mailbox[i].mailbox_recv_wait_list), &(pcb[pid].list) ) == 1){
+                    DequeNode_AccordList( &(global_mailbox[i].mailbox_recv_wait_list), &(pcb[pid].list));
+                }
+            }
+        }
+    }
+}
+
 
 cpu global_cpu[2];
 // implement cpu related cpu
