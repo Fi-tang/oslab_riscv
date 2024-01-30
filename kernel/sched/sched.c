@@ -114,12 +114,12 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
         return;
     }   
     // need 8 bytes to allocate argv[0] - argv[1] - ... - argv[n]
-    reg_t avail_user_stack = pcb -> user_sp;
+    reg_t avail_user_stack = pcb -> user_stack_base;
     int count_mem_usage = 0;
     
     char *filled_with_zero = NULL;
     for(int i = 0; i < 8; i++){
-        filled_with_zero = (char *)(pcb -> user_sp - i);
+        filled_with_zero = (char *)(pcb -> user_stack_base - i);
         *filled_with_zero = '\0';
     }
     for(int i = 0; i <= argc; i++){
@@ -129,7 +129,7 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
     
     for(int i = 0; i < argc; i++){
         char **unassigned_location = NULL;
-        unassigned_location = (char **)(pcb -> user_sp - (argc - i) * 8);
+        unassigned_location = (char **)(pcb -> user_stack_base - (argc - i) * 8);
                         // assign arv[0] --> 'test_barrier'
         int total_number = strlen(argv[i]) + 1;
 
@@ -146,16 +146,16 @@ void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
 
     // write argc and argv to a0 and a1 register!
     pcb -> pcb_user_regs_context.regs[10] = argc;
-    pcb -> pcb_user_regs_context.regs[11] = (pcb -> user_sp - (argc * 8));
+    pcb -> pcb_user_regs_context.regs[11] = (pcb -> user_stack_base - (argc * 8));
 
-    pcb -> user_sp = pcb -> user_sp - count_mem_usage;
-    while(pcb -> user_sp % 128 != 0){
-        pcb -> user_sp -= 1;
+    pcb -> user_stack_base = pcb -> user_stack_base - count_mem_usage;
+    while(pcb -> user_stack_base % 128 != 0){
+        pcb -> user_stack_base -= 1;
     }
 }
 
 // map user stack to user address space
-void allocUserStack(PTE *user_level_one_pgdir){
+uintptr_t allocUserStack(PTE *user_level_one_pgdir){
     uintptr_t malloc_user_stack_address = kmalloc();
     printl("\n[allocUserStack]: \n");
     printl("malloc_user_stack_address: 0x%x\n", malloc_user_stack_address);
@@ -163,6 +163,8 @@ void allocUserStack(PTE *user_level_one_pgdir){
     uint64_t va = 0xf00010000lu - PAGE_SIZE;
     uint64_t pa = kva2pa(malloc_user_stack_address);
     map_single_user_page(va, pa, user_level_one_pgdir);
+
+    return malloc_user_stack_address;
 }
 
 pid_t do_exec(char *name, int argc, char *argv[]){
@@ -176,7 +178,6 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             pcb[i].user_sp = 0xf00010000lu;
 
             pcb[i].kernel_stack_base = pcb[i].kernel_sp;
-            pcb[i].user_stack_base = pcb[i].user_sp;
 
             pcb[i].cursor_x = i;
             pcb[i].cursor_y = i;
@@ -194,7 +195,9 @@ pid_t do_exec(char *name, int argc, char *argv[]){
             share_pgtable(pcb[i].user_pgdir_kva, pa2kva(PGDIR_PA));
             PTE *user_level_one_pgdir = (PTE *)(pcb[i].user_pgdir_kva);
             load_task_image(pcb[i].name, user_level_one_pgdir);
-            allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
+
+            uintptr_t malloc_user_stack_address = allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
+            pcb[i].user_stack_base = malloc_user_stack_address;                               // this records kernel_virtual_address of user stack
 
             init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
 
