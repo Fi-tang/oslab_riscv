@@ -134,60 +134,22 @@ extern void do_process_show();
 extern pid_t do_getpid();
 extern void do_taskset(int mask, char *taskname, int task_pid);
 /************************************************************/
+//***********************virtual memory**************************
+extern void allocate_user_pgdir(pcb_t *pcb);
 
+//*****************initialize pcb structure**************************************
+void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_context_t *user_regs_context, pcb_t *pcb, ptr_t entry_point);
+void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]);
+void assign_initial_pcb(char *name, int alloc_index);
+void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb);
+void init_pcb_loop(void);
+pid_t do_exec(char *name, int argc, char *argv[]);
+//**********************************************************/
+//************************debugging line *****************************************
 // use list to find the whole pcb
-static inline pcb_t *GetPcb_FromList(list_head *node){
-   unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> list);
-   pcb_t *return_pcb = NULL;
-   return_pcb = (pcb_t *) ((char *)(node) - list_offset);
-   return return_pcb;
-}
+pcb_t *GetPcb_FromList(list_head *node);
 
 // use wait_queue to find the whole pcb
-static inline pcb_t *GetPcb_FromWaitList(list_head *node){
-    unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> wait_list);
-    pcb_t *return_pcb = NULL;
-    return_pcb = (pcb_t *) ((char *)(node) - list_offset);
-    return return_pcb;
-}
-
-static inline void PrintPcb_FromList(list_head *head){
-    if(head -> next == head){
-        printl("NULL\n");
-        return;
-    }
-    else{
-        if(head == &sleep_queue){
-            list_head *node = head -> next;
-            while(node != head){
-                pcb_t *print_pcb_list = GetPcb_FromList(node);
-                printl("[%d]: %s [left %d seconds]-> ", print_pcb_list -> pid, print_pcb_list -> name
-                , print_pcb_list -> wakeup_time);
-                node = node -> next;
-            }
-            printl("NULL\n");
-        }
-        else{
-            list_head *node = head -> next;
-            while(node != head){
-                pcb_t *print_pcb_list = GetPcb_FromList(node);
-                printl("[%d]: %s  ", print_pcb_list -> pid, print_pcb_list -> name);
-                if(print_pcb_list -> status == TASK_BLOCKED){
-                    printl(" TASK_BLOCKED -> ");
-                }
-                else if(print_pcb_list -> status == TASK_READY){
-                    printl(" TASK_READY -> ");
-                }
-                else if(print_pcb_list -> status == TASK_RUNNING){
-                    printl(" TASK_RUNNING -> ");
-                }
-                else if(print_pcb_list -> status == TASK_EXITED){
-                    printl(" TASK_EXITED -> ");
-                }
-                node = node -> next;
-            }
-            printl("NULL\n");
-        }
-    }
-}
+pcb_t *GetPcb_FromWaitList(list_head *node);
+void PrintPcb_FromList(list_head *head);
 #endif

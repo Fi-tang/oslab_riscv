@@ -7,7 +7,13 @@
 #include <printk.h>
 #include <assert.h>
 #include <os/string.h> // newly added!
+#include <csr.h>       // newly added!
+#include <os/loader.h> // newly added!
 
+#define BOOT_LOADER_ADDRESS 0xffffffc050200000
+#define BOOT_LOADER_SIG_OFFSET 0x1fe
+#define APP_NUMBER_LOC (BOOT_LOADER_SIG_OFFSET - 4)
+#define current_task_entry_address 0x100000lu 
 pcb_t pcb[NUM_MAX_TASK];
 const ptr_t pid0_stack = INIT_KERNEL_STACK + PAGE_SIZE;
 pcb_t pid0_pcb = {
@@ -24,6 +30,239 @@ pcb_t * volatile current_running;
 
 /* global process id */
 pid_t process_id = 1;
+extern void ret_from_exception();
+//************************debugging line *****************************************
+// use list to find the whole pcb
+pcb_t *GetPcb_FromList(list_head *node){
+   unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> list);
+   pcb_t *return_pcb = NULL;
+   return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+   return return_pcb;
+}
+
+// use wait_queue to find the whole pcb
+pcb_t *GetPcb_FromWaitList(list_head *node){
+    unsigned long list_offset = (unsigned long) (&((pcb_t *)0)-> wait_list);
+    pcb_t *return_pcb = NULL;
+    return_pcb = (pcb_t *) ((char *)(node) - list_offset);
+    return return_pcb;
+}
+
+void PrintPcb_FromList(list_head *head){
+    if(head -> next == head){
+        printl("NULL\n");
+        return;
+    }
+    else{
+        if(head == &sleep_queue){
+            list_head *node = head -> next;
+            while(node != head){
+                pcb_t *print_pcb_list = GetPcb_FromList(node);
+                printl("[%d]: %s [left %d seconds]-> ", print_pcb_list -> pid, print_pcb_list -> name
+                , print_pcb_list -> wakeup_time);
+                node = node -> next;
+            }
+            printl("NULL\n");
+        }
+        else{
+            list_head *node = head -> next;
+            while(node != head){
+                pcb_t *print_pcb_list = GetPcb_FromList(node);
+                printl("[%d]: %s  ", print_pcb_list -> pid, print_pcb_list -> name);
+                if(print_pcb_list -> status == TASK_BLOCKED){
+                    printl(" TASK_BLOCKED -> ");
+                }
+                else if(print_pcb_list -> status == TASK_READY){
+                    printl(" TASK_READY -> ");
+                }
+                else if(print_pcb_list -> status == TASK_RUNNING){
+                    printl(" TASK_RUNNING -> ");
+                }
+                else if(print_pcb_list -> status == TASK_EXITED){
+                    printl(" TASK_EXITED -> ");
+                }
+                node = node -> next;
+            }
+            printl("NULL\n");
+        }
+    }
+}
+
+//******************Initialize registers***********************************************************
+/************************************************************/
+void init_pcb_regs(switchto_context_t *kernel_switchto_context, regs_context_t *user_regs_context, pcb_t *pcb, ptr_t entry_point){
+    // ********************* kernel ***************************//
+    kernel_switchto_context -> regs[0] = ret_from_exception; // ra
+    kernel_switchto_context -> regs[1] = pcb -> kernel_sp; // sp
+
+    //********************** user ****************************//
+    user_regs_context -> regs[1] = entry_point;  // entry_point 
+    user_regs_context -> regs[2] = pcb -> user_sp;
+    user_regs_context -> regs[4] = pcb;
+
+    user_regs_context -> sstatus = SR_SPIE | SR_SUM;
+    user_regs_context -> sepc = entry_point;        // entry_point // restore context, first happen because in ret_from_exception:[sepc + 4]
+    user_regs_context -> sbadaddr = 0;
+    user_regs_context -> scause = SCAUSE_IRQ_FLAG + IRQ_S_TIMER;
+    user_regs_context -> regs_pointer = &(pcb -> pcb_user_regs_context);
+}
+
+void do_writeArgvToMemory(pcb_t *pcb, int argc, char *argv[]){
+    if(argc == 0 || (argc == 1 && argv == NULL)){
+        pcb -> pcb_user_regs_context.regs[10] = argc;   // need to pass the assert(argc >= 1) test, where argv[0] == taskname
+        pcb -> pcb_user_regs_context.regs[11] = 0x0;
+        return;
+    }   
+    // need 8 bytes to allocate argv[0] - argv[1] - ... - argv[n]
+    reg_t avail_user_stack = pcb -> user_sp;
+    int count_mem_usage = 0;
+    
+    char *filled_with_zero = NULL;
+    for(int i = 0; i < 8; i++){
+        filled_with_zero = (char *)(pcb -> user_sp - i);
+        *filled_with_zero = '\0';
+    }
+    for(int i = 0; i <= argc; i++){
+        avail_user_stack -= 8;
+        count_mem_usage += 8;
+    }
+    
+    for(int i = 0; i < argc; i++){
+        char **unassigned_location = NULL;
+        unassigned_location = (char **)(pcb -> user_sp - (argc - i) * 8);
+                        // assign arv[0] --> 'test_barrier'
+        int total_number = strlen(argv[i]) + 1;
+
+        avail_user_stack -= total_number;
+
+        char *string_mem = NULL;
+        string_mem = (char *)(avail_user_stack + 1);
+
+        strncpy(string_mem, argv[i], strlen(argv[i]));
+
+        *unassigned_location = string_mem;
+        count_mem_usage += total_number;
+    }
+
+    // write argc and argv to a0 and a1 register!
+    pcb -> pcb_user_regs_context.regs[10] = argc;
+    pcb -> pcb_user_regs_context.regs[11] = (pcb -> user_sp - (argc * 8));
+
+    pcb -> user_sp = pcb -> user_sp - count_mem_usage;
+    while(pcb -> user_sp % 128 != 0){
+        pcb -> user_sp -= 1;
+    }
+}
+
+void assign_initial_pcb(char *name, int alloc_index){
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    pcb[alloc_index].kernel_sp = allocKernelStack();      // need to notice that kernel_sp allocate from 0xffffffc052001000
+    pcb[alloc_index].user_sp = 0xf00010000lu;
+
+    pcb[alloc_index].kernel_stack_base = pcb[alloc_index].kernel_sp;
+    pcb[alloc_index].user_stack_base = pcb[alloc_index].user_sp;
+
+    pcb[alloc_index].cursor_x = alloc_index;
+    pcb[alloc_index].cursor_y = alloc_index;
+    Initialize_QueueNode(&pcb[alloc_index].list);
+    Initialize_QueueNode(&pcb[alloc_index].wait_list);
+
+    pcb[alloc_index].pid = alloc_index;
+    strcpy(pcb[alloc_index].name, name);
+
+    do_load_virtual_task_img_by_name(pcb[alloc_index].name, &pcb[alloc_index]);
+
+    pcb[alloc_index].status = TASK_RUNNING;
+    pcb[alloc_index].pcb_mask = 0x3;
+    init_pcb_regs(&pcb[alloc_index].pcb_switchto_context, &pcb[alloc_index].pcb_user_regs_context, &pcb[alloc_index], current_task_entry_address);
+}
+
+// virtual load_task_image
+void do_load_virtual_task_img_by_name(char *taskname, pcb_t *pcb){
+    // Step 1: allocate pcb[i]'s user_page
+    printl("\n\n[do_load_virtual_task_img_by_name]: \n");
+    allocate_user_pgdir(pcb);
+    printl("pcb[%d]'s user_pgdir: 0x%x\n", pcb -> pid, pcb -> user_pgdir_kva);
+
+    // Step 2: fill kernel information
+    copy_kernel_pgdir_to_user_pgdir(pa2kva(PGDIR_PA), pcb -> user_pgdir_kva);
+    PTE *user_level_one_pgdir = (PTE *)(pcb -> user_pgdir_kva);
+    load_task_image(taskname, user_level_one_pgdir);
+    allocUserStack(user_level_one_pgdir);       // use a free page as user_stack
+}
+
+
+void init_pcb_loop(void){  // cpu [0] always point to pid0, cpu [1] always point to pid1
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    Initialize_QueueNode(&ready_queue); 
+    for(int i = 0; i <= task_num; i++){
+        if(strcmp(tasks[i].taskname, "pid0") == 0){
+            assign_initial_pcb(tasks[i].taskname, 0);
+        }
+        if(strcmp(tasks[i].taskname, "pid1") == 0){
+            assign_initial_pcb(tasks[i].taskname, 1);
+        }
+    }
+
+    for(int i = 2; i < NUM_MAX_TASK; i++){
+        pcb[i].pid = i;
+        pcb[i].status = TASK_EXITED;
+    }
+    do_exec("shell", 0, NULL);
+}
+
+pid_t do_exec(char *name, int argc, char *argv[]){
+    //***********************************************************
+    // the argv[] parameter now is all correct!
+    //**********************debugging part************************
+    short task_num = *(short *)(BOOT_LOADER_ADDRESS + APP_NUMBER_LOC);
+    for(int i = 0; i < NUM_MAX_TASK; i++){
+        if(pcb[i].status == TASK_EXITED){
+            pcb[i].kernel_sp = allocKernelStack();
+            pcb[i].user_sp = 0xf00010000lu;
+
+            pcb[i].kernel_stack_base = pcb[i].kernel_sp;
+            pcb[i].user_stack_base = pcb[i].user_sp;
+
+            pcb[i].cursor_x = i;
+            pcb[i].cursor_y = i;
+            Initialize_QueueNode(&pcb[i].list);
+            Initialize_QueueNode(&pcb[i].wait_list);
+
+            strcpy(pcb[i].name, name);
+            
+            do_load_virtual_task_img_by_name(pcb[i].name, &pcb[i]);
+            pcb[i].status = TASK_READY;
+             
+            // If otherwise declared, inhereit father's mask
+            int current_cpu = get_current_cpu_id();
+            pcb_t *father_pcb_node = global_cpu[current_cpu].cpu_current_running;
+            // default mask from father
+            pcb[i].pcb_mask = father_pcb_node -> pcb_mask;
+
+            do_writeArgvToMemory(&pcb[i], argc, argv);
+
+            init_pcb_regs(&pcb[i].pcb_switchto_context, &pcb[i].pcb_user_regs_context, &pcb[i], current_task_entry_address);
+
+            Enque_FromTail(&ready_queue, &pcb[i].list);
+            return i;
+        }
+    }
+    return 0;
+}
+
+//************virtual memory*****************************
+// Step1: allocate user_pgdir(corresponding to level_one_pgdir)
+void allocate_user_pgdir(pcb_t *pcb){
+    struct SentienlNode *malloc_user_pgdir_sentienl = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
+    printl("allocate_user_pgdir: ");
+    print_page_alloc_info(malloc_user_pgdir_sentienl);
+
+    pcb -> user_pgdir_kva = (uintptr_t)(malloc_user_pgdir_sentienl -> head);
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!![Warning]!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // kmalloc(1 * PAGE_SIZE) is free to clear_pgdir, but need to pay attention to the usage of next pointer, we may further need it
+}
+//*************************************************debugging line end****************************
 
 void do_scheduler(void){
     check_sleeping();  // First check sleep queue!
@@ -329,3 +568,4 @@ void do_taskset(int mask, char *taskname, int task_pid){
         pcb[started_pid].pcb_mask = mask;
     }
 }
+

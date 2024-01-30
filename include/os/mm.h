@@ -79,18 +79,15 @@ extern void share_pgtable(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern uintptr_t alloc_page_helper(uintptr_t va, uintptr_t pgdir);
 
 extern void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir); // newly added!
-extern uintptr_t load_task_image(char *taskname, PTE *user_level_one_pgdir); // newly added!
-extern void Build_user_page_table(int task_id, PTE *user_level_one_pgdir, uintptr_t *task_page_array); // newly added!
 
 // TODO [P4-task4]: shm_page_get/dt */
 uintptr_t shm_page_get(int key);
 void shm_page_dt(uintptr_t addr);
 
 // newly added!
+extern void init_clean_boot_address_map();
 extern void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir);
 extern void allocUserStack(PTE *user_level_one_pgdir);
 extern uint64_t allocKernelStack();
-
-
 
 #endif /* MM_H */

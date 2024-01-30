@@ -102,6 +102,17 @@ void print_page_alloc_info(struct SentienlNode *sentienl_head){
     printl("NULL\n");
 }
 
+//**************************clean temporary mapping************************************************//
+void init_clean_boot_address_map(){
+    PTE *early_pgdir = (PTE *)pa2kva(PGDIR_PA);
+    uint64_t va = 0x50000000lu;
+    uint64_t vpn2 = (va >> (NORMAL_PAGE_SHIFT + PPN_BITS + PPN_BITS));
+
+    uint64_t physical_address = get_pa(early_pgdir[vpn2]);
+    clear_pgdir(pa2kva(physical_address)); // clean 2th page_table
+
+    early_pgdir[vpn2] = 0;
+}
 
 /**
 this function is to map three level user_page
@@ -132,7 +143,7 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
         uint64_t return_level_two_address = (uint64_t)(malloc_level_two -> head);
         printl("[map_single_user_page]: level_two_pgdir 0x%x\n", kva2pa(return_level_two_address)); // debug
         set_pfn(&level_one_pgdir[vpn2], kva2pa(return_level_two_address) >> NORMAL_PAGE_SHIFT);
-        set_attribute(&level_one_pgdir[vpn2], _PAGE_PRESENT);
+        set_attribute(&level_one_pgdir[vpn2], _PAGE_PRESENT| _PAGE_USER);
         clear_pgdir(pa2kva(get_pa(level_one_pgdir[vpn2])));     // clean level_two_pgdir, for furture fullfill
     }
     PTE *level_two_pgdir = (PTE *)pa2kva(get_pa(level_one_pgdir[vpn2]));
@@ -142,13 +153,13 @@ void map_single_user_page(uint64_t va, uint64_t pa, PTE *level_one_pgdir){
         uint64_t return_level_three_address = (uint64_t)(malloc_level_three -> head);
         printl("[map_single_user_page]: level_three_pgdir 0x%x\n", kva2pa(return_level_three_address)); // debug
         set_pfn(&level_two_pgdir[vpn1], kva2pa(return_level_three_address) >> NORMAL_PAGE_SHIFT);
-        set_attribute(&level_two_pgdir[vpn1], _PAGE_PRESENT);
+        set_attribute(&level_two_pgdir[vpn1], _PAGE_PRESENT | _PAGE_USER);
         clear_pgdir(pa2kva(get_pa(level_two_pgdir[vpn1])));     // clean level_three_pgdir, for furture fullfill
     }
     PTE *level_three_pgdir = (PTE *)pa2kva(get_pa(level_two_pgdir[vpn1]));
     set_pfn(&level_three_pgdir[vpn0], pa >> NORMAL_PAGE_SHIFT);
     set_attribute(
-        &level_three_pgdir[vpn0], _PAGE_PRESENT | _PAGE_READ | _PAGE_WRITE | _PAGE_EXEC | _PAGE_ACCESSED | _PAGE_DIRTY);
+        &level_three_pgdir[vpn0], _PAGE_PRESENT | _PAGE_READ | _PAGE_WRITE | _PAGE_EXEC | _PAGE_USER);
 
     printl("[Verify]level_one_pgdir: 0x%x\n", kva2pa(level_one_pgdir));
     printl("[Verify]level_two_pgdir: 0x%x,\tfunction[vpn2:%d] result = 0x%x\n", kva2pa(level_two_pgdir), vpn2, get_pa(level_one_pgdir[vpn2]));
@@ -192,139 +203,6 @@ void copy_kernel_pgdir_to_user_pgdir(uintptr_t dest_pgdir, uintptr_t src_pgdir){
     user_pgdir[vpn2] = kernel_pgdir[vpn2];
 }
 
-//*********************************************load task image*********************************************
-/**
-function: first load task image, after fullfill it into user_pgtable
-*/
-uintptr_t load_task_image(char *taskname, PTE *user_level_one_pgdir){
-    printl("\n\n[load_task_image]: %s\n", taskname);
-    /**
-    Step 1. record corresponding task-related parameter.
-    */
-    int task_id = -1;
-    for(int i = 0; i < TASK_MAXNUM; i++){
-        if(strcmp(tasks[i].taskname, taskname) == 0){
-            task_id = i;
-            break;
-        }
-    }
-    int start_block_id = tasks[task_id].start_block_id;
-    int total_block_num = tasks[task_id].total_block_num;
-    int max_block_id = start_block_id + total_block_num - 1;    // judge it is a legal sector to visit
-    long task_filesz = tasks[task_id].task_filesz;
-    long task_memorysz = tasks[task_id].task_memorysz;
-    long task_blockstart_offset = tasks[task_id].task_blockstart_offset;
-
-    printl("start_block_id=%d\ttotal_block_num=%d\ttask_filesz=%ld\n", start_block_id, total_block_num, task_filesz);
-    printl("task_memorysz=%ld\ttask_blockstart_offset=%ld\n",task_memorysz, task_blockstart_offset);
-    printl("max_block_id = %d\n", max_block_id);
-    /**
-    according to the load function,
-    we need a free buffer to temoprarily place the first 512B, then copy it to the corresponding position.
-    @free_buffer_page: place first and the 8th block data here, than move it to somewhereelse(according to offset)
-    */
-    /*
-    Step 2: allocate temp_buffer to store first 512 B  --> fix it
-    */
-    printl("free_buffer_address: 0x%x\n", free_buffer_address);  // actually, it is kva: 0xffffffc052001000
-
-    /**
-    Step 3: allocate > memorysz's Byte and record it into array
-    */
-    struct SentienlNode *task_page = (struct SentienlNode *)kmalloc(task_memorysz);
-    printl("\ntask_page:");
-    print_page_alloc_info(task_page);
-
-    int total_page_num = ROUND(task_memorysz, PAGE_SIZE) / PAGE_SIZE;
-    printl("total_page_num = %d\n", total_page_num);
-
-    struct ListNode *temp_task_page = task_page -> head;
-    uintptr_t task_page_array[total_page_num];
-    for(int i = 0; i < total_page_num; i++){
-        task_page_array[i] = (uintptr_t)temp_task_page;
-        temp_task_page = temp_task_page -> next;
-    }
-
-    for(int i = 0; i < total_page_num; i++){
-        printl("task_page_array[%d]=0x%x ", i, task_page_array[i]);     // debug line
-    }
-
-    /**
-    Step 4: formally load task image
-    Every time, we load one page
-    */
-    for(int i = 0; i < total_page_num; i++){
-        /**
-        note: every time, we deal with 8 block,
-        the 1st block should be moved to free_buffer_address, then memcpy here
-
-        bios_sd_read(unsigned mem_address, unsigned num_of_blocks, unsigned block_id);
-        void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len)
-
-        [512 - offset] |  [offset][1][2][3][4][5][6][512 - offset]  | [offset]
-
-        1. bios_sd_read(free_buffer_address, 1, start_block_id)
-        2. memcpy(task_page_array[i], free_buffer_address + offset, 512 - offset)
-        3. bios_sd_read(task_page_array[i] + (512 - offset), 7, start_block_id + 1)
-        4. bios_sd_read(free_buffer_address, 1, start_block_id + 8)
-        5. memcpy(task_page_array[i] + 4096 - offset, free_buffer_address, offset)
-        start_block_id = start_block_id + 8
-        */
-        bios_sd_read(free_buffer_address, 1, start_block_id);
-        memcpy(task_page_array[i], free_buffer_address + task_blockstart_offset, 512 - task_blockstart_offset);
-        /*
-        if left block is less than 7, it will not be necessary
-        */
-        if(start_block_id + 7 > max_block_id){
-            printl("\n[Final round]: This is final round!\n");
-            printl("visit [%d] , only need to visit %d blocks\n", start_block_id + 1, (max_block_id - start_block_id));
-            bios_sd_read(task_page_array[i] + (512 - task_blockstart_offset), (max_block_id - start_block_id), start_block_id + 1);
-        }
-        else{
-            printl("\n[Normal round]: This is a normal round\n");
-            printl("This round visit [%d][%d][%d][%d][%d][%d][%d]\n", start_block_id + 1, start_block_id + 2, start_block_id + 3, 
-            start_block_id + 4, start_block_id + 5, start_block_id + 6, start_block_id + 7);
-            bios_sd_read(task_page_array[i] + (512 - task_blockstart_offset), 7, start_block_id + 1);
-
-            bios_sd_read(free_buffer_address, 1, start_block_id + 8);
-            memcpy(task_page_array[i] + PAGE_SIZE - task_blockstart_offset, free_buffer_address, task_blockstart_offset);
-            start_block_id = start_block_id + 8;
-        }
-    }
-    /**Step 5: the last page, we need to clean task_filesz to task_memsz, fill it with 0*/
-    int task_filesz_spare = task_filesz - (total_page_num - 1) * PAGE_SIZE;
-    int task_memorysz_spare = task_memorysz - (total_page_num - 1) * PAGE_SIZE;
-    printl("\ntask_filesz_spare: %d\ttask_memorysz_spare: %d\n", task_filesz_spare, task_memorysz_spare);
-    
-    memset(task_page_array[total_page_num - 1] + task_filesz_spare, 0, PAGE_SIZE - task_filesz_spare);
-    /**Step 6: fullfill page_table*/
-    clear_pgdir(free_buffer_address);
-    Build_user_page_table(task_id, user_level_one_pgdir, task_page_array);
-
-    return task_page_array[0];
-}
-
-//************************Building user page table********************************************************
-/* after load task image, we need to fullfill user page_table
-(1) virtual address ranges
-(2) page allocate situation
-*/
-void Build_user_page_table(int task_id, PTE *user_level_one_pgdir, uintptr_t *task_page_array){
-    // Step 1: get related virtual address ranges: from 0x10000 to (0x10000 + tasks[i].task_memorysz)
-    int task_memorysz = tasks[task_id].task_memorysz;
-    printl("\n\n[Build_user_page_table]: \n");
-    printl("virtual_address start from 0x10000 to 0x%x\n",(0x100000lu + task_memorysz));  // memorysz = 5456 = 0x1550, 0x10000 ~ 0x11550
-
-    int total_page_num = ROUND(task_memorysz, PAGE_SIZE) / PAGE_SIZE;
-    for(int i = 0; i < total_page_num; i++){
-        uintptr_t kva_load_address = task_page_array[i];
-        printl("%d's kva_load_address = 0x%x\n", i, kva_load_address);
-        uint64_t va = 0x100000lu + i * PAGE_SIZE;
-        uint64_t pa = kva2pa(kva_load_address);
-        map_single_user_page(va, pa, user_level_one_pgdir);
-    }
-}
-
 // map user stack to user address space
 void allocUserStack(PTE *user_level_one_pgdir){
     struct SentienlNode *malloc_user_stack = (struct SentienlNode *)kmalloc(1 * PAGE_SIZE);
@@ -342,5 +220,5 @@ uint64_t allocKernelStack(){
     printl("\n[allocKernelStack]: \n");
     print_page_alloc_info(malloc_kernel_stack);
 
-    return (malloc_kernel_stack -> head);
+    return (malloc_kernel_stack -> head) + PAGE_SIZE;
 }
