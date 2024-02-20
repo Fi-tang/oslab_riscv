@@ -22,7 +22,8 @@ P3 整体而言难度不大，需要注意的是在多核启动的过程中，se
               2. 先解锁再恢复现场
 P3 的shell 启动效果如下:
 可以看到屏幕上打印出了 cpu1 的信息
-![shell](https://github.com/Fi-tang/oslab_riscv/blob/Project3-Interactive_OS_and_Process_Management/P3_result0.PNG)
+![shell](https://github.com/Fi-tang/oslab_riscv/blob/Project3-Interactive_OS_and_Process_Management/P3_result1.PNG)
 
 
-多核启动的执行效果如下: 
+多核启动的执行效果如下: 可以看到双核的加速比约为 1.77
+![multicore](https://github.com/Fi-tang/oslab_riscv/blob/Project3-Interactive_OS_and_Process_Management/P3_result0.PNG)
