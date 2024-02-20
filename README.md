@@ -1,3 +1,7 @@
+写在最前：建议阅读的分支顺序 master -> P1 -> P2_simple -> P2_complex -> P3 -> P4
+**guidebook** 文件夹记录了实验的内容和任务发布
+**feishu_coding** 展示了代码过程中的设计思考和debug过程，展现的形式是 url 链接。
+
 P1 的部分完成了操作系统的引导，镜像文件的加载，以及对ELF文件的处理
 操作系统的引导分为 
 1. BIOS阶段(CPU上电后跳到指定位置执行，此处记录我们的 Boot Loader)
