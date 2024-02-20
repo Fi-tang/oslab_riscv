@@ -21,9 +21,11 @@ P3 整体而言难度不大，需要注意的是在多核启动的过程中，se
 正确的顺序是: 1. 先保存现场再上锁 
               2. 先解锁再恢复现场
 P3 的shell 启动效果如下:
-可以看到屏幕上打印出了 cpu1 的信息
+此时使用 make run 命令，看到在没有开启双核的情况下，打印的加速比为 1.20
+
 ![shell](https://github.com/Fi-tang/oslab_riscv/blob/Project3-Interactive_OS_and_Process_Management/P3_result1.PNG)
 
 
-多核启动的执行效果如下: 可以看到双核的加速比约为 1.77
+多核启动的执行效果如下: 可以看到双核的加速比约为 1.77, 多次测试的平均值在 1.80 左右
+
 ![multicore](https://github.com/Fi-tang/oslab_riscv/blob/Project3-Interactive_OS_and_Process_Management/P3_result0.PNG)
