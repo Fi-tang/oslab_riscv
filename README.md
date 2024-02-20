@@ -29,3 +29,8 @@ RESTORE_CONTEXT, 将pcb内存空间的值写回到 寄存器中
 关注寄存器的值
 ![registers](https://github.com/Fi-tang/oslab_riscv/blob/Project2-A_Complex_Kernel/feishu_picture/part2-debugging/registers.PNG)
 
+
+实验结果:
+能够观察到下列7个进程同时在执行
+![P2_result](https://github.com/Fi-tang/oslab_riscv/blob/Project2-A_Complex_Kernel/P2_result.PNG)
+
