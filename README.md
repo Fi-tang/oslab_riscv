@@ -13,3 +13,6 @@ P1 的部分完成了操作系统的引导，镜像文件的加载，以及对EL
 2. 加载和初始化内存，清空bss段，设置栈指针，跳转到内核 main 函数
 3. 加载并选择启动多个用户程序之一：涉及 write_image_info()
 4. 镜像文件的紧密排列
+
+实验结果显示如下：可以看到通过汇编打印出了欢迎信息，通过输入字符打印出各个用户程序被调度执行的情况
+![result](https://github.com/Fi-tang/oslab_riscv/blob/Project1-BootLoader/feishu_picture/task3/result.png)
