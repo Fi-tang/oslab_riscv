@@ -1,5 +1,5 @@
 **写在最前**
-本分支的任务与 P2-A_Simple_Kernel 的部分一致，新增加的功能是例外处理和时钟中断,因此不特别增加 guidebook 文件夹。
+本分支的任务与 P2-A_Simple_Kernel 的部分一致，新增加的功能是例外处理和时钟中断,guidebook 文件夹是旧版的 ppt 参考。
 本次调试过程中的图片可以参考 "feishu_picture"
 具体的设计内容可以参考 **feishu_coding** 文件夹下的 **"P2-part3-4 的总结"**，和 task3-part2 子目录下的 **"task3-前半部分总结"**
 P2 最主要的两条汇编指令是 **sret** 和 **ecall**,
