@@ -18,3 +18,5 @@ P1 的部分完成了操作系统的引导，镜像文件的加载，以及对EL
 实验同样支持通过程序名的字符输入进行调度。
 P1的设计过程在 **readme.pdf** 中详细展示
 ![result](https://github.com/Fi-tang/oslab_riscv/blob/Project1-BootLoader/feishu_picture/task3/result.png)
+字符显示的结果如下:
+![P1-result](https://github.com/Fi-tang/oslab_riscv/blob/Project1-BootLoader/P1_result.PNG)
